@@ -195,7 +195,7 @@ html.mreg-lock,html.mreg-lock body{overflow:hidden}
 .nav-links a.nav-out{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
 .nav-links a.nav-out:hover{background:rgba(231,199,102,.1);color:var(--gold-soft);filter:none}
 
-.mreg-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:0 0 6px;border:1px solid var(--line-soft);border-radius:12px;background:rgba(0,0,0,.18)}
+.mreg-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:8px 0 6px;border:1px solid var(--line-soft);border-radius:12px;background:rgba(0,0,0,.18)}
 .mreg-tabs button{font:inherit;font-size:14px;font-weight:800;padding:9px 0;border:0;border-radius:9px;background:transparent;color:var(--ink-dim);cursor:pointer}
 .mreg-tabs button.on{background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));color:var(--navy-950)}
 .mreg-msg a{color:var(--gold-soft);font-weight:800}

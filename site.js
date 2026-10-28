@@ -157,7 +157,8 @@
     q("#mregOtp").style.display   = n===2 ? "" : "none";
     q("#mregTabs").style.display  = n===1 ? "" : "none";
     [].forEach.call(q("#mregTabs").querySelectorAll("button"), function(b){ var on=b.getAttribute("data-mode")===mode; b.classList.toggle("on",on); b.setAttribute("aria-selected",on?"true":"false"); });
-    q("#mregTitle").textContent = n===2 ? "Masukkan Kode OTP" : (login ? "Masuk" : "Gabung");
+    q("#mregTitle").textContent = "Masukkan Kode OTP";
+    q("#mregTitle").style.display = n===2 ? "" : "none";   // langkah 1: judul cukup dari tab Gabung/Masuk
     q("#mregBack").textContent  = login ? "Ganti email" : "Ganti data";
     setTimeout(function(){ var f=q(n===2 ? "#m_otp" : (login ? "#m_lemail" : "#m_nama")); if(f) f.focus(); }, 60);
   }
@@ -212,7 +213,7 @@
           msg(m1,'Email ini belum terdaftar. <a href="#" data-switch="join">Gabung sekarang</a>.',false,true); return;
         }
         if(res && res.result==="sent"){
-          q("#mregSentTo").innerHTML = 'Kode 6 digit telah dikirim ke <b>'+esc(pending.email)+'</b>. Cek juga folder Spam/Promosi.';
+          q("#mregSentTo").innerHTML = 'Kode 6 digit telah dikirim ke <b>'+esc(pending.email)+'</b>.';
           q("#m_otp").value=""; step(2); countdown(res.wait||RESEND_SEC);
           if(isResend) msg(2,"Kode baru sudah dikirim.",true);
         } else if(res && res.result==="wait"){
