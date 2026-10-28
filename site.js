@@ -8,8 +8,8 @@
   // Tambah menu baru cukup di sini -> otomatis muncul di semua halaman.
   var MENU = [
     { href:"index.html",   label:"Beranda",      key:"beranda" },
+    { href:"layanan.html", label:"Layanan",      key:"layanan" },
     { href:"edukasi.html", label:"Edukasi",      key:"edukasi" },
-    { href:"live.html",    label:"Live Trading", key:"live" },
     { href:"youtube.html", label:"YouTube",      key:"youtube" },
     { href:"voucher.html", label:"TANGKAS",      key:"voucher" }
   ];
@@ -31,7 +31,7 @@
       '<button class="nav-toggle" id="navToggle" aria-label="Buka menu" aria-expanded="false">'+
         '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>'+
       '<nav class="nav-links" id="navLinks">'+navItems+
-        '<a class="nav-cta" href="index.html#layanan" data-join>Gabung</a></nav>'+
+        '<a class="nav-cta" href="layanan.html"'+(cur==="layanan"?' style="filter:brightness(1.08)"':'')+'>Gabung</a></nav>'+
     '</div></header>';
 
   var footLinks = MENU.map(function(m){ return '<a href="'+m.href+'">'+m.label+'</a>'; }).join("");
@@ -51,6 +51,7 @@
           '<a href="mailto:'+EMAIL+'">'+EMAIL+'</a>'+
         '</div>'+
       '</div>'+
+      '<p class="foot-risk"><strong>Peringatan risiko.</strong> Trading forex/emas (XAUUSD) dengan leverage berisiko tinggi dan dapat menyebabkan kerugian sebagian atau seluruh modal. EA Apocalypto adalah alat bantu otomatis, bukan jaminan keuntungan. Kinerja masa lalu tidak menjamin hasil di masa depan.</p>'+
       '<div class="foot-bottom">&copy; <span id="yr"></span> Apocalypto &middot; Situs resmi <a href="https://apocalypto.id/">apocalypto.id</a> &middot; Seluruh pendaftaran diproses melalui situs resmi ini.</div>'+
     '</div></footer>';
 
@@ -78,7 +79,7 @@
   var REG_KEY    = "__REG_KEY__";      // kunci registrasi publik (BUKAN kunci admin EA)
   var MKEY = "apx_member";
   // Halaman yang wajib registrasi dulu. Tambah file baru di sini untuk kartu berikutnya.
-  var GATED = ["daftar.html","voucher.html"];
+  var GATED = ["layanan.html","daftar.html","voucher.html"];
   var memMem = null;
 
   function getMember(){
