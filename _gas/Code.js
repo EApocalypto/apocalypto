@@ -55,7 +55,7 @@ var TANGKAS_TEST     = false;                 // true = abaikan jam buka (hanya 
 // ====== RELAY EMAIL PELANGGAN (sementara, via akun Gmail biasa yg sudah matang) ======
 // Email ke PELANGGAN (eksternal) dikirim lewat web app 'relay' yg jalan di masmoel.trading@gmail.com.
 // Kosongkan GMAIL_RELAY_URL untuk kembali kirim lewat Workspace (MailApp).
-var USE_GMAIL_RELAY = true;   // true = email pelanggan lewat relay Gmail (masmoel.trading); false = langsung dari Workspace (admin@apocalypto.id)
+var USE_GMAIL_RELAY = false;   // true = email pelanggan lewat relay Gmail (masmoel.trading); false = langsung dari Workspace (admin@apocalypto.id)
 var GMAIL_RELAY_URL = '__GAS_RELAY_URL__';                               // tempel URL /exec web app relay (dari akun Gmail) di sini
 var GMAIL_RELAY_KEY = '__GAS_RELAY_KEY__';   // kunci rahasia relay — samakan dgn RELAY_KEY di script relay
 var INVOICE_SHEET = 'Invoice';                // nama tab pencatatan invoice
@@ -438,8 +438,14 @@ function getProductBlobs() {
 // Kirim email ke PELANGGAN (eksternal). Pakai relay Gmail bila GMAIL_RELAY_URL diisi;
 // kalau kosong/gagal -> fallback kirim lewat Workspace (MailApp). opts = {to,subject,body,htmlBody,name,attachments,inlineImages}.
 function sendMailUser(opts){
+  // Utama: kirim langsung dari Workspace (admin@apocalypto.id, DKIM/SPF/DMARC PASS).
+  // Bila Workspace menolak (mis. kuota habis), otomatis jatuh balik ke relay Gmail.
+  if (!USE_GMAIL_RELAY){
+    try { MailApp.sendEmail(opts); return; }
+    catch (e){ console.error('Workspace gagal kirim: ' + e + ' -> coba relay Gmail.'); }
+  }
   try{
-    if (USE_GMAIL_RELAY && GMAIL_RELAY_URL && GMAIL_RELAY_URL.indexOf('http') === 0){
+    if (GMAIL_RELAY_URL && GMAIL_RELAY_URL.indexOf('http') === 0){
       var attArr = [];
       var atts = opts.attachments || [];
       for (var i = 0; i < atts.length; i++){
@@ -455,7 +461,8 @@ function sendMailUser(opts){
       console.error('Relay gagal (' + resp.getResponseCode() + '): ' + resp.getContentText() + ' -> fallback Workspace.');
     }
   } catch (e){ console.error('Relay error: ' + e + ' -> fallback Workspace.'); }
-  MailApp.sendEmail(opts);   // fallback: kirim lewat Workspace
+  if (USE_GMAIL_RELAY) MailApp.sendEmail(opts);   // fallback: kirim lewat Workspace
+  else throw new Error('Email gagal dikirim lewat Workspace maupun relay');
 }
 
 function emailShell(subtitle, nama, introHtml, rows, extraHtml, headerBg){
