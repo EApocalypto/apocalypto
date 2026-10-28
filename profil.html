@@ -83,7 +83,7 @@
         <input id="fRek" type="text" inputmode="numeric" maxlength="25" placeholder="Kosongkan bila tidak diubah" autocomplete="off">
         <div class="emsg" data-for="fRek">Lengkapi bank, nomor rekening (min. 6 digit) & nama pemilik, atau kosongkan ketiganya.</div>
         <label for="fAn">Nama pemilik rekening</label>
-        <input id="fAn" type="text" maxlength="60" placeholder="Sesuai buku tabungan">
+        <input id="fAn" type="text" maxlength="60" placeholder="Sesuai buku tabungan" style="text-transform:uppercase" oninput="var s=this.selectionStart,e=this.selectionEnd;this.value=this.value.toUpperCase();this.setSelectionRange(s,e)">
         <div class="msg" id="pMsg1"></div>
         <button type="submit" class="btn-gold" id="pSave">Simpan Perubahan</button>
       </div>
@@ -101,7 +101,7 @@
   </main>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202610281859" defer></script>
+  <script src="site.js?v=202610282036" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
@@ -127,7 +127,7 @@
     $('pForm').addEventListener('submit',function(e){
       e.preventDefault();
       var nama=$('fNama').value.trim(), email=$('fEmail').value.trim().toLowerCase(), wa=$('fWa').value.replace(/[^0-9+]/g,'');
-      var bank=$('fBank').value==='Lainnya'?$('fOther').value.trim():$('fBank').value, rek=$('fRek').value.trim(), an=$('fAn').value.trim(), ok=true;
+      var bank=$('fBank').value==='Lainnya'?$('fOther').value.trim():$('fBank').value, rek=$('fRek').value.trim(), an=$('fAn').value.trim().toUpperCase(), ok=true;
       if(!nama){ fe('fNama',true); ok=false; }
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ fe('fEmail',true); ok=false; }
       if(wa.replace(/\D/g,'').length<9){ fe('fWa',true); ok=false; }

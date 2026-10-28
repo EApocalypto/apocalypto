@@ -115,7 +115,7 @@
         <input id="bRek" type="text" inputmode="numeric" maxlength="25" placeholder="Contoh: 1234567890" autocomplete="off">
         <div class="emsg" data-for="bRek">Masukkan nomor rekening yang valid (angka, min. 6 digit).</div>
         <label for="bAn">Nama pemilik rekening</label>
-        <input id="bAn" type="text" maxlength="60" placeholder="Sesuai buku tabungan">
+        <input id="bAn" type="text" maxlength="60" placeholder="Sesuai buku tabungan" style="text-transform:uppercase" oninput="var s=this.selectionStart,e=this.selectionEnd;this.value=this.value.toUpperCase();this.setSelectionRange(s,e)">
         <div class="emsg" data-for="bAn">Isi nama pemilik rekening.</div>
         <label class="chk"><input type="checkbox" id="bOk"> <span>Data rekening di atas sudah benar dan atas nama saya sendiri.</span></label>
         <div class="emsg" data-for="bOk">Centang untuk melanjutkan.</div>
@@ -164,7 +164,7 @@
   </main>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202610282033" defer></script>
+  <script src="site.js?v=202610282036" defer></script>
   <script>
   (function(){
     var OPEN_H=20, CLOSE_H=21, POLL_MS=20000, RESEND=60;
@@ -280,7 +280,7 @@
     $('bankForm').addEventListener('submit', function(e){
       e.preventDefault();
       var bank = $('bBank').value==='Lainnya' ? $('bOther').value.trim() : $('bBank').value;
-      var rek=$('bRek').value.trim(), an=$('bAn').value.trim(), ok=true;
+      var rek=$('bRek').value.trim(), an=$('bAn').value.trim().toUpperCase(), ok=true;
       if(!$('bBank').value){ fe('bBank',true); ok=false; } else if(!bank){ fe('bOther',true); ok=false; }
       if(!/^\d{6,25}$/.test(rek)){ fe('bRek',true); ok=false; }
       if(!an){ fe('bAn',true); ok=false; }

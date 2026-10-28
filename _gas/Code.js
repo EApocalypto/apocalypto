@@ -2327,7 +2327,7 @@ function authMember(p) {
   return m;
 }
 function setMemberBank(row, bank, rek, an) {
-  memberSheet().getRange(row, MB.BANK, 1, 4).setValues([[bank, "'" + rek, an, new Date()]]);
+  memberSheet().getRange(row, MB.BANK, 1, 4).setValues([[bank, "'" + rek, String(an || '').trim().toUpperCase(), new Date()]]);
 }
 function applyProfileChange(me, pr) {
   var sh = memberSheet();
