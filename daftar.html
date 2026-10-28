@@ -243,6 +243,10 @@
   var API_KEY    = "__REG_KEY__";      // kunci registrasi terpisah (bukan kunci admin EA)
   // ===========================================================
   var form = document.getElementById('regForm');
+  // isi otomatis nama/WA/email dari registrasi member (site.js)
+  function prefillMember(m){ if(!m) return; [['nama',m.nama],['wa',m.wa],['email',m.email]].forEach(function(p){ var el=document.getElementById(p[0]); if(el && !el.value && p[1]) el.value=p[1]; }); }
+  try{ prefillMember(JSON.parse(localStorage.getItem('apx_member')||'null')); }catch(_){}
+  document.addEventListener('apx:member', function(e){ prefillMember(e.detail); });
   var required = ['nama','wa','email','login'];
   var btn = document.getElementById('btn'), spin = document.getElementById('spin'), btntext = document.getElementById('btntext');
   function fieldEl(n){ return document.getElementById(n); }
