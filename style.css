@@ -30,7 +30,7 @@ a{color:var(--gold-soft)}
 
 /* ---------- header / nav ---------- */
 .site-head{position:sticky; top:0; z-index:60; background:rgba(6,13,31,.72); backdrop-filter:blur(12px); border-bottom:1px solid var(--line-soft)}
-.site-head .bar{display:flex; align-items:center; gap:14px; padding:12px 0}
+.site-head .bar{display:flex; align-items:center; gap:14px; padding-top:12px; padding-bottom:12px}
 .brand{display:flex; align-items:center; gap:11px; text-decoration:none; color:inherit; flex:none}
 .brand .logo{width:38px;height:38px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
 .brand .wm{display:flex; flex-direction:column; line-height:1}
@@ -43,6 +43,8 @@ a{color:var(--gold-soft)}
 .nav-links a.active{color:var(--gold-soft); background:rgba(231,199,102,.1)}
 .nav-cta{display:inline-flex; align-items:center; gap:7px; text-decoration:none; font-weight:800; font-size:13.5px; color:var(--navy-950);
   background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep)); padding:9px 16px; border-radius:10px; box-shadow:0 10px 24px -14px rgba(231,199,102,.7)}
+.nav-links a.nav-cta{color:var(--navy-950);margin-left:6px}
+.nav-links a.nav-cta:hover{color:var(--navy-950);background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));filter:brightness(1.06)}
 .nav-toggle{display:none; width:40px;height:38px; border:1px solid var(--line-soft); background:transparent; border-radius:10px; cursor:pointer; color:var(--ink)}
 .nav-toggle svg{display:block;margin:0 auto}
 @media(max-width:860px){
@@ -53,6 +55,14 @@ a{color:var(--gold-soft)}
   .nav-cta{margin-top:6px; justify-content:center; padding:12px}
   .nav-toggle{display:block}
 }
+/* menu ringkas (Beranda + Gabung): tampil langsung tanpa hamburger */
+@media(max-width:860px){
+  .nav-links{position:static; inset:auto; flex-direction:row; align-items:center; gap:4px; padding:0; background:none; border:0; transform:none}
+  .nav-links a{padding:8px 10px; font-size:14px}
+  .nav-cta{margin-top:0; padding:9px 14px}
+  .nav-toggle{display:none}
+}
+@media(max-width:480px){ .brand .wm small{display:none} .brand .wm b{font-size:14px;letter-spacing:.1em} .brand .logo{width:32px;height:32px} .brand{gap:8px} .nav-links a{padding:8px 8px;font-size:13.5px} .nav-cta{padding:8px 12px} }
 
 /* ---------- buttons ---------- */
 .btn-gold{display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; cursor:pointer; border:0;
