@@ -5,8 +5,8 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js?v=202610281227"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TANGKAS (Tanggal &amp; Kasih Surprise) — EA Apocalypto</title>
-<meta name="description" content="TANGKAS — Tanggal & Kasih Surprise: isi data harian dan dapatkan voucher harian khusus member Apocalypto.">
+<title>TANGKAS (Tanggal &amp; Kasih Surprise) — Apocalypto</title>
+<meta name="description" content="TANGKAS — Tanggal & Kasih Surprise. Hadiah langsung Rp100.000 per orang jika Anda berada di nomor urut yang tepat.">
 <meta name="theme-color" content="#060d1f">
 <link rel="canonical" href="https://apocalypto.id/voucher.html">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
@@ -14,24 +14,291 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="style.css?v=202610281200">
+<style>
+  .tk{max-width:552px;margin:0 auto;padding-top:22px;padding-bottom:48px}
+  .tk-back{display:inline-flex;align-items:center;gap:7px;color:var(--ink-dim);text-decoration:none;font-size:14px;font-weight:700;padding:8px 12px 8px 8px;border-radius:10px;border:1px solid var(--line-soft)}
+  .tk-back:hover{color:var(--gold-soft);border-color:var(--line)}
+  .tk-head{text-align:center;margin:22px 0 20px}
+  .tk-head .eb{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);font-weight:800}
+  .tk-head h1{margin:8px 0 0;font-size:clamp(30px,7vw,40px);font-weight:900;letter-spacing:.02em}
+  .tk-card{padding:26px 22px;text-align:center}
+  .tk-load{color:var(--ink-dim);font-size:14px;padding:30px 0}
+  .tk-badge{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;padding:9px 16px;border-radius:999px}
+  .tk-badge::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+  .tk-badge.on{color:var(--ok);background:rgba(126,224,166,.1);border:1px solid rgba(126,224,166,.4)}
+  .tk-badge.on::before{animation:tkp 1.3s infinite}
+  .tk-badge.off{color:var(--ink-faint);background:rgba(255,255,255,.04);border:1px solid var(--line-soft)}
+  .tk-badge.done{color:var(--gold);background:rgba(231,199,102,.1);border:1px solid var(--line)}
+  @keyframes tkp{0%,100%{opacity:1}50%{opacity:.25}}
+  .tk-clock{position:relative;width:min(260px,72vw);aspect-ratio:1;margin:24px auto 8px}
+  .tk-clock svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .tk-clock .trk{fill:none;stroke:rgba(255,255,255,.07);stroke-width:10}
+  .tk-clock .prg{fill:none;stroke:url(#tkg);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .9s linear}
+  .tk-clock .tick{stroke:rgba(231,199,102,.35);stroke-width:2}
+  .tk-clock .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .tk-clock .t{font-size:clamp(32px,9vw,44px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .tk-clock .l{margin-top:4px;font-size:12px;font-weight:700;color:var(--ink-faint);letter-spacing:.08em;text-transform:uppercase}
+  .tk-note{margin:6px 0 0;font-size:13.5px;color:var(--ink-dim);line-height:1.55}
+  .tk-go{width:100%;margin-top:22px;font-size:17px;padding:16px 22px}
+  .tk-go:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
+  .tk-wait{display:none;margin-top:22px;padding:16px;border-radius:14px;background:rgba(126,224,166,.08);border:1px solid rgba(126,224,166,.3);color:var(--ok);font-weight:800;font-size:15px;line-height:1.5}
+  .tk-wait small{display:block;margin-top:4px;color:var(--ink-dim);font-weight:600;font-size:13px}
+  .tk-err{display:none;margin-top:12px;font-size:13px;color:var(--danger)}
+  .tk-ann{display:none;margin-top:16px;padding:22px 20px;text-align:left}
+  .tk-ann h2{margin:0 0 4px;font-size:16px;font-weight:900}
+  .tk-ann .sub{margin:0 0 14px;font-size:13px;color:var(--ink-dim)}
+  .tk-win{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(231,199,102,.08);border:1px solid var(--line);margin-top:8px;font-weight:800}
+  .tk-win .no{font-size:12.5px;color:var(--gold);font-weight:800;white-space:nowrap}
+  .tk-me{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;border:1px solid var(--line-soft);background:rgba(255,255,255,.03)}
+  .tk-me.win{border-color:rgba(126,224,166,.45);background:rgba(126,224,166,.08);color:var(--ok);font-weight:800}
+  .tk-none{font-size:14px;color:var(--ink-dim)}
+  .tk-form{text-align:left}
+  .tk-form h2{margin:0 0 4px;font-size:18px;font-weight:900;text-align:center}
+  .tk-form .sub{margin:0 0 6px;font-size:13.5px;color:var(--ink-dim);text-align:center;line-height:1.55}
+  .tk-form label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-dim);margin:14px 0 6px}
+  .tk-form input,.tk-form select{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--field-line);border-radius:11px;padding:12px 13px;outline:none}
+  .tk-form input:focus,.tk-form select:focus{border-color:var(--gold)}
+  .tk-form .err{border-color:var(--danger)}
+  .tk-form .emsg{display:none;color:var(--danger);font-size:12px;margin-top:5px}
+  .tk-form .emsg.show{display:block}
+  .tk-form .chk{display:flex;gap:10px;align-items:flex-start;margin-top:16px;font-size:13px;color:var(--ink-dim);line-height:1.5;cursor:pointer}
+  .tk-form .chk input{width:18px;height:18px;margin:1px 0 0;flex:none;accent-color:var(--gold)}
+  .tk-form .btn-gold{width:100%;margin-top:20px}
+  .tk-form .btn-gold:disabled{opacity:.6;cursor:wait}
+  .tk-form .msg{display:none;margin-top:12px;font-size:12.5px;text-align:center;color:var(--danger)}
+  .tk-form .msg.show{display:block}
+  .tk-form .msg.ok{color:var(--ok)}
+  .tk-otp{text-align:center;font-size:24px !important;letter-spacing:.5em;font-weight:800;padding-left:calc(13px + .5em) !important}
+  .tk-links{display:flex;justify-content:space-between;gap:10px;margin-top:14px}
+  .tk-links button{background:none;border:0;padding:4px 0;font:inherit;font-size:13px;font-weight:700;color:var(--gold-soft);cursor:pointer}
+  .tk-links button:disabled{color:var(--ink-faint);cursor:default}
+</style>
 </head>
 <body data-page="voucher">
   <div id="siteHeader"></div>
-  <section class="page-hero container">
-    <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 6v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-6z"/></svg></div>
-    <div class="sec-eyebrow" style="margin-bottom:8px">Tanggal &amp; Kasih Surprise</div>
-    <h1>TANGKAS</h1>
-    <p>Isi data harian Anda dan dapatkan voucher harian khusus member Apocalypto.</p>
-  </section>
-  <section class="container" style="padding-bottom:34px">
-    <div class="card soon-box">
-      <span class="tag"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Menyusul</span>
-      <h2>TANGKAS sedang disiapkan</h2>
-      <p>Di halaman ini member nantinya mengisi data harian, lalu menerima voucher harian. Mekanisme dan detailnya sedang kami finalkan.</p>
-      <div style="margin-top:20px"><a class="btn-ghost" href="daftar.html">Sementara itu, daftar EA Apocalypto</a></div>
+
+  <main class="container tk">
+    <a class="tk-back" href="index.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Kembali</a>
+
+    <div class="tk-head">
+      <div class="eb">Tanggal &amp; Kasih Surprise</div>
+      <h1>TANGKAS</h1>
     </div>
-  </section>
+
+    <div class="card tk-card tk-load" id="vLoad">Memuat&hellip;</div>
+
+    <div class="card tk-card tk-form" id="vBank" hidden>
+      <form id="bankForm" novalidate>
+        <h2>Data Rekening Hadiah</h2>
+        <p class="sub">Isi sekali saja. Hadiah dikirim ke rekening ini, diverifikasi dengan kode OTP ke email Anda.</p>
+        <label for="bBank">Bank / E-wallet</label>
+        <select id="bBank">
+          <option value="">Pilih bank / e-wallet</option>
+          <option>BCA</option><option>BRI</option><option>Mandiri</option><option>BNI</option><option>BSI</option>
+          <option>CIMB Niaga</option><option>Permata</option><option>BTN</option><option>Danamon</option>
+          <option>Bank Jago</option><option>SeaBank</option>
+          <option>DANA</option><option>OVO</option><option>GoPay</option><option>ShopeePay</option>
+          <option>Lainnya</option>
+        </select>
+        <div class="emsg" data-for="bBank">Pilih bank atau e-wallet.</div>
+        <div id="bOtherWrap" hidden>
+          <label for="bOther">Nama bank / e-wallet</label>
+          <input id="bOther" type="text" maxlength="40" placeholder="Tulis nama bank / e-wallet">
+          <div class="emsg" data-for="bOther">Tulis nama bank / e-wallet.</div>
+        </div>
+        <label for="bRek">Nomor rekening / nomor e-wallet</label>
+        <input id="bRek" type="text" inputmode="numeric" maxlength="25" placeholder="Contoh: 1234567890" autocomplete="off">
+        <div class="emsg" data-for="bRek">Masukkan nomor rekening yang valid (angka, min. 6 digit).</div>
+        <label for="bAn">Nama pemilik rekening</label>
+        <input id="bAn" type="text" maxlength="60" placeholder="Sesuai buku tabungan / aplikasi">
+        <div class="emsg" data-for="bAn">Isi nama pemilik rekening.</div>
+        <label class="chk"><input type="checkbox" id="bOk"> <span>Data rekening di atas sudah benar dan atas nama saya sendiri.</span></label>
+        <div class="emsg" data-for="bOk">Centang untuk melanjutkan.</div>
+        <div class="msg" id="bMsg1"></div>
+        <button type="submit" class="btn-gold" id="bSend">Kirim Kode OTP</button>
+      </form>
+      <form id="bankOtp" novalidate hidden>
+        <h2>Masukkan Kode OTP</h2>
+        <p class="sub" id="bSentTo"></p>
+        <label for="bCode">Kode OTP</label>
+        <input id="bCode" class="tk-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
+        <div class="msg" id="bMsg2"></div>
+        <button type="submit" class="btn-gold" id="bVerify">Verifikasi &amp; Simpan</button>
+        <div class="tk-links"><button type="button" id="bResend" disabled>Kirim ulang kode</button><button type="button" id="bBack">Ubah data</button></div>
+      </form>
+    </div>
+
+    <div id="vMain" hidden>
+      <div class="card tk-card">
+        <span class="tk-badge off" id="mBadge">System Belum Aktif</span>
+        <div class="tk-clock" aria-live="polite">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs><linearGradient id="tkg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3dd93"/><stop offset="1" stop-color="#b0821c"/></linearGradient></defs>
+            <g id="mTicks"></g>
+            <circle class="trk" cx="60" cy="60" r="50"/>
+            <circle class="prg" id="mRing" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+          </svg>
+          <div class="mid"><div class="t" id="mTime">--:--:--</div><div class="l" id="mLbl">menuju 21:00 WIB</div></div>
+        </div>
+        <p class="tk-note" id="mNote"></p>
+        <button type="button" class="btn-gold tk-go" id="mGo" disabled>Ikutan dong&hellip;</button>
+        <div class="tk-wait" id="mWait">&#10003; Anda sudah ikut hari ini<small>Tunggu sampai system selesai pukul 21:00 WIB. Pemenang langsung diumumkan di halaman ini.</small></div>
+        <div class="tk-err" id="mErr"></div>
+      </div>
+
+      <div class="card tk-ann" id="mAnn">
+        <h2>Pengumuman Pemenang</h2>
+        <p class="sub" id="aSub"></p>
+        <div id="aList"></div>
+        <div class="tk-me" id="aMe" hidden></div>
+      </div>
+    </div>
+  </main>
+
   <div id="siteFooter"></div>
   <script src="site.js?v=202610281257" defer></script>
+  <script>
+  (function(){
+    var OPEN_H=20, CLOSE_H=21, POLL_MS=20000, RESEND=60;
+    var $=function(id){ return document.getElementById(id); };
+    var info=null, polling=null, lastFetch=0, joining=false, pendingBank=null, rTimer=null, fetchedAfterClose=false;
+    var BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+    function wib(){ var d=new Date(Date.now()+7*3600e3); return { h:d.getUTCHours(), m:d.getUTCMinutes(), s:d.getUTCSeconds(), ymd:d.toISOString().slice(0,10) }; }
+    function pad(n){ return (n<10?'0':'')+n; }
+    function fmtHMS(sec){ sec=Math.max(0,sec|0); return pad(Math.floor(sec/3600))+':'+pad(Math.floor(sec%3600/60))+':'+pad(sec%60); }
+    function tglID(s){ var p=s.split('-'); return Number(p[2])+' '+BULAN[Number(p[1])-1]+' '+p[0]; }
+    function show(id){ ['vLoad','vBank','vMain'].forEach(function(v){ $(v).hidden = (v!==id); }); }
+    function esc(t){ return window.APX && APX.esc ? APX.esc(t) : String(t); }
+
+    (function(){ var g=$('mTicks'), s=''; for(var i=0;i<12;i++){ var a=i*Math.PI/6, x1=60+57*Math.cos(a), y1=60+57*Math.sin(a), x2=60+53*Math.cos(a), y2=60+53*Math.sin(a); s+='<line class="tick" x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'"/>'; } g.innerHTML=s; })();
+
+    function load(){
+      lastFetch=Date.now();
+      return APX.api({ action:'tangkas_info' }).then(function(res){
+        if(!res || res.result!=='ok'){ $('vLoad').textContent='Gagal memuat. Coba muat ulang halaman.'; return; }
+        info=res;
+        if(!res.hasBank){ show('vBank'); return; }
+        show('vMain'); render(); renderAnn();
+      }).catch(function(){ $('vLoad').textContent='Gagal terhubung. Periksa koneksi lalu muat ulang.'; });
+    }
+
+    function render(){
+      if(!info || $('vMain').hidden) return;
+      var t=wib(), now=t.h*3600+t.m*60+t.s, close=CLOSE_H*3600;
+      var inWin = now>=OPEN_H*3600 && now<close, open = inWin && info.status && info.status.open;
+      var badge=$('mBadge'), ring=$('mRing'), go=$('mGo');
+      if(open){
+        badge.className='tk-badge on'; badge.textContent='System Aktif';
+        var oa=(info.status.openedAt||'20:00').split(':'), start=Number(oa[0])*3600+Number(oa[1])*60, total=Math.max(60,close-start), left=close-now;
+        $('mTime').textContent=fmtHMS(left); $('mLbl').textContent='sisa waktu · tutup 21:00 WIB';
+        ring.style.strokeDashoffset=(314.16*(1-left/total)).toFixed(2);
+        $('mNote').textContent='';
+      } else if(inWin){
+        badge.className='tk-badge off'; badge.textContent='System Belum Aktif';
+        $('mTime').textContent='--:--:--'; $('mLbl').textContent='aktif acak sebelum 21:00';
+        ring.style.strokeDashoffset='314.16';
+        $('mNote').textContent='System aktif otomatis pada waktu acak antara pukul 20:00–21:00 WIB. Tetap di halaman ini.';
+      } else {
+        var done = now>=close;
+        badge.className = done ? 'tk-badge done' : 'tk-badge off';
+        badge.textContent = done ? 'System Selesai' : 'System Belum Aktif';
+        $('mTime').textContent = done ? '00:00:00' : '--:--:--'; $('mLbl').textContent = done ? 'system selesai' : 'aktif acak 20:00–21:00';
+        ring.style.strokeDashoffset = done ? '314.16' : '314.16';
+        $('mNote').textContent = done ? 'TANGKAS hari ini sudah selesai. Sampai jumpa besok pukul 20:00–21:00 WIB.' : 'System aktif setiap hari pada waktu acak antara pukul 20:00–21:00 WIB.';
+      }
+      var joined = info.joinedToday && inWin;
+      go.style.display = joined ? 'none' : ''; $('mWait').style.display = joined ? 'block' : 'none';
+      go.disabled = !open || joining;
+      var needPoll = inWin && !open;
+      if(needPoll && !polling){ polling=setInterval(load, POLL_MS); }
+      if(!needPoll && polling){ clearInterval(polling); polling=null; }
+      if(now>=close && !fetchedAfterClose && Date.now()-lastFetch>3000){ fetchedAfterClose=true; setTimeout(load, 2500); }
+      if(now<close) fetchedAfterClose=false;
+      renderAnn();
+    }
+
+    function renderAnn(){
+      var a=info && info.announce, box=$('mAnn'), t=wib(), now=t.h*3600+t.m*60;
+      var inWin = now>=OPEN_H*3600 && now<CLOSE_H*3600;
+      if(!a || inWin || !a.date){ box.style.display='none'; return; }
+      box.style.display='block';
+      $('aSub').textContent=tglID(a.date)+' · nomor urut '+a.day+' · '+a.total+' peserta';
+      $('aList').innerHTML = a.winners.length
+        ? a.winners.map(function(w){ return '<div class="tk-win"><span>'+esc(w.nama)+'</span><span class="no">No. '+w.no+' · label '+w.label+'</span></div>'; }).join('')
+        : '<p class="tk-none">Tidak ada peserta di nomor urut '+a.day+'.</p>';
+      var me=$('aMe');
+      if(a.me){ me.hidden=false; me.className='tk-me'+(a.me.win?' win':'');
+        me.innerHTML = a.me.win ? '&#127881; Selamat! Anda menang di nomor urut '+a.me.no+'. Hadiah Rp100.000 dikirim ke rekening Anda.'
+                                : 'Nomor urut Anda: <b>'+a.me.no+'</b> (label '+a.me.label+'). Belum beruntung, coba lagi besok!'; }
+      else me.hidden=true;
+    }
+
+    $('mGo').addEventListener('click', function(){
+      if(joining) return; joining=true; render(); $('mGo').textContent='Mengirim...'; $('mErr').style.display='none';
+      APX.api({ action:'tangkas' }).then(function(res){
+        joining=false; $('mGo').innerHTML='Ikutan dong&hellip;';
+        if(res && (res.result==='ok' || res.result==='already')){ info.joinedToday=true; render(); }
+        else if(res && res.result==='closed'){ load(); err('System sedang tidak aktif.'); }
+        else if(res && res.result==='need_bank'){ show('vBank'); }
+        else err('Belum berhasil. Silakan coba lagi.');
+      }).catch(function(){ joining=false; $('mGo').innerHTML='Ikutan dong&hellip;'; render(); err('Gagal terhubung. Periksa koneksi Anda.'); });
+    });
+    function err(t){ var e=$('mErr'); e.textContent=t; e.style.display='block'; render(); }
+
+    function fe(id,on){ var el=$(id); if(el && el.type!=='checkbox') el.classList.toggle('err',on); var m=document.querySelector('.emsg[data-for="'+id+'"]'); if(m) m.classList.toggle('show',on); }
+    function bmsg(n,t,ok){ var el=$('bMsg'+n); el.textContent=t||''; el.className='msg'+(t?' show':'')+(ok?' ok':''); }
+    ['bBank','bOther','bRek','bAn','bOk'].forEach(function(id){ var el=$(id); el.addEventListener('input',function(){fe(id,false);}); el.addEventListener('change',function(){fe(id,false);}); });
+    $('bBank').addEventListener('change', function(){ $('bOtherWrap').hidden = this.value!=='Lainnya'; });
+    $('bRek').addEventListener('input', function(){ var v=this.value.replace(/\D/g,''); if(v!==this.value) this.value=v; });
+    $('bCode').addEventListener('input', function(){ this.value=this.value.replace(/\D/g,'').slice(0,6); bmsg(2,''); });
+    $('bBack').addEventListener('click', function(){ $('bankOtp').hidden=true; $('bankForm').hidden=false; });
+    $('bResend').addEventListener('click', function(){ if(pendingBank) sendBank(true); });
+
+    function countdown(sec){ var b=$('bResend'); clearInterval(rTimer); b.disabled=true;
+      function step(){ if(sec<=0){ clearInterval(rTimer); b.disabled=false; b.textContent='Kirim ulang kode'; return; } b.textContent='Kirim ulang kode ('+sec+'s)'; sec--; }
+      step(); rTimer=setInterval(step,1000); }
+
+    $('bankForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var bank = $('bBank').value==='Lainnya' ? $('bOther').value.trim() : $('bBank').value;
+      var rek=$('bRek').value.trim(), an=$('bAn').value.trim(), ok=true;
+      if(!$('bBank').value){ fe('bBank',true); ok=false; } else if(!bank){ fe('bOther',true); ok=false; }
+      if(!/^\d{6,25}$/.test(rek)){ fe('bRek',true); ok=false; }
+      if(!an){ fe('bAn',true); ok=false; }
+      if(!$('bOk').checked){ fe('bOk',true); ok=false; }
+      if(!ok) return;
+      pendingBank={ bank:bank, rek:rek, an:an }; sendBank(false);
+    });
+    function sendBank(isResend){
+      var b = isResend ? $('bResend') : $('bSend'); b.disabled=true; b.textContent='Mengirim...';
+      APX.api({ action:'otp_send', mode:'bank', bank:pendingBank.bank, rek:pendingBank.rek, an:pendingBank.an }).then(function(res){
+        $('bSend').disabled=false; $('bSend').textContent='Kirim Kode OTP';
+        if(res && (res.result==='sent' || res.result==='wait')){
+          var m=APX.member(); $('bSentTo').innerHTML='Kode 6 digit telah dikirim ke <b>'+esc(m?m.email:'email Anda')+'</b>.';
+          $('bankForm').hidden=true; $('bankOtp').hidden=false; $('bCode').value=''; $('bCode').focus();
+          countdown(res.wait||RESEND); if(res.result==='wait') bmsg(2,'Tunggu '+res.wait+' detik sebelum meminta kode baru.'); else if(isResend) bmsg(2,'Kode baru sudah dikirim.',true);
+        } else if(res && res.result==='limit'){ bmsg(isResend?2:1,'Terlalu banyak permintaan kode. Coba lagi dalam 1 jam.'); if(isResend) $('bResend').disabled=false; }
+        else { bmsg(isResend?2:1,'Kode belum bisa dikirim. Periksa data lalu coba lagi.'); if(isResend) $('bResend').disabled=false; }
+      }).catch(function(){ $('bSend').disabled=false; $('bSend').textContent='Kirim Kode OTP'; bmsg(isResend?2:1,'Gagal terhubung. Periksa koneksi Anda.'); });
+    }
+    $('bankOtp').addEventListener('submit', function(e){
+      e.preventDefault();
+      var code=$('bCode').value.trim(); if(!/^\d{6}$/.test(code)){ bmsg(2,'Masukkan 6 digit kode dari email.'); return; }
+      var b=$('bVerify'); b.disabled=true; b.textContent='Memeriksa...';
+      APX.api({ action:'otp_verify', code:code }).then(function(res){
+        b.disabled=false; b.innerHTML='Verifikasi &amp; Simpan';
+        if(res && res.result==='ok'){ clearInterval(rTimer); pendingBank=null; show('vLoad'); $('vLoad').textContent='Memuat…'; load(); }
+        else if(res && res.result==='wrong') bmsg(2,'Kode salah.'+(typeof res.left==='number'?' Sisa percobaan: '+res.left+'.':''));
+        else if(res && res.result==='too_many') bmsg(2,'Terlalu banyak percobaan. Silakan minta kode baru.');
+        else if(res && res.result==='expired') bmsg(2,'Kode sudah kedaluwarsa. Silakan minta kode baru.');
+        else bmsg(2,'Verifikasi gagal. Silakan coba lagi.');
+      }).catch(function(){ b.disabled=false; b.innerHTML='Verifikasi &amp; Simpan'; bmsg(2,'Gagal terhubung. Periksa koneksi Anda.'); });
+    });
+
+    function start(){ if(!window.APX || !APX.member || !APX.member()) return; load(); setInterval(render, 1000); }
+    if(window.APX) start(); else document.addEventListener('apx:ready', start);
+  })();
+  </script>
 </body>
 </html>
