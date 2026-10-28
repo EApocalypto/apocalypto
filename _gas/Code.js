@@ -55,7 +55,7 @@ var TANGKAS_TEST     = false;                 // true = abaikan jam buka (hanya 
 // ====== RELAY EMAIL PELANGGAN (sementara, via akun Gmail biasa yg sudah matang) ======
 // Email ke PELANGGAN (eksternal) dikirim lewat web app 'relay' yg jalan di masmoel.trading@gmail.com.
 // Kosongkan GMAIL_RELAY_URL untuk kembali kirim lewat Workspace (MailApp).
-var USE_GMAIL_RELAY = false;   // true = email pelanggan lewat relay Gmail (masmoel.trading); false = langsung dari Workspace (admin@apocalypto.id)
+var USE_GMAIL_RELAY = true;    // true = email pelanggan lewat relay Gmail (masmoel.trading); false = langsung dari Workspace (admin@apocalypto.id)
 var GMAIL_RELAY_URL = '__GAS_RELAY_URL__';                               // tempel URL /exec web app relay (dari akun Gmail) di sini
 var GMAIL_RELAY_KEY = '__GAS_RELAY_KEY__';   // kunci rahasia relay — samakan dgn RELAY_KEY di script relay
 var INVOICE_SHEET = 'Invoice';                // nama tab pencatatan invoice
