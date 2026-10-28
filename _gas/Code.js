@@ -2236,7 +2236,7 @@ function tangkasStatus() {
 //  Kolom: A Waktu | B Nama | C Email | D WA | E Halaman | F Terakhir | G Jumlah
 //         H Bank | I No. Rekening | J Atas Nama | K Rekening Diverifikasi | L Token Sesi (hash)
 //====================================================================
-var WEB_EXTRA_HEADERS = ['Bank / E-wallet', 'No. Rekening', 'Atas Nama', 'Rekening Diverifikasi', 'Token Sesi (hash)'];
+var WEB_EXTRA_HEADERS = ['Bank', 'No. Rekening', 'Atas Nama', 'Rekening Diverifikasi', 'Token Sesi (hash)'];
 
 function sha256Hex(t) {
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(t)).map(function (b) {
@@ -2298,7 +2298,7 @@ function tangkasSheet() {
   if (!sh) {
     sh = ss.insertSheet(TANGKAS_SHEET);
     sh.getRange(1, 1, 1, 13).setValues([['Tanggal', 'Waktu', 'No. Urut', 'Label', 'Nama Panggilan', 'Email', 'WhatsApp',
-      'Bank / E-wallet', 'No. Rekening', 'Atas Nama', 'Pemenang', 'Ditransfer', 'Catatan Admin']])
+      'Bank', 'No. Rekening', 'Atas Nama', 'Pemenang', 'Ditransfer', 'Catatan Admin']])
       .setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
     sh.setFrozenRows(1);
     sh.setColumnWidths(1, 13, 130);
