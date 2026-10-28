@@ -102,7 +102,6 @@
           '<button type="button" role="tab" data-mode="login">Masuk</button>'+
         '</div>'+
         '<form id="mregLogin" novalidate style="display:none">'+
-          '<p class="mreg-info">Sudah pernah Gabung? Masukkan email Anda, kami kirim kode OTP.</p>'+
           '<label for="m_lemail">Email</label>'+
           '<input id="m_lemail" type="email" autocomplete="email" placeholder="nama@email.com" maxlength="80">'+
           '<div class="mreg-err" data-for="m_lemail">Masukkan email yang valid.</div>'+
@@ -142,7 +141,7 @@
     q("#mregLogin").addEventListener("submit", onLoginSend);
     q("#m_lemail").addEventListener("input", function(){ showE("m_lemail",false); msg(3,""); });
     [].forEach.call(q("#mregTabs").querySelectorAll("button"), function(b){ b.addEventListener("click", function(){ mode=b.getAttribute("data-mode"); step(1); }); });
-    modal.addEventListener("click", function(e){ var sw=e.target.closest && e.target.closest("[data-switch]"); if(sw){ e.preventDefault(); mode=sw.getAttribute("data-switch"); step(1); } });
+    modal.addEventListener("click", function(e){ var sw=e.target.closest && e.target.closest("[data-switch]"); if(sw){ e.preventDefault(); mode=sw.getAttribute("data-switch"); if(sw.getAttribute("data-email") && mode==="login") q("#m_lemail").value=sw.getAttribute("data-email"); msg(1,""); msg(3,""); step(1); } });
     q("#mregOtp").addEventListener("submit", onVerify);
     q("#mregResend").addEventListener("click", function(){ if(pending) sendOtp(true); });
     q("#mregBack").addEventListener("click", function(){ step(1); });
@@ -157,7 +156,8 @@
     q("#mregOtp").style.display   = n===2 ? "" : "none";
     q("#mregTabs").style.display  = n===1 ? "" : "none";
     [].forEach.call(q("#mregTabs").querySelectorAll("button"), function(b){ var on=b.getAttribute("data-mode")===mode; b.classList.toggle("on",on); b.setAttribute("aria-selected",on?"true":"false"); });
-    q("#mregTitle").textContent = n===2 ? "Masukkan Kode OTP" : (login ? "Masuk" : "Gabung");
+    q("#mregTitle").textContent = "Masukkan Kode OTP";
+    q("#mregTitle").style.display = n===2 ? "" : "none";   // langkah 1: judul cukup dari tab Gabung/Masuk
     q("#mregBack").textContent  = login ? "Ganti email" : "Ganti data";
     setTimeout(function(){ var f=q(n===2 ? "#m_otp" : (login ? "#m_lemail" : "#m_nama")); if(f) f.focus(); }, 60);
   }
@@ -207,12 +207,17 @@
     api({ action:"otp_send", mode:pending.mode, nama:pending.nama||"", email:pending.email, wa:pending.wa||"", halaman:pageOf(target||location.href) })
       .then(function(res){
         busy(first,false,"Kirim Kode OTP");
+        if(res && res.result==="registered"){
+          var what = res.by==="wa" ? "Nomor WhatsApp ini" : res.by==="both" ? "Email dan nomor WhatsApp ini" : "Email ini";
+          var em = pending.email; pending=null;
+          msg(m1, what+' sudah terdaftar. Silakan <a href="#" data-switch="login" data-email="'+esc(em)+'">Masuk</a>.', false, true); return;
+        }
         if(res && res.result==="not_found"){
           pending=null;
           msg(m1,'Email ini belum terdaftar. <a href="#" data-switch="join">Gabung sekarang</a>.',false,true); return;
         }
         if(res && res.result==="sent"){
-          q("#mregSentTo").innerHTML = 'Kode 6 digit telah dikirim ke <b>'+esc(pending.email)+'</b>. Cek juga folder Spam/Promosi.';
+          q("#mregSentTo").innerHTML = 'Kode 6 digit telah dikirim ke <b>'+esc(pending.email)+'</b>.';
           q("#m_otp").value=""; step(2); countdown(res.wait||RESEND_SEC);
           if(isResend) msg(2,"Kode baru sudah dikirim.",true);
         } else if(res && res.result==="wait"){

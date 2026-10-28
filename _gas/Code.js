@@ -2083,8 +2083,13 @@ function handleOtpSend(p) {
     var found = findWebMember(email);
     if (!found) return otpOut({ result: 'not_found' });
     nama = found.nama; wa = found.wa;
-  } else if (!nama || !validEmailStr(email) || !isDigitsStr(wa) || wa.length < 8) {
-    return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+  } else {
+    if (!nama || !validEmailStr(email) || !isDigitsStr(wa) || wa.length < 8) {
+      return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+    }
+    // GABUNG: tolak bila email ATAU WhatsApp sudah terdaftar -> arahkan ke Masuk
+    var dup = findWebMemberDup(email, wa);
+    if (dup) return otpOut({ result: 'registered', by: dup });
   }
 
   var cache = CacheService.getScriptCache();
@@ -2132,6 +2137,19 @@ function findWebMember(email) {
     }
   }
   return null;
+}
+
+// Cek email / WA sudah ada di tab "Registrasi Web" -> 'email' | 'wa' | 'both' | null
+function findWebMemberDup(email, wa) {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(WEB_MEMBER_SHEET);
+  if (!sh || sh.getLastRow() < 2) return null;
+  var rows = sh.getRange(2, 3, sh.getLastRow() - 1, 2).getDisplayValues();   // C email, D WA
+  var e = false, w = false;
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][0]).trim().toLowerCase() === email) e = true;
+    if (wa && normPhone(String(rows[i][1])) === wa) w = true;
+  }
+  return (e && w) ? 'both' : e ? 'email' : w ? 'wa' : null;
 }
 
 function handleOtpVerify(p) {
