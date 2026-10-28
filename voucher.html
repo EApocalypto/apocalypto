@@ -47,8 +47,13 @@
   .tk-ann{display:none;margin-top:16px;padding:22px 20px;text-align:left}
   .tk-ann h2{margin:0 0 4px;font-size:16px;font-weight:900}
   .tk-ann .sub{margin:0 0 14px;font-size:13px;color:var(--ink-dim)}
-  .tk-win{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(231,199,102,.08);border:1px solid var(--line);margin-top:8px;font-weight:800}
+  .tk-win{padding:12px 14px;border-radius:12px;background:rgba(231,199,102,.08);border:1px solid var(--line);margin-top:8px}
+  .tk-win .top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:900;font-size:15px}
   .tk-win .no{font-size:12.5px;color:var(--gold);font-weight:800;white-space:nowrap}
+  .tk-win .det{margin-top:4px;font-size:13px;color:var(--ink-dim);word-break:break-all}
+  .tk-coffee{font-size:15px;color:var(--ink-dim);line-height:1.6;text-align:center;margin:4px 0}
+  .tk-coffee b{display:block;font-size:30px;margin-bottom:6px}
+  .tk-terms{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(255,157,138,.06);border:1px solid rgba(255,157,138,.25);font-size:12.5px;color:var(--ink-dim);line-height:1.6}
   .tk-me{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;border:1px solid var(--line-soft);background:rgba(255,255,255,.03)}
   .tk-me.win{border-color:rgba(126,224,166,.45);background:rgba(126,224,166,.08);color:var(--ok);font-weight:800}
   .tk-none{font-size:14px;color:var(--ink-dim)}
@@ -146,10 +151,14 @@
       </div>
 
       <div class="card tk-ann" id="mAnn">
-        <h2>Pengumuman Pemenang</h2>
-        <p class="sub" id="aSub"></p>
-        <div id="aList"></div>
-        <div class="tk-me" id="aMe" hidden></div>
+        <div id="aWait"><p class="tk-coffee"><b>&#9749;</b>Sambil menunggu yang lain ikutan&hellip; boleh sambil ngopi.</p></div>
+        <div id="aRes" hidden>
+          <h2>Pengumuman Pemenang</h2>
+          <p class="sub" id="aSub"></p>
+          <div id="aList"></div>
+          <div class="tk-me" id="aMe"></div>
+          <div class="tk-terms">Hadiah akan ditransfer oleh admin paling lambat <b>1&times;24 jam</b>. Jika nomor rekening dan nama pemilik rekening berbeda, hadiah akan di-<i>suspend</i>.</div>
+        </div>
       </div>
     </div>
   </main>
@@ -215,19 +224,21 @@
     }
 
     function renderAnn(){
-      var a=info && info.announce, box=$('mAnn'), t=wib(), now=t.h*3600+t.m*60;
-      var inWin = now>=OPEN_H*3600 && now<CLOSE_H*3600;
-      if(!a || inWin || !a.date){ box.style.display='none'; return; }
+      var a=info && info.announce, box=$('mAnn'), t=wib(), now=t.h*3600+t.m*60+t.s;
       box.style.display='block';
+      var closedToday = now>=CLOSE_H*3600 && a && a.date===t.ymd;
+      $('aWait').hidden = closedToday; $('aRes').hidden = !closedToday;
+      if(!closedToday) return;
       $('aSub').textContent=tglID(a.date)+' · nomor urut '+a.day+' · '+a.total+' peserta';
       $('aList').innerHTML = a.winners.length
-        ? a.winners.map(function(w){ return '<div class="tk-win"><span>'+esc(w.nama)+'</span><span class="no">No. '+w.no+' · label '+w.label+'</span></div>'; }).join('')
-        : '<p class="tk-none">Tidak ada peserta di nomor urut '+a.day+'.</p>';
+        ? a.winners.map(function(w){ return '<div class="tk-win"><div class="top"><span>&#127942; '+esc(w.nama)+'</span><span class="no">No. '+w.no+'</span></div>'+
+            '<div class="det">'+esc(w.email)+' &middot; WA '+esc(w.wa)+'</div></div>'; }).join('')
+        : '<p class="tk-none">Tidak ada peserta di nomor urut '+a.day+' hari ini.</p>';
       var me=$('aMe');
-      if(a.me){ me.hidden=false; me.className='tk-me'+(a.me.win?' win':'');
-        me.innerHTML = a.me.win ? '&#127881; Selamat! Anda menang di nomor urut '+a.me.no+'. Hadiah Rp100.000 dikirim ke rekening Anda.'
-                                : 'Nomor urut Anda: <b>'+a.me.no+'</b> (label '+a.me.label+'). Belum beruntung, coba lagi besok!'; }
-      else me.hidden=true;
+      if(a.me){ me.className='tk-me'+(a.me.win?' win':'');
+        me.innerHTML = a.me.win ? '&#127881; Selamat! Anda menang di nomor urut <b>'+a.me.no+'</b>.'
+                                : 'Anda berada di nomor urut <b>'+a.me.no+'</b>. Belum beruntung, coba lagi besok!'; }
+      else { me.className='tk-me'; me.innerHTML='Anda tidak ikut TANGKAS hari ini.'; }
     }
 
     $('mGo').addEventListener('click', function(){
