@@ -151,7 +151,7 @@
       </div>
 
       <div class="card tk-ann" id="mAnn">
-        <div id="aWait"><p class="tk-coffee"><b>&#9749;</b>Sambil menunggu yang lain ikutan&hellip; boleh sambil ngopi.</p></div>
+        <div id="aWait"><p class="tk-coffee"><b>&#9749;</b><span id="aWaitTxt">Sambil menunggu system aktif&hellip; boleh sambil ngopi.</span></p></div>
         <div id="aRes" hidden>
           <h2>Pengumuman Pemenang</h2>
           <p class="sub" id="aSub"></p>
@@ -228,7 +228,11 @@
       box.style.display='block';
       var closedToday = now>=CLOSE_H*3600 && a && a.date===t.ymd;
       $('aWait').hidden = closedToday; $('aRes').hidden = !closedToday;
-      if(!closedToday) return;
+      if(!closedToday){
+        var active = now>=OPEN_H*3600 && now<CLOSE_H*3600 && info.status && info.status.open;
+        $('aWaitTxt').textContent = active ? 'Sambil menunggu yang lain ikutan… boleh sambil ngopi.' : 'Sambil menunggu system aktif… boleh sambil ngopi.';
+        return;
+      }
       $('aSub').textContent=tglID(a.date)+' · nomor urut '+a.day+' · '+a.total+' peserta';
       $('aList').innerHTML = a.winners.length
         ? a.winners.map(function(w){ return '<div class="tk-win"><div class="top"><span>&#127942; '+esc(w.nama)+'</span><span class="no">No. '+w.no+'</span></div>'+
