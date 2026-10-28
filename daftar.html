@@ -51,6 +51,11 @@
   .st.pending{color:var(--gold);border-color:var(--line);background:rgba(231,199,102,.08)}
   .st.inactive,.st.rejected{color:var(--danger);border-color:rgba(255,157,138,.35);background:rgba(255,157,138,.06)}
   .ea-load{text-align:center;color:var(--ink-dim);padding:30px 0}
+  .disc{max-height:220px;overflow-y:auto;padding:14px 16px;border-radius:12px;border:1px solid var(--field-line);background:var(--field);font-size:12.5px;color:var(--ink-dim);line-height:1.6}
+  .disc p{margin:0 0 10px}.disc p:last-child{margin:0}
+  .disc strong{color:var(--ink)}
+  .agree{display:flex!important;gap:10px;align-items:flex-start;margin:14px 0 0!important;font-size:13px!important;font-weight:600!important;color:var(--ink)!important;line-height:1.5;cursor:pointer}
+  .agree input{width:18px!important;height:18px;flex:none;margin:2px 0 0;padding:0;accent-color:var(--gold);cursor:pointer}
 </style>
 </head>
 <body data-page="daftar">
@@ -76,13 +81,25 @@
       <div class="pk" id="ePaket"></div>
       <div class="emsg" data-for="ePaket">Pilih paket berlangganan.</div>
       <div class="note">Akun <b>Demo</b> otomatis <b>GRATIS</b> tanpa profit sharing. Untuk akun <b>Real</b>, profit sharing ditagih tiap akhir bulan hanya bila profit. Tidak perlu password trading.</div>
+      <label>Disclaimer &amp; Persetujuan</label>
+      <div class="disc" tabindex="0">
+        <p><strong>Risiko Trading.</strong> Perdagangan Forex/emas (XAUUSD) dengan leverage mengandung risiko tinggi dan dapat menyebabkan kerugian sebagian atau seluruh modal. EA Apocalypto adalah alat bantu (automation tool), bukan jaminan keuntungan.</p>
+        <p><strong>Strategi.</strong> EA Apocalypto menggunakan metode averaging/martingale berlapis. Metode ini dapat menahan posisi floating dalam jumlah besar pada kondisi pasar tertentu. Pengguna wajib memahami cara kerja, pengaturan risiko, dan menyediakan modal yang sesuai.</p>
+        <p><strong>Tanpa Jaminan.</strong> Kinerja pada masa lalu maupun hasil backtest tidak menjamin hasil di masa depan. Penyedia tidak bertanggung jawab atas kerugian yang timbul dari penggunaan EA.</p>
+        <p><strong>Keputusan Mandiri.</strong> Segala keputusan penggunaan EA, besaran lot, dan pengaturan risiko sepenuhnya menjadi tanggung jawab pengguna. Gunakan hanya dana yang Anda siap tanggung risikonya.</p>
+        <p><strong>Lisensi.</strong> Lisensi terikat pada nomor akun yang didaftarkan dan tidak dapat dipindahtangankan tanpa persetujuan penyedia.</p>
+        <p><strong>Profit Sharing.</strong> User menyetujui membayar profit sharing setiap akhir bulan sesuai pilihan pada saat aktivasi, selambat-lambatnya 3 hari dari tanggal penagihan. Admin berhak memutus akses layanan secara sepihak apabila user tidak melakukan pembayaran.</p>
+        <p><strong>Dasar Perhitungan Profit Sharing.</strong> Profit sharing dihitung <strong>hanya dari transaksi yang dilakukan oleh EA Apocalypto</strong>. Apabila user bertransaksi sendiri (manual) atau menggunakan EA lain pada akun yang sama, profit maupun kerugian dari transaksi tersebut <strong>tidak diperhitungkan</strong> &mdash; perhitungan profit sharing tetap murni berdasarkan hasil transaksi EA Apocalypto.</p>
+      </div>
+      <label class="agree"><input type="checkbox" id="eSetuju"><span>Saya telah membaca, memahami, dan menyetujui seluruh disclaimer di atas serta bersedia menanggung risiko trading secara mandiri.</span></label>
+      <div class="emsg" data-for="eSetuju">Anda harus menyetujui disclaimer untuk melanjutkan.</div>
       <div class="msg" id="eMsg"></div>
       <button type="submit" class="btn-gold" id="eSend">Daftar Sekarang</button>
     </form>
   </main>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202610281859" defer></script>
+  <script src="site.js?v=202610281902" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
@@ -91,7 +108,7 @@
     function esc(t){ return window.APX&&APX.esc?APX.esc(t):String(t); }
     function tgl(s){ if(!s) return ''; var p=s.split('-'); return Number(p[2])+' '+BULAN[Number(p[1])-1]+' '+p[0]; }
     function stLabel(s){ s=String(s||'').toLowerCase(); return s==='active'?'Aktif':s==='pending'?'Menunggu Sinkron':s==='rejected'?'Ditolak':'Nonaktif'; }
-    function fe(id,on){ var el=$(id); if(el&&el.tagName==='INPUT') el.classList.toggle('err',on); var m=document.querySelector('.emsg[data-for="'+id+'"]'); if(m) m.classList.toggle('show',on); }
+    function fe(id,on){ var el=$(id); if(el&&el.tagName==='INPUT'&&el.type!=='checkbox') el.classList.toggle('err',on); var m=document.querySelector('.emsg[data-for="'+id+'"]'); if(m) m.classList.toggle('show',on); }
     function msg(t,ok){ var el=$('eMsg'); el.textContent=t||''; el.className='msg'+(t?' show':'')+(ok?' ok':''); }
 
     function paketUI(p){
@@ -114,16 +131,18 @@
       .catch(function(){ $('eLoad').textContent='Gagal terhubung. Muat ulang halaman.'; }); }
 
     $('eLogin').addEventListener('input',function(){ var v=this.value.replace(/\D/g,''); if(v!==this.value) this.value=v; fe('eLogin',false); msg(''); });
+    $('eSetuju').addEventListener('change',function(){ if(this.checked) fe('eSetuju',false); });
     $('eForm').addEventListener('submit',function(e){
       e.preventDefault();
       var login=$('eLogin').value.trim(), pk=document.querySelector('input[name=paket]:checked'), ok=true;
       if(!/^\d{3,15}$/.test(login)){ fe('eLogin',true); ok=false; }
       if(!pk){ fe('ePaket',true); ok=false; }
+      if(!$('eSetuju').checked){ fe('eSetuju',true); ok=false; }
       if(!ok) return;
       var b=$('eSend'); b.disabled=true; b.textContent='Mengirim...';
-      APX.api({action:'ea_register',login:login,paket:pk.value}).then(function(r){
+      APX.api({action:'ea_register',login:login,paket:pk.value,setuju:'YA'}).then(function(r){
         b.disabled=false; b.textContent='Daftar Sekarang';
-        if(r&&r.result==='ok'){ $('eLogin').value=''; pk.checked=false; msg('Pendaftaran berhasil! File EA & panduan sudah dikirim ke email Anda.',true); load(); }
+        if(r&&r.result==='ok'){ $('eLogin').value=''; pk.checked=false; $('eSetuju').checked=false; msg('Pendaftaran berhasil! File EA & panduan sudah dikirim ke email Anda.',true); load(); }
         else if(r&&r.result==='duplicate'){ fe('eLogin',true); msg('Nomor akun ini sudah terdaftar.'); }
         else msg('Pendaftaran belum berhasil. Periksa data lalu coba lagi.');
       }).catch(function(){ b.disabled=false; b.textContent='Daftar Sekarang'; msg('Gagal terhubung. Periksa koneksi Anda.'); });
