@@ -15,12 +15,18 @@
   ];
 
   var cur = document.body.getAttribute("data-page") || "";
+  var MKEY = "apx_member";
+  function readMember(){ try{ var m=JSON.parse(localStorage.getItem(MKEY)||"null"); return (m && m.verified) ? m : null; }catch(_){ return null; } }
+  var loggedIn = !!readMember();
 
-  // Menu atas sengaja ringkas: Beranda + tombol Gabung. Halaman lain tetap ada di footer.
-  var NAV = [ { href:"index.html", label:"Beranda", key:"beranda" } ];
+  // Menu atas ringkas. Belum login: Beranda + Gabung. Sudah login: hanya tombol Log Out.
+  var NAV = loggedIn ? [] : [ { href:"index.html", label:"Beranda", key:"beranda" } ];
   var navItems = NAV.map(function(m){
     return '<a href="'+m.href+'"'+(m.key===cur?' class="active"':'')+'>'+m.label+'</a>';
   }).join("");
+  var cta = loggedIn
+    ? '<a class="nav-cta nav-out" href="#" id="apxLogout">Log Out</a>'
+    : '<a class="nav-cta" href="layanan.html">Gabung</a>';
 
   var header =
     '<div class="topline"></div>'+
@@ -28,10 +34,7 @@
       '<a class="brand" href="index.html"><img class="logo" src="logo.svg" alt="Apocalypto logo">'+
         '<span class="wm"><b>APOCALYPTO</b></span></a>'+
       '<span class="nav-spacer"></span>'+
-      '<button class="nav-toggle" id="navToggle" aria-label="Buka menu" aria-expanded="false">'+
-        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>'+
-      '<nav class="nav-links" id="navLinks">'+navItems+
-        '<a class="nav-cta" href="layanan.html"'+(cur==="layanan"?' style="filter:brightness(1.08)"':'')+'>Gabung</a></nav>'+
+      '<nav class="nav-links" id="navLinks">'+navItems+cta+'</nav>'+
     '</div></header>';
 
   var footLinks = MENU.map(function(m){ return '<a href="'+m.href+'">'+m.label+'</a>'; }).join("");
@@ -54,46 +57,37 @@
 
   var yr = document.getElementById("yr"); if(yr) yr.textContent = new Date().getFullYear();
 
-  var tgl = document.getElementById("navToggle");
-  var links = document.getElementById("navLinks");
-  if(tgl && links){
-    tgl.addEventListener("click", function(){
-      var open = links.classList.toggle("open");
-      tgl.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-    links.addEventListener("click", function(e){ if(e.target.tagName==="A") links.classList.remove("open"); });
-  }
+  var lo = document.getElementById("apxLogout");
+  if(lo) lo.addEventListener("click", function(e){
+    e.preventDefault();
+    try{ localStorage.removeItem(MKEY); }catch(_){}
+    location.href = "index.html";
+  });
 
-  // ================== REGISTRASI MEMBER (gerbang kartu) ==================
-  // Pengunjung baru wajib registrasi singkat (nama panggilan, email, WhatsApp)
-  // sebelum membuka halaman layanan. Data lain diminta di halaman layanan masing-masing.
-  var SCRIPT_URL = "__SCRIPT_URL__";   // backend Apps Script (sama dengan daftar.html)
-  var REG_KEY    = "__REG_KEY__";      // kunci registrasi publik (BUKAN kunci admin EA)
-  var MKEY = "apx_member";
-  // Halaman yang wajib registrasi dulu. Tambah file baru di sini untuk kartu berikutnya.
+  // ================== GABUNG (registrasi member + OTP email) ==================
+  // Pengunjung mengisi nama panggilan, email, WhatsApp -> kode OTP dikirim ke email ->
+  // setelah kode benar, member tersimpan (tab "Registrasi Web") & dianggap login di browser ini.
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVpdxUgIbZKfqbpO6pv--hPbI0sfa0-y5go0kAiv_pRHAiLxhUkiIsYHY61roVuLtw/exec";   // backend Apps Script
+  var REG_KEY    = "APOX-WEB-xBd7W3Yp-aQFm5xuA";      // kunci registrasi publik (BUKAN kunci admin EA)
+  // Halaman yang wajib Gabung dulu. Tambah file baru di sini untuk kartu berikutnya.
   var GATED = ["layanan.html","daftar.html","voucher.html"];
-  var memMem = null;
+  var RESEND_SEC = 60;
 
-  function getMember(){
-    try{ var s=localStorage.getItem(MKEY); if(s) return JSON.parse(s); }catch(_){}
-    return memMem;
-  }
-  function saveMember(m){ memMem=m; try{ localStorage.setItem(MKEY, JSON.stringify(m)); }catch(_){} }
+  function getMember(){ return readMember(); }
+  function saveMember(m){ try{ localStorage.setItem(MKEY, JSON.stringify(m)); }catch(_){} }
   function backendReady(){ return SCRIPT_URL.indexOf("http")===0; }
-  function sendMember(m){
-    if(!backendReady()) return Promise.resolve(false);
-    var d=new FormData();
-    d.append("action","member"); d.append("nama",m.nama); d.append("email",m.email); d.append("wa",m.wa);
-    d.append("halaman",m.halaman||""); d.append("key",REG_KEY);
-    return fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:d}).then(function(){ return true; }).catch(function(){ return false; });
+  function api(params){
+    params.key = REG_KEY;
+    return fetch(SCRIPT_URL, { method:"POST", body:new URLSearchParams(params) })
+      .then(function(r){ return r.json(); });
   }
-  // registrasi yang tersimpan sebelum backend tersambung -> kirim ulang otomatis
-  (function(){ var m=getMember(); if(m && !m.sent && backendReady()){ sendMember(m).then(function(ok){ if(ok){ m.sent=true; saveMember(m); } }); } })();
+  function esc(t){ return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
 
   function pageOf(href){ try{ var u=new URL(href, location.href); if(u.origin!==location.origin) return ""; return (u.pathname.split("/").pop()||"index.html"); }catch(_){ return ""; } }
   function isGated(href){ return GATED.indexOf(pageOf(href))>=0; }
 
-  var modal=null;
+  var modal=null, target=null, forced=false, pending=null, timer=null;
+  function q(sel){ return modal.querySelector(sel); }
   function buildModal(){
     if(modal) return modal;
     modal=document.createElement("div");
@@ -102,7 +96,7 @@
       '<div class="mreg card">'+
         '<button type="button" class="mreg-x" aria-label="Tutup">&times;</button>'+
         '<div class="mreg-ic"><img src="logo.svg" alt=""></div>'+
-        '<h2 id="mregTitle">Registrasi Member</h2>'+
+        '<h2 id="mregTitle">Gabung</h2>'+
         '<form id="mregForm" novalidate>'+
           '<label for="m_nama">Nama panggilan</label>'+
           '<input id="m_nama" type="text" autocomplete="nickname" placeholder="Nama panggilan Anda" maxlength="40">'+
@@ -113,59 +107,130 @@
           '<label for="m_wa">Nomor WhatsApp</label>'+
           '<input id="m_wa" type="tel" inputmode="tel" autocomplete="tel" placeholder="Contoh: 0812xxxxxxx" maxlength="20">'+
           '<div class="mreg-err" data-for="m_wa">Masukkan nomor WhatsApp yang valid (min. 9 digit).</div>'+
-          '<button type="submit" class="btn-gold mreg-btn" id="mregBtn">Daftar &amp; Lanjutkan</button>'+
+          '<div class="mreg-msg" id="mregMsg1"></div>'+
+          '<button type="submit" class="btn-gold mreg-btn" id="mregBtn">Kirim Kode OTP</button>'+
+        '</form>'+
+        '<form id="mregOtp" novalidate style="display:none">'+
+          '<p class="mreg-info" id="mregSentTo"></p>'+
+          '<label for="m_otp">Kode OTP</label>'+
+          '<input id="m_otp" class="mreg-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">'+
+          '<div class="mreg-msg" id="mregMsg2"></div>'+
+          '<button type="submit" class="btn-gold mreg-btn" id="mregVerify">Verifikasi &amp; Masuk</button>'+
+          '<div class="mreg-links"><button type="button" class="mreg-link" id="mregResend" disabled>Kirim ulang kode</button>'+
+          '<button type="button" class="mreg-link" id="mregBack">Ganti data</button></div>'+
         '</form>'+
       '</div>';
     document.body.appendChild(modal);
-    modal.querySelector(".mreg-x").addEventListener("click", closeModal);
+    q(".mreg-x").addEventListener("click", closeModal);
     modal.addEventListener("click", function(e){ if(e.target===modal) closeModal(); });
     document.addEventListener("keydown", function(e){ if(e.key==="Escape" && modal.classList.contains("show")) closeModal(); });
-    ["m_nama","m_email","m_wa"].forEach(function(id){ modal.querySelector("#"+id).addEventListener("input", function(){ showE(id,false); }); });
-    modal.querySelector("#mregForm").addEventListener("submit", onSubmit);
+    ["m_nama","m_email","m_wa"].forEach(function(id){ q("#"+id).addEventListener("input", function(){ showE(id,false); msg(1,""); }); });
+    q("#m_otp").addEventListener("input", function(){ this.value=this.value.replace(/\D/g,"").slice(0,6); msg(2,""); });
+    q("#mregForm").addEventListener("submit", onSend);
+    q("#mregOtp").addEventListener("submit", onVerify);
+    q("#mregResend").addEventListener("click", function(){ if(pending) sendOtp(true); });
+    q("#mregBack").addEventListener("click", function(){ step(1); });
     return modal;
   }
-  var target=null, forced=false;
-  function showE(id,on){ var i=modal.querySelector("#"+id), m=modal.querySelector('.mreg-err[data-for="'+id+'"]'); if(i) i.classList.toggle("err",on); if(m) m.classList.toggle("show",on); }
+  function showE(id,on){ var i=q("#"+id), m=q('.mreg-err[data-for="'+id+'"]'); if(i) i.classList.toggle("err",on); if(m) m.classList.toggle("show",on); }
+  function msg(n,text,ok){ var el=q("#mregMsg"+n); el.textContent=text||""; el.className="mreg-msg"+(text?" show":"")+(ok?" ok":""); }
+  function step(n){
+    q("#mregForm").style.display = n===1 ? "" : "none";
+    q("#mregOtp").style.display  = n===2 ? "" : "none";
+    q("#mregTitle").textContent  = n===1 ? "Gabung" : "Masukkan Kode OTP";
+    setTimeout(function(){ var f=q(n===1?"#m_nama":"#m_otp"); if(f) f.focus(); }, 60);
+  }
+  function countdown(sec){
+    var b=q("#mregResend"); clearInterval(timer); b.disabled=true;
+    (function t(){ if(sec<=0){ clearInterval(timer); b.disabled=false; b.textContent="Kirim ulang kode"; return; }
+      b.textContent="Kirim ulang kode ("+sec+"s)"; sec--; })();
+    timer=setInterval(function(){ if(sec<=0){ clearInterval(timer); b.disabled=false; b.textContent="Kirim ulang kode"; return; } b.textContent="Kirim ulang kode ("+sec+"s)"; sec--; },1000);
+  }
   function openModal(href, mustStay){
     buildModal(); target=href; forced=!!mustStay;
-    modal.querySelector(".mreg-x").textContent = forced ? "←" : "×";
-    modal.querySelector(".mreg-x").setAttribute("aria-label", forced ? "Kembali ke beranda" : "Tutup");
+    q(".mreg-x").textContent = forced ? "\u2190" : "\u00d7";
+    q(".mreg-x").setAttribute("aria-label", forced ? "Kembali ke beranda" : "Tutup");
+    step(pending ? 2 : 1);
     modal.classList.add("show"); document.documentElement.classList.add("mreg-lock");
-    setTimeout(function(){ var n=modal.querySelector("#m_nama"); if(n) n.focus(); }, 60);
   }
   function closeModal(){
     if(forced){ location.href="index.html"; return; }
     modal.classList.remove("show"); document.documentElement.classList.remove("mreg-lock");
   }
-  function onSubmit(e){
+  function busy(id,on,label){ var b=q("#"+id); b.disabled=on; if(label) b.innerHTML=label; }
+
+  function onSend(e){
     e.preventDefault();
-    var nama=modal.querySelector("#m_nama").value.trim();
-    var email=modal.querySelector("#m_email").value.trim();
-    var wa=modal.querySelector("#m_wa").value.replace(/[^0-9+]/g,"");
+    var nama=q("#m_nama").value.trim(), email=q("#m_email").value.trim().toLowerCase(), wa=q("#m_wa").value.replace(/[^0-9+]/g,"");
     var ok=true;
     if(!nama){ showE("m_nama",true); ok=false; }
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ showE("m_email",true); ok=false; }
     if(wa.replace(/\D/g,"").length<9){ showE("m_wa",true); ok=false; }
     if(!ok) return;
-    var b=modal.querySelector("#mregBtn"); b.disabled=true; b.textContent="Menyimpan...";
-    var m={ nama:nama, email:email, wa:wa, halaman:pageOf(target||location.href), t:new Date().toISOString(), sent:false };
-    sendMember(m).then(function(sent){
-      m.sent=sent; saveMember(m);
-      document.documentElement.classList.remove("mreg-lock"); modal.classList.remove("show");
-      document.dispatchEvent(new CustomEvent("apx:member", { detail:m }));
-      if(target && pageOf(target)!==pageOf(location.href)) location.href=target;
-      else if(target && target.indexOf("#")>=0){ var s=document.querySelector(target.slice(target.indexOf("#"))); if(s) s.scrollIntoView({behavior:"smooth"}); }
-      b.disabled=false; b.innerHTML="Daftar &amp; Lanjutkan";
-    });
+    pending={ nama:nama, email:email, wa:wa };
+    sendOtp(false);
+  }
+  function sendOtp(isResend){
+    if(!backendReady()){ msg(1,"Layanan belum tersambung. Silakan hubungi admin."); return; }
+    var bid = isResend ? "mregResend" : "mregBtn";
+    busy(bid,true, isResend ? "Mengirim..." : "Mengirim kode...");
+    api({ action:"otp_send", nama:pending.nama, email:pending.email, wa:pending.wa, halaman:pageOf(target||location.href) })
+      .then(function(res){
+        busy("mregBtn",false,"Kirim Kode OTP");
+        if(res && res.result==="sent"){
+          q("#mregSentTo").innerHTML = 'Kode 6 digit telah dikirim ke <b>'+esc(pending.email)+'</b>. Cek juga folder Spam/Promosi.';
+          q("#m_otp").value=""; step(2); countdown(res.wait||RESEND_SEC);
+          if(isResend) msg(2,"Kode baru sudah dikirim.",true);
+        } else if(res && res.result==="wait"){
+          step(2); countdown(res.wait||RESEND_SEC);
+          msg(2,"Tunggu "+(res.wait||RESEND_SEC)+" detik sebelum meminta kode baru.");
+        } else if(res && res.result==="limit"){
+          msg(isResend?2:1,"Terlalu banyak permintaan kode. Coba lagi dalam 1 jam."); if(isResend) busy("mregResend",false,"Kirim ulang kode");
+        } else {
+          msg(isResend?2:1,"Kode belum bisa dikirim. Periksa data Anda lalu coba lagi."); if(isResend) busy("mregResend",false,"Kirim ulang kode");
+        }
+      })
+      .catch(function(){
+        busy("mregBtn",false,"Kirim Kode OTP"); if(isResend) busy("mregResend",false,"Kirim ulang kode");
+        msg(isResend?2:1,"Gagal terhubung. Periksa koneksi internet Anda lalu coba lagi.");
+      });
+  }
+  function onVerify(e){
+    e.preventDefault();
+    var code=q("#m_otp").value.trim();
+    if(!/^\d{6}$/.test(code)){ msg(2,"Masukkan 6 digit kode dari email."); return; }
+    busy("mregVerify",true,"Memeriksa...");
+    api({ action:"otp_verify", email:pending.email, code:code })
+      .then(function(res){
+        busy("mregVerify",false,"Verifikasi &amp; Masuk");
+        if(res && res.result==="ok"){
+          var m={ nama:res.nama||pending.nama, email:pending.email, wa:res.wa||pending.wa, verified:true, t:new Date().toISOString() };
+          saveMember(m); pending=null; clearInterval(timer);
+          document.documentElement.classList.remove("mreg-lock"); modal.classList.remove("show");
+          if(target && pageOf(target)!==pageOf(location.href)) location.href=target; else location.reload();
+        } else if(res && res.result==="wrong"){
+          msg(2,"Kode salah."+(typeof res.left==="number"?" Sisa percobaan: "+res.left+".":""));
+        } else if(res && res.result==="too_many"){
+          msg(2,"Terlalu banyak percobaan. Silakan minta kode baru.");
+        } else if(res && res.result==="expired"){
+          msg(2,"Kode sudah kedaluwarsa. Silakan minta kode baru.");
+        } else {
+          msg(2,"Verifikasi gagal. Silakan coba lagi.");
+        }
+      })
+      .catch(function(){ busy("mregVerify",false,"Verifikasi &amp; Masuk"); msg(2,"Gagal terhubung. Periksa koneksi internet Anda lalu coba lagi."); });
   }
 
-  // klik ke halaman berpagar -> minta registrasi dulu
+  // klik ke halaman berpagar -> Gabung dulu
   document.addEventListener("click", function(e){
     var a=e.target.closest && e.target.closest("a[href]"); if(!a) return;
     if(!getMember() && (isGated(a.href) || a.hasAttribute("data-join"))){ e.preventDefault(); openModal(a.href,false); }
   });
-  // buka langsung halaman berpagar (mis. dari link yang dibagikan) -> registrasi dulu
+  // buka langsung halaman berpagar (mis. dari link yang dibagikan) -> Gabung dulu
   if(!getMember() && GATED.indexOf(pageOf(location.href))>=0){ openModal(location.href,true); }
+
+  // tombol "Gabung" di halaman: bila sudah login, labelnya jadi "Buka Layanan"
+  if(loggedIn){ [].forEach.call(document.querySelectorAll("[data-join-label]"), function(el){ el.firstChild.nodeValue = el.getAttribute("data-join-label")+" "; }); }
 
   // ekspor untuk halaman yang butuh (mis. form)
   window.APX = { WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember, url:SCRIPT_URL, key:REG_KEY, ready:backendReady };
