@@ -79,6 +79,8 @@ a{color:var(--gold-soft)}
 .hero .eyebrow{font-size:12px; letter-spacing:.3em; text-transform:uppercase; color:var(--gold); font-weight:800}
 .hero h1{font-size:clamp(28px,5.6vw,46px); font-weight:900; margin:14px 0 12px; letter-spacing:-.01em; line-height:1.1}
 .g{background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep)); -webkit-background-clip:text; background-clip:text; color:transparent}
+.hero .hero-title{font-size:clamp(40px,8.5vw,72px);line-height:1.02;margin-bottom:22px}
+.hero-title .sub{display:block;margin-top:12px;font-size:.46em;font-weight:800;letter-spacing:-.005em}
 .hero p.tagline{margin:0 auto 14px;font-size:clamp(15px,2.4vw,18px);font-style:italic;font-weight:600;color:var(--gold-soft);letter-spacing:.01em}
 .hero p.lead{color:var(--ink-dim); font-size:16px; line-height:1.6; margin:0 auto; max-width:640px}
 .hero .cta-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:24px}
