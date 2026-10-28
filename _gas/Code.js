@@ -314,7 +314,11 @@ function doPost(e) {
     // (Endpoint invoice manual halaman penagihan DIHAPUS — penagihan full-otomatis tiap tgl 1.)
 
     // ---- Registrasi MEMBER dari situs apocalypto.id (nama, email, WA) ----
-    if (p0.action === 'member') return handleWebMember(p0);
+    // (action=member tanpa OTP DINONAKTIFKAN — registrasi wajib lewat otp_send/otp_verify)
+    if (p0.action === 'member') return ContentService.createTextOutput(JSON.stringify({ result: 'error', error: 'USE_OTP' })).setMimeType(ContentService.MimeType.JSON);
+    // ---- Gabung dgn OTP email (situs apocalypto.id) ----
+    if (p0.action === 'otp_send')   return handleOtpSend(p0);
+    if (p0.action === 'otp_verify') return handleOtpVerify(p0);
     // ---- Entri harian TANGKAS dari situs ----
     if (p0.action === 'tangkas') return handleTangkas(p0);
 
@@ -1950,6 +1954,12 @@ function handleWebMember(p) {
   var hal   = String(p.halaman || '').trim().slice(0, 40);
   if (!nama || !validEmailStr(email) || !isDigitsStr(wa)) return out({ result: 'error', error: 'INVALID_INPUT' });
 
+  upsertWebMember(nama, email, wa, hal);
+  return out({ result: 'ok' });
+}
+
+// Simpan / perbarui 1 baris per email di tab "Registrasi Web".
+function upsertWebMember(nama, email, wa, hal) {
   var lock = LockService.getScriptLock();
   lock.tryLock(10000);
   try {
@@ -1971,12 +1981,12 @@ function handleWebMember(p) {
           var r = i + 2;
           var cnt = Number(sh.getRange(r, 7).getValue()) || 1;
           sh.getRange(r, 2, 1, 6).setValues([[nama, email, "'" + wa, hal, now, cnt + 1]]);
-          return out({ result: 'ok', update: true });
+          return 'update';
         }
       }
     }
     sh.appendRow([now, nama, email, "'" + wa, hal, now, 1]);
-    return out({ result: 'ok' });
+    return 'new';
   } finally {
     lock.releaseLock();
   }
@@ -2040,4 +2050,86 @@ function handleTangkas(p) {
   } finally {
     lock.releaseLock();
   }
+}
+
+
+//====================================================================
+//  GABUNG + OTP EMAIL (situs apocalypto.id)
+//  1) action=otp_send   : nama, email, wa, halaman -> kirim kode 6 digit ke email (berlaku 10 menit)
+//       balasan: {result:'sent', wait} | {result:'wait', wait} | {result:'limit'} | {result:'error'}
+//  2) action=otp_verify : email, code -> bila benar, member disimpan ke tab "Registrasi Web"
+//       balasan: {result:'ok', nama, wa} | {result:'wrong', left} | {result:'too_many'} | {result:'expired'}
+//  Batas: kirim ulang min. 60 detik, maks. 5 kode / email / jam, maks. 5 tebakan / kode.
+//====================================================================
+var OTP_TTL_SEC    = 600;
+var OTP_RESEND_SEC = 60;
+var OTP_MAX_HOUR   = 5;
+var OTP_MAX_TRY    = 5;
+
+function otpOut(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+function otpKey(email){ return 'otp_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, email)).slice(0, 40); }
+
+function handleOtpSend(p) {
+  if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
+  var nama  = String(p.nama || '').trim().slice(0, 40);
+  var email = String(p.email || '').trim().toLowerCase().slice(0, 80);
+  var wa    = normPhone(String(p.wa || ''));
+  var hal   = String(p.halaman || '').trim().slice(0, 40);
+  if (!nama || !validEmailStr(email) || !isDigitsStr(wa) || wa.length < 8) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+
+  var cache = CacheService.getScriptCache();
+  var k = otpKey(email);
+  var lastSent = Number(cache.get(k + '_t') || 0);
+  var nowMs = Date.now();
+  if (lastSent && nowMs - lastSent < OTP_RESEND_SEC * 1000) {
+    return otpOut({ result: 'wait', wait: Math.ceil((OTP_RESEND_SEC * 1000 - (nowMs - lastSent)) / 1000) });
+  }
+  var cnt = Number(cache.get(k + '_n') || 0);
+  if (cnt >= OTP_MAX_HOUR) return otpOut({ result: 'limit' });
+
+  var code = String(Math.floor(100000 + Math.random() * 900000));
+  cache.put(k, JSON.stringify({ code: code, nama: nama, wa: wa, hal: hal, tries: 0 }), OTP_TTL_SEC);
+  cache.put(k + '_t', String(nowMs), OTP_RESEND_SEC + 5);
+  cache.put(k + '_n', String(cnt + 1), 3600);
+
+  try {
+    var intro = '<p style="margin:0 0 12px;">Berikut kode untuk bergabung di <b>apocalypto.id</b>. Kode berlaku <b>10 menit</b>.</p>' +
+      '<div style="text-align:center;margin:18px 0;"><span style="display:inline-block;font-size:32px;font-weight:bold;letter-spacing:10px;color:#0E1A2B;background:#F5ECD5;border:1px solid #E6D7A8;border-radius:10px;padding:12px 18px 12px 28px;">' + code + '</span></div>';
+    var note = infoBox('Jangan berikan kode ini kepada siapa pun, termasuk yang mengaku sebagai admin. Abaikan email ini bila Anda tidak merasa meminta kode.', 'warn');
+    sendMailUser({
+      to: email,
+      subject: 'Kode OTP Apocalypto: ' + code,
+      body: 'Kode OTP Anda: ' + code + ' (berlaku 10 menit). Jangan berikan kode ini kepada siapa pun. Salam, Tim Apocalypto.',
+      htmlBody: emailShell('Kode Verifikasi (OTP)', nama, intro, [], note),
+      name: 'Apocalypto'
+    });
+  } catch (err) {
+    console.error('OTP email gagal: ' + err);
+    cache.remove(k); cache.remove(k + '_t');
+    return otpOut({ result: 'error', error: 'MAIL_FAILED' });
+  }
+  return otpOut({ result: 'sent', wait: OTP_RESEND_SEC });
+}
+
+function handleOtpVerify(p) {
+  if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
+  var email = String(p.email || '').trim().toLowerCase().slice(0, 80);
+  var code  = String(p.code || '').replace(/\D/g, '');
+  if (!validEmailStr(email) || code.length !== 6) return otpOut({ result: 'wrong' });
+
+  var cache = CacheService.getScriptCache();
+  var k = otpKey(email);
+  var raw = cache.get(k);
+  if (!raw) return otpOut({ result: 'expired' });
+  var d = JSON.parse(raw);
+  if (d.tries >= OTP_MAX_TRY) { cache.remove(k); return otpOut({ result: 'too_many' }); }
+  if (d.code !== code) {
+    d.tries++;
+    if (d.tries >= OTP_MAX_TRY) { cache.remove(k); return otpOut({ result: 'too_many' }); }
+    cache.put(k, JSON.stringify(d), OTP_TTL_SEC);
+    return otpOut({ result: 'wrong', left: OTP_MAX_TRY - d.tries });
+  }
+  cache.remove(k);
+  upsertWebMember(d.nama, email, d.wa, d.hal);
+  return otpOut({ result: 'ok', nama: d.nama, wa: d.wa });
 }

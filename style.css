@@ -183,6 +183,18 @@ html.mreg-lock,html.mreg-lock body{overflow:hidden}
 .mreg-btn:disabled{opacity:.7;cursor:wait}
 .mreg-note{margin:12px 0 0;font-size:11.5px;color:var(--ink-faint);text-align:center;line-height:1.5}
 
+.mreg-info{margin:0 0 4px;font-size:13.5px;color:var(--ink-dim);line-height:1.55;text-align:center}
+.mreg-info b{color:var(--ink)}
+.mreg-otp{text-align:center;font-size:24px !important;letter-spacing:.5em;font-weight:800;padding-left:calc(13px + .5em) !important}
+.mreg-msg{display:none;margin-top:12px;font-size:12.5px;color:var(--danger);text-align:center;line-height:1.5}
+.mreg-msg.show{display:block}
+.mreg-msg.ok{color:var(--ok)}
+.mreg-links{display:flex;justify-content:space-between;gap:10px;margin-top:14px}
+.mreg-link{background:none;border:0;padding:4px 0;font:inherit;font-size:13px;font-weight:700;color:var(--gold-soft);cursor:pointer}
+.mreg-link:disabled{color:var(--ink-faint);cursor:default}
+.nav-links a.nav-out{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.nav-links a.nav-out:hover{background:rgba(231,199,102,.1);color:var(--gold-soft);filter:none}
+
 /* ---------- footer ---------- */
 .site-foot{border-top:1px solid var(--line-soft); margin-top:30px; padding:34px 0 26px}
 .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:26px}
