@@ -1,0 +1,96 @@
+# Deploy otomatis backend Apocalypto (Google Apps Script) dari folder _gas/.
+# Jalan setiap ada perubahan _gas/ di branch main, atau manual dari tab Actions.
+#
+# GitHub Secrets yang dibutuhkan (Settings > Secrets and variables > Actions):
+#   CLASPRC_JSON  : isi file .clasprc.json hasil "npx @google/clasp login" (akun Google Apocalypto)
+#   GAS_SECRETS   : JSON berisi nilai rahasia backend (API_KEY, ADMIN_KEY, RELAY_URL, RELAY_KEY, BANK_REK, BANK_AN)
+name: Deploy Apps Script
+
+on:
+  push:
+    branches: [main]
+    paths: ['_gas/**', '.github/workflows/deploy-apps-script.yml', '.github/scripts/build-gas.js']
+  workflow_dispatch:
+
+concurrency:
+  group: apps-script-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SCRIPT_ID: '1F7mQkHl69XcWNTDCV2TitNXT48wqYInlDvvLilqC6FMMS-HXKUZuHo_9'   # Script ID project Apps Script "Apocalypto Database" (Project Settings > Script ID)
+  DEPLOYMENT_ID: 'AKfycbwVpdxUgIbZKfqbpO6pv--hPbI0sfa0-y5go0kAiv_pRHAiLxhUkiIsYHY61roVuLtw'   # Web App yang dipakai EA & situs (URL tetap)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cek kesiapan
+        id: cek
+        env:
+          HAS_CLASP: ${{ secrets.CLASPRC_JSON != '' }}
+          HAS_SECRETS: ${{ secrets.GAS_SECRETS != '' }}
+        run: |
+          if [ -n "$SCRIPT_ID" ] && [ "$HAS_CLASP" = "true" ] && [ "$HAS_SECRETS" = "true" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Deploy dilewati: SCRIPT_ID / secret CLASPRC_JSON / secret GAS_SECRETS belum lengkap."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cek.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.cek.outputs.ready == 'true'
+        with:
+          node-version: '20'
+
+      - name: Pasang clasp
+        if: steps.cek.outputs.ready == 'true'
+        run: npm install -g @google/clasp@3.4.1
+
+      - name: Kredensial clasp
+        if: steps.cek.outputs.ready == 'true'
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then echo "::error::Secret CLASPRC_JSON belum diisi"; exit 1; fi
+          if [ -z "$SCRIPT_ID" ]; then echo "::error::SCRIPT_ID belum diisi di workflow"; exit 1; fi
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+
+      - name: Ambil project dari Apps Script (manifest & file lain tetap)
+        if: steps.cek.outputs.ready == 'true'
+        run: |
+          mkdir build
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > build/.clasp.json
+          cd build
+          set +e; clasp pull > ../pull.log 2>&1; rc=$?; set -e
+          cat ../pull.log
+          if [ $rc -ne 0 ]; then echo "::error title=clasp pull gagal::$(tail -n 6 ../pull.log | tr '\n' ' ' | cut -c1-600)"; exit $rc; fi
+          echo "File di project:"; ls -1
+
+      - name: Sisipkan kode terbaru + nilai rahasia
+        if: steps.cek.outputs.ready == 'true'
+        env:
+          GAS_SECRETS: ${{ secrets.GAS_SECRETS }}
+        run: node .github/scripts/build-gas.js _gas/Code.js build
+
+      - name: Push & deploy ke Web App yang sama
+        if: steps.cek.outputs.ready == 'true'
+        working-directory: build
+        run: |
+          set +e
+          clasp push --force > ../push.log 2>&1; rc=$?; cat ../push.log
+          if [ $rc -ne 0 ]; then echo "::error title=clasp push gagal::$(tail -n 6 ../push.log | tr '\n' ' ' | cut -c1-600)"; exit $rc; fi
+          clasp update-deployment "$DEPLOYMENT_ID" --description "GitHub ${GITHUB_SHA::7}" > ../dep.log 2>&1; rc=$?; cat ../dep.log
+          if [ $rc -ne 0 ]; then echo "::error title=clasp deploy gagal::$(tail -n 6 ../dep.log | tr '\n' ' ' | cut -c1-600)"; exit $rc; fi
+          set -e
+          echo "Deploy selesai: https://script.google.com/macros/s/$DEPLOYMENT_ID/exec"
+
+      - name: Bersihkan kredensial
+        if: always()
+        run: rm -f "$HOME/.clasprc.json"
