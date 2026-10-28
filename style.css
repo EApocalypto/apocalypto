@@ -82,6 +82,7 @@ a{color:var(--gold-soft)}
 .hero .hero-title{font-size:clamp(40px,8.5vw,72px);line-height:1.02;margin-bottom:22px}
 .hero-title .sub{display:block;margin-top:12px;font-size:.46em;font-weight:800;letter-spacing:-.005em}
 .hero p.tagline{margin:0 auto 14px;font-size:clamp(15px,2.4vw,18px);font-style:italic;font-weight:600;color:var(--gold-soft);letter-spacing:.01em}
+.gold-txt{color:var(--gold-soft);font-weight:700}
 .hero p.lead{color:var(--ink-dim); font-size:16px; line-height:1.6; margin:0 auto; max-width:640px}
 .hero .cta-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:24px}
 .chips{display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin:22px auto 0}
