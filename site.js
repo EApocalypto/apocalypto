@@ -43,7 +43,7 @@
     '<footer class="site-foot"><div class="container">'+
       '<div class="foot-grid foot-1">'+
         '<div class="foot-col"><h4>Kontak</h4>'+
-          '<a href="'+WA+'" target="_blank" rel="noopener">Hubungi Admin (WhatsApp)</a>'+
+          '<a href="'+WA+'" target="_blank" rel="noopener">Hubungi Admin</a>'+
           '<a href="'+GRUP+'" target="_blank" rel="noopener">Grup Komunitas</a>'+
         '</div>'+
       '</div>'+
