@@ -15,12 +15,18 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="style.css?v=202610281859">
 <style>
-  .ea{max-width:600px;margin:0 auto;padding-top:22px;padding-bottom:48px}
+  .ea{max-width:1080px;margin:0 auto;padding-top:22px;padding-bottom:48px}
+  .ea-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+  .ea-grid .ea-card + .ea-card{margin-top:0}
+  #eList{position:sticky;top:20px}
+  #eAcc{max-height:calc(100vh - 170px);overflow-y:auto;padding-right:4px;margin-right:-4px}
+  .ea-empty{margin-top:10px;padding:22px 14px;border-radius:12px;border:1px dashed var(--line-soft);text-align:center;color:var(--ink-dim);font-size:13.5px}
+  .ea-count{font-weight:700;color:var(--ink-dim);font-size:13px;margin-left:6px}
+  @media(max-width:860px){.ea{max-width:600px}.ea-grid{grid-template-columns:1fr}#eList{position:static}#eAcc{max-height:none}}
   .ea-back{display:inline-flex;align-items:center;gap:7px;color:var(--ink-dim);text-decoration:none;font-size:14px;font-weight:700;padding:8px 12px 8px 8px;border-radius:10px;border:1px solid var(--line-soft)}
   .ea-back:hover{color:var(--gold-soft);border-color:var(--line)}
   .ea h1{text-align:center;margin:22px 0 18px;font-size:clamp(28px,6vw,36px);font-weight:900}
   .ea-card{padding:24px 22px}
-  .ea-card + .ea-card{margin-top:14px}
   .ea-card h2{margin:0 0 4px;font-size:16px;font-weight:900}
   .ea-card .hint{margin:0;font-size:13px;color:var(--ink-dim);line-height:1.55}
   .ea label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-dim);margin:16px 0 6px}
@@ -28,8 +34,8 @@
   .ea input:focus{border-color:var(--gold)}
   .ea input.err{border-color:var(--danger)}
   .pk{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-  .pk label{margin:0;cursor:pointer}
-  .pk input{position:absolute;opacity:0;pointer-events:none}
+  .pk label{margin:0;cursor:pointer;position:relative}
+  .pk input{position:absolute;inset:0;width:1px!important;height:1px;opacity:0;pointer-events:none}
   .pk .box{display:block;padding:14px;border-radius:12px;border:1px solid var(--field-line);background:var(--field);text-align:center;transition:border-color .15s,background .15s}
   .pk .box b{display:block;font-size:16px;color:var(--ink)}
   .pk .box span{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-dim);font-weight:600}
@@ -66,12 +72,8 @@
 
     <div class="card ea-card ea-load" id="eLoad">Memuat&hellip;</div>
 
-    <div class="card ea-card" id="eList" hidden>
-      <h2>Akun EA Saya</h2>
-      <div id="eAcc"></div>
-    </div>
-
-    <form class="card ea-card" id="eForm" novalidate hidden>
+    <div class="ea-grid" id="eGrid" hidden>
+    <form class="card ea-card" id="eForm" novalidate>
       <h2>Daftar Lisensi</h2>
       <p class="hint">Saat ini kami hanya menyediakan platform MT5, untuk kebutuhan MT4 silakan hubungi <a href="https://wa.me/6281296855550" target="_blank" rel="noopener" style="color:var(--gold-soft);font-weight:700">Admin</a>.</p>
       <label for="eLogin">Nomor Akun / ID Trading</label>
@@ -96,10 +98,16 @@
       <div class="msg" id="eMsg"></div>
       <button type="submit" class="btn-gold" id="eSend">Daftar Sekarang</button>
     </form>
+
+    <div class="card ea-card" id="eList">
+      <h2>Akun EA Saya<span class="ea-count" id="eCnt"></span></h2>
+      <div id="eAcc"></div>
+    </div>
+    </div>
   </main>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202610282111" defer></script>
+  <script src="site.js?v=202610282125" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
@@ -118,14 +126,14 @@
       [].forEach.call(document.querySelectorAll('input[name=paket]'),function(r){ r.addEventListener('change',function(){ fe('ePaket',false); msg(''); }); });
     }
     function render(r){
-      $('eLoad').hidden=true; $('eForm').hidden=false;
-      if(r.akun && r.akun.length){
-        $('eList').hidden=false;
-        $('eAcc').innerHTML=r.akun.map(function(a){
-          var sub=[a.masa, a.jenis||'', a.exp?('s/d '+tgl(a.exp)):''].filter(Boolean).join(' · ');
-          return '<div class="acc"><div class="l"><b>'+esc(a.login)+'</b><span>'+esc(sub)+'</span></div><span class="st '+esc(String(a.status).toLowerCase())+'">'+stLabel(a.status)+'</span></div>';
-        }).join('');
-      } else $('eList').hidden=true;
+      $('eLoad').hidden=true; $('eGrid').hidden=false;
+      var ord={active:0,pending:1}, ak=(r.akun||[]).slice().sort(function(a,b){ var x=ord[String(a.status).toLowerCase()], y=ord[String(b.status).toLowerCase()]; return (x==null?2:x)-(y==null?2:y); });
+      $('eCnt').textContent=ak.length?'('+ak.length+')':'';
+      if(!ak.length){ $('eAcc').innerHTML='<div class="ea-empty">Belum ada akun terdaftar.<br>Daftarkan akun pertama Anda lewat form.</div>'; return; }
+      $('eAcc').innerHTML=ak.map(function(a){
+        var sub=[a.masa, a.jenis||'', a.exp?('s/d '+tgl(a.exp)):''].filter(Boolean).join(' · ');
+        return '<div class="acc"><div class="l"><b>'+esc(a.login)+'</b><span>'+esc(sub)+'</span></div><span class="st '+esc(String(a.status).toLowerCase())+'">'+stLabel(a.status)+'</span></div>';
+      }).join('');
     }
     function load(){ APX.api({action:'ea_list'}).then(function(r){ if(r&&r.result==='ok'){ paketUI(r.paket); render(r); } else $('eLoad').textContent='Gagal memuat. Muat ulang halaman.'; })
       .catch(function(){ $('eLoad').textContent='Gagal terhubung. Muat ulang halaman.'; }); }
