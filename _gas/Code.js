@@ -49,8 +49,9 @@ var API_KEY      = '__GAS_API_KEY__';   // KUNCI RAHASIA: wajib dikirim EA (prof
 var REG_KEY      = 'APOX-WEB-xBd7W3Yp-aQFm5xuA';
 var WEB_MEMBER_SHEET = 'Registrasi Web';      // tab pencatatan registrasi member dari situs (nama, email, WA)
 var TANGKAS_SHEET    = 'TANGKAS';             // tab entri harian TANGKAS (Tanggal & Kasih Surprise)
-var TANGKAS_OPEN_H   = 20;                    // jam buka (WIB, zona waktu script = Asia/Jakarta)
-var TANGKAS_CLOSE_H  = 21;                    // jam tutup (WIB). Entri diterima bila OPEN_H <= jam < CLOSE_H
+var TANGKAS_OPEN_H   = 20;                    // awal jendela (WIB, zona waktu script = Asia/Jakarta)
+var TANGKAS_CLOSE_H  = 21;                    // tutup TEPAT jam ini (WIB)
+var TANGKAS_RAND_MAX = 50;                    // buka di menit acak 0..50 setelah OPEN_H (min. 10 menit sebelum tutup). Dirahasiakan sampai buka.
 var TANGKAS_TEST     = false;                 // true = abaikan jam buka (hanya untuk uji coba admin)
 // ====== RELAY EMAIL PELANGGAN (sementara, via akun Gmail biasa yg sudah matang) ======
 // Email ke PELANGGAN (eksternal) dikirim lewat web app 'relay' yg jalan di masmoel.trading@gmail.com.
@@ -322,6 +323,7 @@ function doPost(e) {
     if (p0.action === 'otp_verify') return handleOtpVerify(p0);
     // ---- Entri harian TANGKAS dari situs ----
     if (p0.action === 'tangkas') return handleTangkas(p0);
+    if (p0.action === 'tangkas_status') return otpOut(tangkasStatus());
 
     var lock = LockService.getScriptLock();
     lock.tryLock(10000);
@@ -2015,8 +2017,7 @@ function handleTangkas(p) {
 
   var tz  = 'Asia/Jakarta';
   var now = new Date();
-  var jam = Number(Utilities.formatDate(now, tz, 'H'));
-  if (!TANGKAS_TEST && (jam < TANGKAS_OPEN_H || jam >= TANGKAS_CLOSE_H)) return out({ result: 'closed' });
+  if (!tangkasStatus().open) return out({ result: 'closed' });
 
   var nama  = String(p.nama || '').trim().slice(0, 40);
   var email = String(p.email || '').trim().toLowerCase().slice(0, 80);
@@ -2180,4 +2181,44 @@ function handleOtpVerify(p) {
   cache.remove(k);
   upsertWebMember(d.nama, email, d.wa, d.hal);
   return otpOut({ result: 'ok', nama: d.nama, wa: d.wa });
+}
+
+
+// Menit buka acak TANGKAS untuk tanggal tsb (dibuat sekali per hari, disimpan di Script Properties).
+function tangkasOpenMinute(tgl) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'TANGKAS_OPEN_' + tgl;
+  var v = props.getProperty(key);
+  if (v === null) {
+    var lock = LockService.getScriptLock();
+    lock.tryLock(5000);
+    try {
+      v = props.getProperty(key);
+      if (v === null) {
+        v = String(Math.floor(Math.random() * (TANGKAS_RAND_MAX + 1)));
+        props.setProperty(key, v);
+        // bersihkan kunci hari-hari lama
+        var all = props.getKeys();
+        for (var i = 0; i < all.length; i++) {
+          if (all[i].indexOf('TANGKAS_OPEN_') === 0 && all[i] < 'TANGKAS_OPEN_' + tgl) props.deleteProperty(all[i]);
+        }
+      }
+    } finally { lock.releaseLock(); }
+  }
+  return Number(v);
+}
+
+// Status TANGKAS saat ini. Menit buka TIDAK dibocorkan sebelum waktunya.
+// {open:bool, openedAt:'HH:mm'|null, closeAt:'21:00'}
+function tangkasStatus() {
+  var tz  = 'Asia/Jakarta';
+  var now = new Date();
+  var tgl = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
+  var cur = Number(Utilities.formatDate(now, tz, 'H')) * 60 + Number(Utilities.formatDate(now, tz, 'm'));
+  var closeAt = ('0' + TANGKAS_CLOSE_H).slice(-2) + ':00';
+  if (TANGKAS_TEST) return { open: true, openedAt: null, closeAt: closeAt };
+  if (cur < TANGKAS_OPEN_H * 60 || cur >= TANGKAS_CLOSE_H * 60) return { open: false, openedAt: null, closeAt: closeAt };
+  var openAt = TANGKAS_OPEN_H * 60 + tangkasOpenMinute(tgl);
+  if (cur < openAt) return { open: false, openedAt: null, closeAt: closeAt };
+  return { open: true, openedAt: ('0' + Math.floor(openAt / 60)).slice(-2) + ':' + ('0' + (openAt % 60)).slice(-2), closeAt: closeAt };
 }
