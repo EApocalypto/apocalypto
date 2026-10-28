@@ -102,7 +102,6 @@
           '<button type="button" role="tab" data-mode="login">Masuk</button>'+
         '</div>'+
         '<form id="mregLogin" novalidate style="display:none">'+
-          '<p class="mreg-info">Sudah pernah Gabung? Masukkan email Anda, kami kirim kode OTP.</p>'+
           '<label for="m_lemail">Email</label>'+
           '<input id="m_lemail" type="email" autocomplete="email" placeholder="nama@email.com" maxlength="80">'+
           '<div class="mreg-err" data-for="m_lemail">Masukkan email yang valid.</div>'+
