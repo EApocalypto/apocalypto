@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 env:
-  SCRIPT_ID: ''   # Script ID project Apps Script "Apocalypto Database" (Project Settings > Script ID)
+  SCRIPT_ID: '1F7mQkHl69XcWNTDCV2TitNXT48wqYInlDvvLilqC6FMMS-HXKUZuHo_9'   # Script ID project Apps Script "Apocalypto Database" (Project Settings > Script ID)
   DEPLOYMENT_ID: 'AKfycbwVpdxUgIbZKfqbpO6pv--hPbI0sfa0-y5go0kAiv_pRHAiLxhUkiIsYHY61roVuLtw'   # Web App yang dipakai EA & situs (URL tetap)
 
 jobs:
