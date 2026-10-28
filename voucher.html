@@ -36,7 +36,7 @@
   .tk-clock .prg{fill:none;stroke:url(#tkg);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .9s linear}
   .tk-clock .tick{stroke:rgba(231,199,102,.35);stroke-width:2}
   .tk-clock .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-  .tk-clock .t{font-size:clamp(32px,9vw,44px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .tk-clock .t{font-size:clamp(40px,12vw,56px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em}
   .tk-clock .l{margin-top:4px;font-size:12px;font-weight:700;color:var(--ink-faint);letter-spacing:.08em;text-transform:uppercase}
   .tk-note{margin:6px 0 0;font-size:13.5px;color:var(--ink-dim);line-height:1.55}
   .tk-go{width:100%;margin-top:22px;font-size:17px;padding:16px 22px}
@@ -143,7 +143,7 @@
             <circle class="trk" cx="60" cy="60" r="50"/>
             <circle class="prg" id="mRing" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
           </svg>
-          <div class="mid"><div class="t" id="mTime">--:--:--</div><div class="l" id="mLbl">menuju 21:00 WIB</div></div>
+          <div class="mid"><div class="t" id="mTime">--:--</div><div class="l" id="mLbl" hidden></div></div>
         </div>
         <button type="button" class="btn-gold tk-go" id="mGo" disabled>Ikutan dong&hellip;</button>
         <div class="tk-wait" id="mWait">&#10003; Anda sudah ikut hari ini<small>Tunggu sampai system selesai pukul 21:00 WIB. Pemenang langsung diumumkan di halaman ini.</small></div>
@@ -164,7 +164,7 @@
   </main>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202610281859" defer></script>
+  <script src="site.js?v=202610282033" defer></script>
   <script>
   (function(){
     var OPEN_H=20, CLOSE_H=21, POLL_MS=20000, RESEND=60;
@@ -174,7 +174,7 @@
 
     function wib(){ var d=new Date(Date.now()+7*3600e3); return { h:d.getUTCHours(), m:d.getUTCMinutes(), s:d.getUTCSeconds(), ymd:d.toISOString().slice(0,10) }; }
     function pad(n){ return (n<10?'0':'')+n; }
-    function fmtHMS(sec){ sec=Math.max(0,sec|0); return pad(Math.floor(sec/3600))+':'+pad(Math.floor(sec%3600/60))+':'+pad(sec%60); }
+    function fmtHMS(sec){ sec=Math.max(0,sec|0); return pad(Math.floor(sec/60))+':'+pad(sec%60); }
     function tglID(s){ var p=s.split('-'); return Number(p[2])+' '+BULAN[Number(p[1])-1]+' '+p[0]; }
     function show(id){ ['vLoad','vBank','vMain'].forEach(function(v){ $(v).hidden = (v!==id); }); }
     function esc(t){ return window.APX && APX.esc ? APX.esc(t) : String(t); }
@@ -199,22 +199,22 @@
       var holiday = info.status && info.status.holiday;
       if(holiday){
         badge.className='tk-badge done'; badge.textContent='Libur';
-        $('mTime').textContent='--:--:--'; $('mLbl').textContent='';
+        $('mTime').textContent='--:--'; $('mLbl').textContent='';
         ring.style.strokeDashoffset='314.16';
       } else if(open){
         badge.className='tk-badge on'; badge.textContent='System Aktif';
         var oa=(info.status.openedAt||'20:00').split(':'), start=Number(oa[0])*3600+Number(oa[1])*60, total=Math.max(60,close-start), left=close-now;
-        $('mTime').textContent=fmtHMS(left); $('mLbl').textContent='sisa waktu · tutup 21:00 WIB';
+        $('mTime').textContent=fmtHMS(left); $('mLbl').textContent='';
         ring.style.strokeDashoffset=(314.16*(1-left/total)).toFixed(2);
       } else if(inWin){
         badge.className='tk-badge off'; badge.textContent='System Belum Aktif';
-        $('mTime').textContent='--:--:--'; $('mLbl').textContent='';
+        $('mTime').textContent='--:--'; $('mLbl').textContent='';
         ring.style.strokeDashoffset='314.16';
       } else {
         var done = now>=close;
         badge.className = done ? 'tk-badge done' : 'tk-badge off';
         badge.textContent = done ? 'System Selesai' : 'System Belum Aktif';
-        $('mTime').textContent = done ? '00:00:00' : '--:--:--'; $('mLbl').textContent = '';
+        $('mTime').textContent = done ? '00:00' : '--:--'; $('mLbl').textContent = '';
         ring.style.strokeDashoffset = done ? '314.16' : '314.16';
       }
       var joined = info.joinedToday && inWin;
