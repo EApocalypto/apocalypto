@@ -67,8 +67,8 @@
   // ================== REGISTRASI MEMBER (gerbang kartu) ==================
   // Pengunjung baru wajib registrasi singkat (nama panggilan, email, WhatsApp)
   // sebelum membuka halaman layanan. Data lain diminta di halaman layanan masing-masing.
-  var SCRIPT_URL = "__SCRIPT_URL__";   // backend Apps Script (sama dengan daftar.html)
-  var REG_KEY    = "__REG_KEY__";      // kunci registrasi publik (BUKAN kunci admin EA)
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVpdxUgIbZKfqbpO6pv--hPbI0sfa0-y5go0kAiv_pRHAiLxhUkiIsYHY61roVuLtw/exec";   // backend Apps Script (sama dengan daftar.html)
+  var REG_KEY    = "APOX-WEB-xBd7W3Yp-aQFm5xuA";      // kunci registrasi publik (BUKAN kunci admin EA)
   var MKEY = "apx_member";
   // Halaman yang wajib registrasi dulu. Tambah file baru di sini untuk kartu berikutnya.
   var GATED = ["layanan.html","daftar.html","voucher.html"];
