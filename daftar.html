@@ -5,8 +5,8 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js?v=202610281227"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pendaftaran Resmi — EA Apocalypto</title>
-<meta name="description" content="Pendaftaran & aktivasi lisensi resmi EA Apocalypto (XAUUSD / MetaTrader 5) di apocalypto.id.">
+<title>Expert Advisor — Apocalypto</title>
+<meta name="description" content="Berlangganan EA Apocalypto (XAUUSD / MetaTrader 5).">
 <meta name="theme-color" content="#060d1f">
 <link rel="canonical" href="https://apocalypto.id/daftar.html">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
@@ -15,285 +15,122 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="style.css?v=202610281200">
 <style>
-  .reg .wrap{display:grid; grid-template-columns:1fr; gap:22px; padding-top:6px}
-  @media(min-width:980px){ .reg .wrap{grid-template-columns:1fr 320px; align-items:start} }
-  .reg .card-head{padding:20px 22px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,rgba(231,199,102,.07),transparent)}
-  .reg .card-head h2{margin:0; font-size:18px; font-weight:800}
-  .reg .card-head p{margin:5px 0 0; font-size:13px; color:var(--ink-dim)}
-  .reg .card-body{padding:8px 22px 22px}
-  .reg .section{padding:18px 0; border-bottom:1px dashed var(--line-soft)}
-  .reg .section:last-of-type{border-bottom:0}
-  .reg .sec-head{display:flex; align-items:center; gap:10px; margin-bottom:14px}
-  .reg .sec-num{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:12.5px;font-weight:800;color:var(--navy-950);background:linear-gradient(180deg,var(--gold-soft),var(--gold));flex:none}
-  .reg .sec-title{font-size:14.5px; font-weight:800}
-  .reg .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
-  .reg .field{display:flex; flex-direction:column; gap:6px}
-  .reg .field.full{grid-column:1 / -1}
-  @media(max-width:600px){ .reg .grid{grid-template-columns:1fr} }
-  .reg label{font-size:13px; font-weight:700; color:var(--ink)}
-  .reg .req{color:var(--gold)}
-  .reg input,.reg select{font-family:inherit; font-size:14.5px; color:var(--ink); width:100%; padding:12px 13px; border-radius:11px; background:var(--field); border:1px solid var(--field-line); outline:none; transition:border-color .15s, box-shadow .15s}
-  .reg input::placeholder{color:#5f7093}
-  .reg select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a9b7d2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>"); background-repeat:no-repeat; background-position:right 13px center; padding-right:38px}
-  .reg input:focus,.reg select:focus{border-color:var(--gold); box-shadow:0 0 0 3px rgba(231,199,102,.16)}
-  .reg input.err,.reg select.err{border-color:var(--danger); box-shadow:0 0 0 3px rgba(255,157,138,.14)}
-  .reg .hint{font-size:12px; color:var(--ink-faint); line-height:1.5}
-  .reg .errmsg{display:none; font-size:12px; color:var(--danger); font-weight:600}
-  .reg .errmsg.show{display:block}
-  .reg .note{display:flex; gap:9px; align-items:flex-start; margin-top:14px; padding:12px 14px; border-radius:12px; background:rgba(126,224,166,.07); border:1px solid rgba(126,224,166,.22); font-size:12.5px; color:#cfeede; line-height:1.55}
-  .reg .note svg{color:var(--ok); flex:none; margin-top:1px}
-  .reg .disc{max-height:180px; overflow:auto; padding:14px 16px; border-radius:12px; background:rgba(0,0,0,.22); border:1px solid var(--line-soft); font-size:12.5px; color:var(--ink-dim); line-height:1.6}
-  .reg .disc p{margin:0 0 9px} .reg .disc p:last-child{margin:0} .reg .disc strong{color:var(--ink)}
-  .reg .agree{display:flex; gap:10px; align-items:flex-start; margin-top:13px; font-size:13px; line-height:1.5; cursor:pointer}
-  .reg .agree input{width:18px;height:18px;flex:none;margin-top:1px;accent-color:var(--gold)}
-  .reg .submit{width:100%; margin-top:20px; padding:15px; border:0; border-radius:13px; cursor:pointer; font-family:inherit; font-size:15.5px; font-weight:800; color:var(--navy-950); background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep)); display:flex; align-items:center; justify-content:center; gap:10px; transition:transform .1s, filter .15s; box-shadow:0 14px 30px -14px rgba(231,199,102,.6)}
-  .reg .submit:hover{filter:brightness(1.05)} .reg .submit:active{transform:translateY(1px)} .reg .submit:disabled{opacity:.7; cursor:default}
-  .reg .spinner{display:none;width:18px;height:18px;border:2.5px solid rgba(6,13,31,.35);border-top-color:var(--navy-950);border-radius:50%;animation:spin .7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .reg .wa-badge{display:flex; align-items:center; justify-content:center; gap:7px; margin-top:13px; font-size:12px; color:var(--ink-faint)}
-  .reg .wa-badge svg{color:var(--ok)}
-  .reg .foot{text-align:center; font-size:12.5px; color:var(--ink-faint); line-height:1.7; margin:16px 0 2px}
-  .reg .admin-link{font-weight:700; text-decoration:none}
-  .reg aside{display:flex; flex-direction:column; gap:16px}
-  .reg .panel{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px}
-  .reg .panel h3{margin:0 0 13px; font-size:14px; font-weight:800}
-  .reg .vsteps{display:flex; flex-direction:column; gap:13px; counter-reset:s}
-  .reg .vstep{display:flex; gap:11px; align-items:flex-start}
-  .reg .vstep .n{counter-increment:s; width:25px;height:25px;flex:none;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--gold);background:rgba(231,199,102,.12);border:1px solid var(--line)}
-  .reg .vstep .n::before{content:counter(s)}
-  .reg .vstep b{display:block;font-size:13px;color:var(--ink)} .reg .vstep span{font-size:12px;color:var(--ink-dim);line-height:1.5}
-  .reg .help{background:linear-gradient(180deg,rgba(231,199,102,.08),transparent)}
-  .reg .help p{margin:0 0 11px; font-size:12.5px; color:var(--ink-dim); line-height:1.55}
-  .reg .success,.reg .blacklist,.reg .dupwrap{display:none; text-align:center; padding:40px 24px; border-radius:20px; margin-top:22px; background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow)}
-  .reg .success.show,.reg .blacklist.show,.reg .dupwrap.show{display:block; animation:pop .25s ease}
-  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  .reg .check,.reg .blk-ring,.reg .dup-ring{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;margin:0 auto 16px}
-  .reg .check{background:rgba(126,224,166,.12);border:1px solid rgba(126,224,166,.4)}
-  .reg .blk-ring{background:rgba(240,110,110,.12);border:1px solid rgba(240,110,110,.4)}
-  .reg .dup-ring{background:rgba(239,215,126,.12);border:1px solid rgba(239,215,126,.4)}
-  .reg .success h2,.reg .blacklist h2,.reg .dupwrap h2{margin:0 0 9px;font-size:22px;font-weight:800}
-  .reg .success p,.reg .blacklist p,.reg .dupwrap p{color:var(--ink-dim);font-size:14px;line-height:1.6;margin:0 auto;max-width:460px}
-  .reg .popup-contact{margin-top:12px !important;font-size:13px !important}
-  .reg .again{margin-top:20px;padding:12px 26px;border:1px solid var(--line);border-radius:11px;background:transparent;color:var(--ink);font-family:inherit;font-weight:700;font-size:14px;cursor:pointer}
+  .ea{max-width:600px;margin:0 auto;padding-top:22px;padding-bottom:48px}
+  .ea-back{display:inline-flex;align-items:center;gap:7px;color:var(--ink-dim);text-decoration:none;font-size:14px;font-weight:700;padding:8px 12px 8px 8px;border-radius:10px;border:1px solid var(--line-soft)}
+  .ea-back:hover{color:var(--gold-soft);border-color:var(--line)}
+  .ea h1{text-align:center;margin:22px 0 18px;font-size:clamp(28px,6vw,36px);font-weight:900}
+  .ea-card{padding:24px 22px}
+  .ea-card + .ea-card{margin-top:14px}
+  .ea-card h2{margin:0 0 4px;font-size:16px;font-weight:900}
+  .ea-card .hint{margin:0;font-size:13px;color:var(--ink-dim);line-height:1.55}
+  .ea label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-dim);margin:16px 0 6px}
+  .ea input{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--field-line);border-radius:11px;padding:12px 13px;outline:none}
+  .ea input:focus{border-color:var(--gold)}
+  .ea input.err{border-color:var(--danger)}
+  .pk{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .pk label{margin:0;cursor:pointer}
+  .pk input{position:absolute;opacity:0;pointer-events:none}
+  .pk .box{display:block;padding:14px;border-radius:12px;border:1px solid var(--field-line);background:var(--field);text-align:center;transition:border-color .15s,background .15s}
+  .pk .box b{display:block;font-size:16px;color:var(--ink)}
+  .pk .box span{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-dim);font-weight:600}
+  .pk input:checked + .box{border-color:var(--gold);background:rgba(231,199,102,.1)}
+  .pk input:checked + .box b{color:var(--gold-soft)}
+  .ea .emsg{display:none;color:var(--danger);font-size:12px;margin-top:6px}
+  .ea .emsg.show{display:block}
+  .ea .note{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(126,224,166,.07);border:1px solid rgba(126,224,166,.28);font-size:12.5px;color:var(--ink-dim);line-height:1.6}
+  .ea .btn-gold{width:100%;margin-top:18px}
+  .ea .btn-gold:disabled{opacity:.6;cursor:wait}
+  .ea .msg{display:none;margin-top:12px;font-size:13px;text-align:center;color:var(--danger)}
+  .ea .msg.show{display:block}
+  .ea .msg.ok{color:var(--ok)}
+  .acc{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--line-soft);background:rgba(255,255,255,.03);margin-top:8px}
+  .acc .l b{display:block;font-size:15px}
+  .acc .l span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-dim)}
+  .st{font-size:11.5px;font-weight:800;letter-spacing:.04em;padding:5px 10px;border-radius:999px;white-space:nowrap;border:1px solid var(--line-soft);color:var(--ink-dim)}
+  .st.active{color:var(--ok);border-color:rgba(126,224,166,.4);background:rgba(126,224,166,.08)}
+  .st.pending{color:var(--gold);border-color:var(--line);background:rgba(231,199,102,.08)}
+  .st.inactive,.st.rejected{color:var(--danger);border-color:rgba(255,157,138,.35);background:rgba(255,157,138,.06)}
+  .ea-load{text-align:center;color:var(--ink-dim);padding:30px 0}
 </style>
 </head>
 <body data-page="daftar">
   <div id="siteHeader"></div>
+  <main class="container ea">
+    <a class="ea-back" href="layanan.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Kembali</a>
+    <h1>Expert Advisor</h1>
 
-  <section class="page-hero container">
-    <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
-    <h1>Pendaftaran &amp; Aktivasi Lisensi</h1>
-    <p>Lengkapi data di bawah untuk mendaftarkan lisensi EA Apocalypto. Panduan instalasi &amp; aktivasi dikirim otomatis ke email Anda.</p>
-  </section>
+    <div class="card ea-card ea-load" id="eLoad">Memuat&hellip;</div>
 
-  <div class="reg container">
-    <div class="wrap">
-      <main>
-        <div class="card">
-          <div class="card-head">
-            <h2>Formulir Pendaftaran</h2>
-            <p>Kolom bertanda <span class="req">*</span> wajib diisi.</p>
-          </div>
-          <div class="card-body">
-            <form id="regForm" novalidate>
-
-              <div class="section">
-                <div class="sec-head"><span class="sec-num">1</span><span class="sec-title">Data Pribadi</span></div>
-                <div class="grid">
-                  <div class="field full">
-                    <label for="nama">Nama Panggilan <span class="req">*</span></label>
-                    <input id="nama" name="nama" type="text" placeholder="Nama panggilan Anda" required>
-                    <div class="errmsg" data-for="nama">Nama panggilan wajib diisi.</div>
-                  </div>
-                  <div class="field">
-                    <label for="wa">Nomor WhatsApp <span class="req">*</span></label>
-                    <input id="wa" name="wa" type="tel" inputmode="tel" placeholder="Contoh: 0812xxxxxxx" required>
-                    <div class="errmsg" data-for="wa">Nomor WhatsApp wajib diisi.</div>
-                  </div>
-                  <div class="field">
-                    <label for="email">Email <span class="req">*</span></label>
-                    <input id="email" name="email" type="email" placeholder="nama@email.com" required>
-                    <div class="errmsg" data-for="email">Email wajib diisi dengan format yang benar.</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="section">
-                <div class="sec-head"><span class="sec-num">2</span><span class="sec-title">Data Akun Trading (untuk Aktivasi)</span></div>
-                <div class="grid">
-                  <div class="field full">
-                    <label for="login">Nomor Akun / Login MT5 <span class="req">*</span></label>
-                    <input id="login" name="login" type="text" inputmode="numeric" placeholder="Contoh: 12345678" required>
-                    <div class="hint">Isi angka saja tanpa huruf dan spasi.</div>
-                    <div class="hint" id="loginNote" style="display:none; color:var(--gold); font-weight:700;">Karakter non-angka otomatis dihapus. Isi nomor akun angka saja.</div>
-                    <div class="errmsg" data-for="login">Nomor akun wajib diisi.</div>
-                  </div>
-                </div>
-                <div class="note">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-                  <span><strong>Cukup nomor akun / login MT5 saja.</strong> Anda tidak perlu memberikan password apa pun. Jangan pernah membagikan password trading atau wallet Anda kepada siapa pun.</span>
-                </div>
-              </div>
-
-              <div class="section">
-                <div class="sec-head"><span class="sec-num">3</span><span class="sec-title">Paket &amp; Layanan</span></div>
-                <div class="grid">
-                  <div class="field" id="skemaField">
-                    <label for="skema">Skema Layanan</label>
-                    <select id="skema" name="skema"><option selected>Profit Sharing</option></select>
-                    <div class="hint">Saat ini kami hanya menyediakan layanan <strong>Profit Sharing</strong> yang ditagihkan setiap akhir bulan (jika profit saja).</div>
-                  </div>
-                  <div class="field">
-                    <label for="masa">Masa Berlaku Lisensi</label>
-                    <select id="masa" name="masa">
-                      <option value="">&mdash; Pilih masa berlaku &mdash;</option>
-                      <option>1 Bulan</option><option>3 Bulan</option><option>6 Bulan</option><option>12 Bulan</option>
-                    </select>
-                    <div id="psInfo" style="display:none; margin-top:7px; padding:8px 12px; border-radius:9px; background:rgba(231,199,102,0.12); color:var(--gold); font-weight:700; font-size:12.5px;"></div>
-                    <input type="hidden" id="psharing" name="psharing">
-                  </div>
-                  <div class="field full">
-                    <label for="vps">Pilihan VPS</label>
-                    <select id="vps" name="vps">
-                      <option value="">&mdash; Pilih opsi VPS &mdash;</option>
-                      <option>Private VPS</option><option>Sharing VPS</option>
-                    </select>
-                    <div class="hint">VPS diperlukan agar EA berjalan 24 jam tanpa perlu menyalakan komputer sendiri.</div>
-                    <div id="vpsInfo" style="display:none; margin-top:7px; padding:8px 12px; border-radius:9px; background:rgba(231,199,102,0.12); color:var(--gold); font-weight:600; font-size:12.5px;">Untuk <strong>Sharing VPS</strong>, admin akan menghubungi Anda untuk melakukan setup. Anda akan dikenakan biaya tambahan sebesar <strong>Rp 25.000 / bulan</strong>.</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="section">
-                <div class="sec-head"><span class="sec-num">4</span><span class="sec-title">Disclaimer &amp; Persetujuan</span></div>
-                <div class="disc" tabindex="0">
-                  <p><strong>Risiko Trading.</strong> Perdagangan Forex/emas (XAUUSD) dengan leverage mengandung risiko tinggi dan dapat menyebabkan kerugian sebagian atau seluruh modal. EA Apocalypto adalah alat bantu (automation tool), bukan jaminan keuntungan.</p>
-                  <p><strong>Strategi.</strong> EA Apocalypto menggunakan metode averaging/martingale berlapis. Metode ini dapat menahan posisi floating dalam jumlah besar pada kondisi pasar tertentu. Pengguna wajib memahami cara kerja, pengaturan risiko, dan menyediakan modal yang sesuai.</p>
-                  <p><strong>Tanpa Jaminan.</strong> Kinerja pada masa lalu maupun hasil backtest tidak menjamin hasil di masa depan. Penyedia tidak bertanggung jawab atas kerugian yang timbul dari penggunaan EA.</p>
-                  <p><strong>Keputusan Mandiri.</strong> Segala keputusan penggunaan EA, besaran lot, dan pengaturan risiko sepenuhnya menjadi tanggung jawab pengguna. Gunakan hanya dana yang Anda siap tanggung risikonya.</p>
-                  <p><strong>Lisensi.</strong> Lisensi terikat pada nomor akun yang didaftarkan dan tidak dapat dipindahtangankan tanpa persetujuan penyedia.</p>
-                  <p><strong>Profit Sharing.</strong> User menyetujui membayar profit sharing setiap akhir bulan sesuai pilihan pada saat aktivasi, selambat-lambatnya 3 hari dari tanggal penagihan. Admin berhak memutus akses layanan secara sepihak apabila user tidak melakukan pembayaran.</p>
-                  <p><strong>Dasar Perhitungan Profit Sharing.</strong> Profit sharing dihitung <strong>hanya dari transaksi yang dilakukan oleh EA Apocalypto</strong>. Apabila user bertransaksi sendiri (manual) atau menggunakan EA lain pada akun yang sama, profit maupun kerugian dari transaksi tersebut <strong>tidak diperhitungkan</strong> &mdash; perhitungan profit sharing tetap murni berdasarkan hasil transaksi EA Apocalypto.</p>
-                </div>
-                <label class="agree">
-                  <input type="checkbox" id="setuju" name="setuju" required>
-                  <span>Saya telah membaca, memahami, dan menyetujui seluruh disclaimer di atas serta bersedia menanggung risiko trading secara mandiri. <span class="req">*</span></span>
-                </label>
-                <div class="errmsg" data-for="setuju">Anda harus menyetujui disclaimer untuk melanjutkan.</div>
-              </div>
-
-              <button class="submit" type="submit" id="btn"><span class="spinner" id="spin"></span><span id="btntext">Kirim Pendaftaran</span></button>
-              <div class="wa-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data Anda aman &amp; hanya digunakan untuk proses aktivasi lisensi</div>
-              <p class="foot">Butuh bantuan? <a class="admin-link" href="https://wa.me/6281296855550" target="_blank" rel="noopener">Hubungi Admin</a> &nbsp;&middot;&nbsp; <a class="admin-link" href="https://chat.whatsapp.com/E8rZ29XGZa6I0a1KdksMm6" target="_blank" rel="noopener">Gabung Komunitas</a></p>
-            </form>
-          </div>
-        </div>
-
-        <div class="success" id="success">
-          <div class="check"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#7ee0a6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
-          <h2>Pendaftaran Terkirim!</h2>
-          <p id="successMsg">Pendaftaran Anda berhasil. Silakan cek Inbox (dan folder spam) untuk panduan instalasi dan aktivasi.</p>
-          <button class="again" id="again">Daftar Akun Lain</button>
-        </div>
-        <div class="blacklist" id="blacklist">
-          <div class="blk-ring"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#f06e6e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6 18.4 18.4"/></svg></div>
-          <h2>Akses Diblokir</h2>
-          <p>ID Anda sudah di-<strong>Blacklist</strong>. Silakan konfirmasi ke admin melalui channel resmi yang tersedia untuk penjelasan lebih lanjut.</p>
-          <p class="popup-contact">Butuh bantuan? <a class="admin-link" href="https://wa.me/6281296855550" target="_blank" rel="noopener">Hubungi Admin</a></p>
-          <button class="again" id="blkClose">Kembali</button>
-        </div>
-        <div class="dupwrap" id="dupwrap">
-          <div class="dup-ring"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#efd77e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5h.01"/></svg></div>
-          <h2>ID Sudah Terdaftar</h2>
-          <p>Nomor Akun / ID Trading sudah terdaftar, silakan gunakan ID Trading lainnya atau hubungi Admin.</p>
-          <p class="popup-contact">Butuh bantuan? <a class="admin-link" href="https://wa.me/6281296855550" target="_blank" rel="noopener">Hubungi Admin</a></p>
-          <button class="again" id="dupClose">Kembali</button>
-        </div>
-        <div class="dupwrap" id="quotawrap">
-          <div class="dup-ring"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#efd77e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-          <h2>Kuota Registrasi Penuh</h2>
-          <p>Mohon maaf, kuota registrasi untuk hari ini sudah penuh. Silakan coba kembali esok hari.</p>
-          <p class="popup-contact">Butuh bantuan? <a class="admin-link" href="https://wa.me/6281296855550" target="_blank" rel="noopener">Hubungi Admin</a></p>
-          <button class="again" id="quotaClose">Kembali</button>
-        </div>
-      </main>
-
-      <aside>
-        <div class="panel">
-          <h3>Langkah Setelah Daftar</h3>
-          <div class="vsteps">
-            <div class="vstep"><span class="n"></span><span><b>Cek Email</b><span>Panduan instalasi &amp; file EA dikirim ke email Anda (cek juga folder spam).</span></span></div>
-            <div class="vstep"><span class="n"></span><span><b>Pasang EA di MT5</b><span>Ikuti panduan, pasang EA Apocalypto ke chart XAUUSD.</span></span></div>
-            <div class="vstep"><span class="n"></span><span><b>Aktivasi Otomatis</b><span>Lisensi aktif otomatis saat EA terhubung dengan nomor akun yang didaftarkan.</span></span></div>
-          </div>
-        </div>
-        <div class="panel help">
-          <h3>Butuh Bantuan?</h3>
-          <p>Tim admin Apocalypto siap membantu proses pendaftaran &amp; aktivasi Anda.</p>
-          <a class="btn-gold" style="width:100%" href="https://wa.me/6281296855550" target="_blank" rel="noopener">Chat Admin via WhatsApp</a>
-          <a class="btn-ghost" style="width:100%;margin-top:9px" href="https://chat.whatsapp.com/E8rZ29XGZa6I0a1KdksMm6" target="_blank" rel="noopener">Gabung Grup Komunitas</a>
-        </div>
-      </aside>
+    <div class="card ea-card" id="eList" hidden>
+      <h2>Akun EA Saya</h2>
+      <div id="eAcc"></div>
     </div>
-  </div>
+
+    <form class="card ea-card" id="eForm" novalidate hidden>
+      <h2>Daftar Berlangganan</h2>
+      <p class="hint">Cukup nomor akun MT5 &amp; paket. Data diri diambil dari profil Anda.</p>
+      <label for="eLogin">Nomor akun / login MT5</label>
+      <input id="eLogin" type="text" inputmode="numeric" maxlength="15" placeholder="Contoh: 12345678" autocomplete="off">
+      <div class="emsg" data-for="eLogin">Masukkan nomor akun MT5 (angka).</div>
+      <label>Paket berlangganan</label>
+      <div class="pk" id="ePaket"></div>
+      <div class="emsg" data-for="ePaket">Pilih paket berlangganan.</div>
+      <div class="note">Akun <b>Demo</b> otomatis <b>GRATIS</b> tanpa profit sharing. Untuk akun <b>Real</b>, profit sharing ditagih tiap akhir bulan hanya bila profit. Tidak perlu password trading.</div>
+      <div class="msg" id="eMsg"></div>
+      <button type="submit" class="btn-gold" id="eSend">Daftar Sekarang</button>
+    </form>
+  </main>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202610281749" defer></script>
+  <script src="site.js?v=202610281809" defer></script>
   <script>
-  // ======================= KONFIGURASI =======================
-  var SCRIPT_URL = "__SCRIPT_URL__";   // diisi otomatis saat deploy (backend admin@apocalypto.id)
-  var API_KEY    = "__REG_KEY__";      // kunci registrasi terpisah (bukan kunci admin EA)
-  // ===========================================================
-  var form = document.getElementById('regForm');
-  // isi otomatis nama/WA/email dari registrasi member (site.js)
-  function prefillMember(m){ if(!m) return; [['nama',m.nama],['wa',m.wa],['email',m.email]].forEach(function(p){ var el=document.getElementById(p[0]); if(el && !el.value && p[1]) el.value=p[1]; }); }
-  try{ prefillMember(JSON.parse(localStorage.getItem('apx_member')||'null')); }catch(_){}
-  document.addEventListener('apx:member', function(e){ prefillMember(e.detail); });
-  var required = ['nama','wa','email','login'];
-  var btn = document.getElementById('btn'), spin = document.getElementById('spin'), btntext = document.getElementById('btntext');
-  function fieldEl(n){ return document.getElementById(n); }
-  function showErr(n, on){ var el=fieldEl(n); if(el) el.classList.toggle('err',on); var m=document.querySelector('.errmsg[data-for="'+n+'"]'); if(m) m.classList.toggle('show',on); }
-  required.concat(['setuju']).forEach(function(n){ var el=fieldEl(n); if(el){ el.addEventListener('input',function(){showErr(n,false);}); el.addEventListener('change',function(){showErr(n,false);}); } });
-  (function(){ var l=document.getElementById('login'), nt=document.getElementById('loginNote'), t; if(!l) return;
-    function clean(){ var b=l.value, a=b.replace(/[^0-9]/g,''); if(a!==b){ l.value=a; if(nt){ nt.style.display='block'; clearTimeout(t); t=setTimeout(function(){nt.style.display='none';},3000);} } }
-    l.addEventListener('input',clean); l.addEventListener('paste',function(){setTimeout(clean,0);}); l.addEventListener('blur',clean); })();
-  function setLoading(on){ btn.disabled=on; spin.style.display=on?'block':'none'; btntext.textContent=on?'Mengirim...':'Kirim Pendaftaran'; }
-  var psMap={ '1 Bulan':'30%','3 Bulan':'20%','6 Bulan':'10%','12 Bulan':'5%' };
-  var masaEl=document.getElementById('masa'), psInfo=document.getElementById('psInfo'), psField=document.getElementById('psharing');
-  var demoFreeNote='<span style="display:block; margin-top:5px; color:#7ee0a6; font-weight:700;">Akun Demo: GRATIS (Free) &mdash; tanpa biaya &amp; tanpa profit sharing.</span>';
-  if(masaEl){ masaEl.addEventListener('change',function(){ var p=psMap[masaEl.value]||''; if(p){ psInfo.innerHTML='Profit Sharing untuk '+masaEl.value+': '+p+' dari profit &mdash; ditagih tiap akhir bulan (jika profit).'+demoFreeNote; psInfo.style.display='block'; if(psField) psField.value=p; } else { psInfo.innerHTML=demoFreeNote; psInfo.style.display='block'; if(psField) psField.value=''; } });
-    psInfo.innerHTML=demoFreeNote; psInfo.style.display='block'; }
-  var vpsEl=document.getElementById('vps'), vpsInfo=document.getElementById('vpsInfo');
-  if(vpsEl){ vpsEl.addEventListener('change',function(){ vpsInfo.style.display=(vpsEl.value==='Sharing VPS')?'block':'none'; }); }
-  function precheck(vals, done){ var called=false, cb='cb_'+Date.now()+'_'+Math.floor(Math.random()*1e5), s=document.createElement('script');
-    function fin(v){ if(called) return; called=true; cl(); done(v); } function cl(){ clearTimeout(tm); try{delete window[cb];}catch(_){window[cb]=undefined;} if(s.parentNode) s.parentNode.removeChild(s); }
-    var tm=setTimeout(function(){ fin({dup:false,blacklist:false}); },9000);
-    window[cb]=function(r){ r=r||{}; fin({dup:!!r.dup, blacklist:!!r.blacklist, quota:r.quota}); };
-    s.onerror=function(){ fin({dup:false,blacklist:false}); };
-    s.src=SCRIPT_URL+'?action=precheck&account='+encodeURIComponent(vals.login)+'&wa='+encodeURIComponent(vals.wa)+'&email='+encodeURIComponent(vals.email)+'&callback='+cb+'&t='+Date.now();
-    document.body.appendChild(s); }
-  function submitData(){ var d=new FormData(); ['nama','wa','email','login','skema','masa','vps','psharing'].forEach(function(n){ d.append(n,(fieldEl(n).value||'').trim()); });
-    d.append('setuju', fieldEl('setuju').checked?'YA':'TIDAK'); d.append('key', API_KEY);
-    var sm=document.getElementById('successMsg'); if(sm) sm.innerHTML='Pendaftaran Anda <strong>berhasil</strong>. Silakan cek <strong>Inbox</strong> (dan folder spam) untuk panduan instalasi dan aktivasi.';
-    fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:d}).then(function(){ setLoading(false); form.style.display='none'; document.getElementById('success').classList.add('show'); window.scrollTo({top:0,behavior:'smooth'}); })
-    .catch(function(){ setLoading(false); alert('Gagal mengirim. Periksa koneksi internet Anda lalu coba lagi.'); }); }
-  form.addEventListener('submit', function(e){ e.preventDefault();
-    var lm=document.querySelector('.errmsg[data-for="login"]'); if(lm) lm.textContent='Nomor akun wajib diisi.';
-    var ok=true, fb=null; required.forEach(function(n){ var v=(fieldEl(n).value||'').trim(); if(!v){ showErr(n,true); ok=false; if(!fb) fb=fieldEl(n);} });
-    if(!fieldEl('setuju').checked){ showErr('setuju',true); ok=false; if(!fb) fb=fieldEl('setuju'); }
-    if(!ok){ if(fb) fb.scrollIntoView({behavior:'smooth',block:'center'}); return; }
-    if(SCRIPT_URL.indexOf('http')!==0){ alert('Form belum tersambung ke database. Admin perlu memasang URL Apps Script terlebih dahulu.'); return; }
-    setLoading(true);
-    precheck({ login:(fieldEl('login').value||'').trim(), wa:(fieldEl('wa').value||'').trim(), email:(fieldEl('email').value||'').trim() }, function(res){
-      if(typeof res.quota==='number' && res.quota<2){ setLoading(false); document.getElementById('quotawrap').classList.add('show'); window.scrollTo({top:0,behavior:'smooth'}); return; }
-      if(res.blacklist){ setLoading(false); document.getElementById('blacklist').classList.add('show'); window.scrollTo({top:0,behavior:'smooth'}); return; }
-      if(res.dup){ setLoading(false); document.getElementById('dupwrap').classList.add('show'); window.scrollTo({top:0,behavior:'smooth'}); return; }
-      submitData();
-    }); });
-  document.getElementById('quotaClose').addEventListener('click', function(){ document.getElementById('quotawrap').classList.remove('show'); });
-  document.getElementById('blkClose').addEventListener('click', function(){ document.getElementById('blacklist').classList.remove('show'); });
-  document.getElementById('dupClose').addEventListener('click', function(){ document.getElementById('dupwrap').classList.remove('show'); });
-  document.getElementById('again').addEventListener('click', function(){ form.reset(); form.style.display=''; document.getElementById('success').classList.remove('show'); window.scrollTo({top:0,behavior:'smooth'}); psInfo.innerHTML=demoFreeNote; psInfo.style.display='block'; vpsInfo.style.display='none'; });
+  (function(){
+    var $=function(id){ return document.getElementById(id); };
+    var PAKET={ '1 Bulan':'30%', '3 Bulan':'20%', '6 Bulan':'10%', '12 Bulan':'5%' };
+    var BULAN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    function esc(t){ return window.APX&&APX.esc?APX.esc(t):String(t); }
+    function tgl(s){ if(!s) return ''; var p=s.split('-'); return Number(p[2])+' '+BULAN[Number(p[1])-1]+' '+p[0]; }
+    function stLabel(s){ s=String(s||'').toLowerCase(); return s==='active'?'Aktif':s==='pending'?'Menunggu Sinkron':s==='rejected'?'Ditolak':'Nonaktif'; }
+    function fe(id,on){ var el=$(id); if(el&&el.tagName==='INPUT') el.classList.toggle('err',on); var m=document.querySelector('.emsg[data-for="'+id+'"]'); if(m) m.classList.toggle('show',on); }
+    function msg(t,ok){ var el=$('eMsg'); el.textContent=t||''; el.className='msg'+(t?' show':'')+(ok?' ok':''); }
+
+    function paketUI(p){
+      PAKET=p||PAKET; var h='';
+      Object.keys(PAKET).forEach(function(k,i){ h+='<label><input type="radio" name="paket" value="'+esc(k)+'"'+(i===0?'':'')+'><span class="box"><b>'+esc(k)+'</b><span>Profit sharing '+esc(PAKET[k])+'</span></span></label>'; });
+      $('ePaket').innerHTML=h;
+      [].forEach.call(document.querySelectorAll('input[name=paket]'),function(r){ r.addEventListener('change',function(){ fe('ePaket',false); msg(''); }); });
+    }
+    function render(r){
+      $('eLoad').hidden=true; $('eForm').hidden=false;
+      if(r.akun && r.akun.length){
+        $('eList').hidden=false;
+        $('eAcc').innerHTML=r.akun.map(function(a){
+          var sub=[a.masa, a.jenis||'', a.exp?('s/d '+tgl(a.exp)):''].filter(Boolean).join(' · ');
+          return '<div class="acc"><div class="l"><b>'+esc(a.login)+'</b><span>'+esc(sub)+'</span></div><span class="st '+esc(String(a.status).toLowerCase())+'">'+stLabel(a.status)+'</span></div>';
+        }).join('');
+      } else $('eList').hidden=true;
+    }
+    function load(){ APX.api({action:'ea_list'}).then(function(r){ if(r&&r.result==='ok'){ paketUI(r.paket); render(r); } else $('eLoad').textContent='Gagal memuat. Muat ulang halaman.'; })
+      .catch(function(){ $('eLoad').textContent='Gagal terhubung. Muat ulang halaman.'; }); }
+
+    $('eLogin').addEventListener('input',function(){ var v=this.value.replace(/\D/g,''); if(v!==this.value) this.value=v; fe('eLogin',false); msg(''); });
+    $('eForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      var login=$('eLogin').value.trim(), pk=document.querySelector('input[name=paket]:checked'), ok=true;
+      if(!/^\d{3,15}$/.test(login)){ fe('eLogin',true); ok=false; }
+      if(!pk){ fe('ePaket',true); ok=false; }
+      if(!ok) return;
+      var b=$('eSend'); b.disabled=true; b.textContent='Mengirim...';
+      APX.api({action:'ea_register',login:login,paket:pk.value}).then(function(r){
+        b.disabled=false; b.textContent='Daftar Sekarang';
+        if(r&&r.result==='ok'){ $('eLogin').value=''; pk.checked=false; msg('Pendaftaran berhasil! File EA & panduan sudah dikirim ke email Anda.',true); load(); }
+        else if(r&&r.result==='duplicate'){ fe('eLogin',true); msg('Nomor akun ini sudah terdaftar.'); }
+        else msg('Pendaftaran belum berhasil. Periksa data lalu coba lagi.');
+      }).catch(function(){ b.disabled=false; b.textContent='Daftar Sekarang'; msg('Gagal terhubung. Periksa koneksi Anda.'); });
+    });
+    function start(){ if(window.APX&&APX.member&&APX.member()) load(); }
+    if(window.APX) start(); else document.addEventListener('apx:ready',start);
+  })();
   </script>
 </body>
 </html>
