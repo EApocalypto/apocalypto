@@ -38,17 +38,13 @@
 
   var footer =
     '<footer class="site-foot"><div class="container">'+
-      '<div class="foot-grid foot-2">'+
-        '<div class="foot-brand">'+
-          '<div class="b"><img src="logo.svg" alt="Apocalypto"><b>APOCALYPTO</b></div>'+
-        '</div>'+
+      '<div class="foot-grid foot-1">'+
         '<div class="foot-col"><h4>Kontak</h4>'+
           '<a href="'+WA+'" target="_blank" rel="noopener">Hubungi Admin (WhatsApp)</a>'+
           '<a href="'+GRUP+'" target="_blank" rel="noopener">Grup Komunitas</a>'+
         '</div>'+
       '</div>'+
-      '<p class="foot-risk"><strong>Peringatan risiko.</strong> Trading forex/emas (XAUUSD) dengan leverage berisiko tinggi dan dapat menyebabkan kerugian sebagian atau seluruh modal. EA Apocalypto adalah alat bantu otomatis, bukan jaminan keuntungan. Kinerja masa lalu tidak menjamin hasil di masa depan.</p>'+
-      '<div class="foot-bottom">&copy; <span id="yr"></span> Apocalypto &middot; Situs resmi <a href="https://apocalypto.id/">apocalypto.id</a> &middot; Seluruh pendaftaran diproses melalui situs resmi ini.</div>'+
+      '<div class="foot-bottom">&copy; <span id="yr"></span> Apocalypto</div>'+
     '</div></footer>';
 
   var h = document.getElementById("siteHeader");
