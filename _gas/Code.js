@@ -48,9 +48,11 @@ var API_KEY      = '__GAS_API_KEY__';   // KUNCI RAHASIA: wajib dikirim EA (prof
 // registrasi member & pendaftaran EA — TIDAK bisa dipakai untuk laporan profit EA.
 var REG_KEY      = 'APOX-WEB-xBd7W3Yp-aQFm5xuA';
 var WEB_MEMBER_SHEET = 'Registrasi Web';      // tab pencatatan registrasi member dari situs (nama, email, WA)
-var TANGKAS_SHEET    = 'TANGKAS';             // tab entri harian TANGKAS (Tanggal & Kasih Surprise)
-var TANGKAS_OPEN_H   = 20;                    // jam buka (WIB, zona waktu script = Asia/Jakarta)
-var TANGKAS_CLOSE_H  = 21;                    // jam tutup (WIB). Entri diterima bila OPEN_H <= jam < CLOSE_H
+var TANGKAS_SHEET    = 'TANGKAS Harian';      // tab entri harian TANGKAS (Tanggal & Kasih Surprise)
+var TANGKAS_CFG_SHEET = 'TANGKAS Pengaturan'; // tab pengaturan admin (jumlah pemenang per hari)
+var TANGKAS_OPEN_H   = 20;                    // awal jendela (WIB, zona waktu script = Asia/Jakarta)
+var TANGKAS_CLOSE_H  = 21;                    // tutup TEPAT jam ini (WIB)
+var TANGKAS_RAND_MAX = 50;                    // buka di menit acak 0..50 setelah OPEN_H (min. 10 menit sebelum tutup). Dirahasiakan sampai buka.
 var TANGKAS_TEST     = false;                 // true = abaikan jam buka (hanya untuk uji coba admin)
 // ====== RELAY EMAIL PELANGGAN (sementara, via akun Gmail biasa yg sudah matang) ======
 // Email ke PELANGGAN (eksternal) dikirim lewat web app 'relay' yg jalan di masmoel.trading@gmail.com.
@@ -322,6 +324,8 @@ function doPost(e) {
     if (p0.action === 'otp_verify') return handleOtpVerify(p0);
     // ---- Entri harian TANGKAS dari situs ----
     if (p0.action === 'tangkas') return handleTangkas(p0);
+    if (p0.action === 'tangkas_status') return otpOut(tangkasStatus());
+    if (p0.action === 'tangkas_info')   return handleTangkasInfo(p0);
 
     var lock = LockService.getScriptLock();
     lock.tryLock(10000);
@@ -1980,6 +1984,7 @@ function upsertWebMember(nama, email, wa, hal) {
       sh.setFrozenRows(1);
       sh.setColumnWidths(1, 7, 160);
     }
+    webMemberSheet();
     var now = new Date();
     var last = sh.getLastRow();
     if (last >= 2) {
@@ -2010,51 +2015,35 @@ function upsertWebMember(nama, email, wa, hal) {
 //  Balasan: {result:'ok'} | {result:'already'} | {result:'closed'} | {result:'error', error}
 //====================================================================
 function handleTangkas(p) {
-  var out = function(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); };
-  if (!checkFormKey(p)) return out({ result: 'error', error: 'BAD_KEY' });
+  // IKUTAN DONG: member login + rekening terverifikasi, saat system aktif, 1x per hari.
+  // Nomor urut & label TIDAK diberitahukan sebelum pukul 21:00 (mencegah peserta mengatur waktu masuk).
+  if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
+  var me = authMember(p);
+  if (!me) return otpOut({ result: 'auth' });
+  if (!me.rek) return otpOut({ result: 'need_bank' });
+  if (!tangkasStatus().open) return otpOut({ result: 'closed' });
 
-  var tz  = 'Asia/Jakarta';
-  var now = new Date();
-  var jam = Number(Utilities.formatDate(now, tz, 'H'));
-  if (!TANGKAS_TEST && (jam < TANGKAS_OPEN_H || jam >= TANGKAS_CLOSE_H)) return out({ result: 'closed' });
-
-  var nama  = String(p.nama || '').trim().slice(0, 40);
-  var email = String(p.email || '').trim().toLowerCase().slice(0, 80);
-  var wa    = normPhone(String(p.wa || ''));
-  var bank  = String(p.bank || '').trim().slice(0, 40);
-  var rek   = String(p.rek || '').replace(/[^0-9]/g, '').slice(0, 25);
-  var an    = String(p.an || '').trim().slice(0, 60);
-  if (!nama || !validEmailStr(email) || !isDigitsStr(wa) || !bank || rek.length < 6 || !an) {
-    return out({ result: 'error', error: 'INVALID_INPUT' });
-  }
-
+  var tz = 'Asia/Jakarta', now = new Date();
   var tgl = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
   var lock = LockService.getScriptLock();
-  lock.tryLock(10000);
+  lock.tryLock(15000);
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sh = ss.getSheetByName(TANGKAS_SHEET);
-    if (!sh) {
-      sh = ss.insertSheet(TANGKAS_SHEET);
-      sh.getRange(1, 1, 1, 11).setValues([['Tanggal', 'Waktu', 'Nama Panggilan', 'Email', 'WhatsApp', 'Bank / E-wallet', 'No. Rekening', 'Atas Nama', 'Pemenang', 'Ditransfer', 'Catatan Admin']])
-        .setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
-      sh.setFrozenRows(1);
-      sh.setColumnWidths(1, 11, 140);
-    }
+    var sh = tangkasSheet();
+    var no = 0;
     var last = sh.getLastRow();
     if (last >= 2) {
-      var rows = sh.getRange(2, 1, last - 1, 5).getDisplayValues();
+      var rows = sh.getRange(2, 1, last - 1, 6).getDisplayValues();   // A tgl .. F email
       for (var i = 0; i < rows.length; i++) {
         if (rows[i][0] !== tgl) continue;
-        var rEmail = String(rows[i][3]).trim().toLowerCase();
-        var rWa    = normPhone(String(rows[i][4]));
-        if (rEmail === email || (rWa && rWa === wa)) return out({ result: 'already' });
+        no++;
+        if (String(rows[i][5]).trim().toLowerCase() === me.email) return otpOut({ result: 'already' });
       }
     }
-    sh.appendRow(["'" + tgl, Utilities.formatDate(now, tz, 'HH:mm:ss'), nama, email, "'" + wa, bank, "'" + rek, an, false, '', '']);
-    var r = sh.getLastRow();
-    sh.getRange(r, 9).insertCheckboxes();
-    return out({ result: 'ok' });
+    no++;
+    var label = ((no - 1) % daysInMonth(tgl)) + 1;
+    sh.appendRow(["'" + tgl, Utilities.formatDate(now, tz, 'HH:mm:ss'), no, label, me.nama, me.email, "'" + me.wa, me.bank, "'" + me.rek, me.an, false, '', '']);
+    sh.getRange(sh.getLastRow(), 11).insertCheckboxes();
+    return otpOut({ result: 'ok' });
   } finally {
     lock.releaseLock();
   }
@@ -2079,12 +2068,22 @@ function otpKey(email){ return 'otp_' + Utilities.base64EncodeWebSafe(Utilities.
 
 function handleOtpSend(p) {
   if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
-  var mode  = p.mode === 'login' ? 'login' : 'join';
+  var mode  = (p.mode === 'login' || p.mode === 'bank') ? p.mode : 'join';
+  var bank = '', rek = '', an = '';
   var nama  = String(p.nama || '').trim().slice(0, 40);
   var email = String(p.email || '').trim().toLowerCase().slice(0, 80);
   var wa    = normPhone(String(p.wa || ''));
   var hal   = String(p.halaman || '').trim().slice(0, 40);
-  if (mode === 'login') {
+  if (mode === 'bank') {
+    // VERIFIKASI REKENING (TANGKAS): wajib sudah login (token sesi) -> data rekening disimpan setelah OTP benar
+    var me = authMember(p);
+    if (!me) return otpOut({ result: 'auth' });
+    bank = String(p.bank || '').trim().slice(0, 40);
+    rek  = String(p.rek || '').replace(/[^0-9]/g, '').slice(0, 25);
+    an   = String(p.an || '').trim().slice(0, 60);
+    if (!bank || rek.length < 6 || !an) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+    email = me.email; nama = me.nama; wa = me.wa;
+  } else if (mode === 'login') {
     // MASUK: member lama cukup email -> nama & WA diambil dari tab "Registrasi Web"
     if (!validEmailStr(email)) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
     var found = findWebMember(email);
@@ -2110,12 +2109,13 @@ function handleOtpSend(p) {
   if (cnt >= OTP_MAX_HOUR) return otpOut({ result: 'limit' });
 
   var code = String(Math.floor(100000 + Math.random() * 900000));
-  cache.put(k, JSON.stringify({ code: code, nama: nama, wa: wa, hal: hal, tries: 0 }), OTP_TTL_SEC);
+  cache.put(k, JSON.stringify({ code: code, mode: mode, nama: nama, wa: wa, hal: hal, bank: bank, rek: rek, an: an, tries: 0 }), OTP_TTL_SEC);
   cache.put(k + '_t', String(nowMs), OTP_RESEND_SEC + 5);
   cache.put(k + '_n', String(cnt + 1), 3600);
 
   try {
-    var intro = '<p style="margin:0 0 12px;">Berikut kode untuk ' + (mode === 'login' ? 'masuk ke' : 'bergabung di') + ' <b>apocalypto.id</b>. Kode berlaku <b>10 menit</b>.</p>' +
+    var tujuan = mode === 'login' ? 'masuk ke' : mode === 'bank' ? 'memverifikasi data rekening Anda di' : 'bergabung di';
+    var intro = '<p style="margin:0 0 12px;">Berikut kode untuk ' + tujuan + ' <b>apocalypto.id</b>. Kode berlaku <b>10 menit</b>.</p>' +
       '<div style="text-align:center;margin:18px 0;"><span style="display:inline-block;font-size:32px;font-weight:bold;letter-spacing:10px;color:#0E1A2B;background:#F5ECD5;border:1px solid #E6D7A8;border-radius:10px;padding:12px 18px 12px 28px;">' + code + '</span></div>';
     var note = infoBox('Jangan berikan kode ini kepada siapa pun, termasuk yang mengaku sebagai admin. Abaikan email ini bila Anda tidak merasa meminta kode.', 'warn');
     sendMailUser({
@@ -2177,7 +2177,205 @@ function handleOtpVerify(p) {
     cache.put(k, JSON.stringify(d), OTP_TTL_SEC);
     return otpOut({ result: 'wrong', left: OTP_MAX_TRY - d.tries });
   }
+  if (d.mode === 'bank') {
+    var me = authMember(p);
+    if (!me || me.email !== email) return otpOut({ result: 'auth' });
+    cache.remove(k);
+    setMemberBank(me.row, d.bank, d.rek, d.an);
+    return otpOut({ result: 'ok', bank: d.bank, rek: maskRek(d.rek), an: d.an });
+  }
   cache.remove(k);
   upsertWebMember(d.nama, email, d.wa, d.hal);
-  return otpOut({ result: 'ok', nama: d.nama, wa: d.wa });
+  var token = issueMemberToken(email);
+  return otpOut({ result: 'ok', nama: d.nama, wa: d.wa, token: token });
+}
+
+
+// Menit buka acak TANGKAS untuk tanggal tsb (dibuat sekali per hari, disimpan di Script Properties).
+function tangkasOpenMinute(tgl) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'TANGKAS_OPEN_' + tgl;
+  var v = props.getProperty(key);
+  if (v === null) {
+    var lock = LockService.getScriptLock();
+    lock.tryLock(5000);
+    try {
+      v = props.getProperty(key);
+      if (v === null) {
+        v = String(Math.floor(Math.random() * (TANGKAS_RAND_MAX + 1)));
+        props.setProperty(key, v);
+        // bersihkan kunci hari-hari lama
+        var all = props.getKeys();
+        for (var i = 0; i < all.length; i++) {
+          if (all[i].indexOf('TANGKAS_OPEN_') === 0 && all[i] < 'TANGKAS_OPEN_' + tgl) props.deleteProperty(all[i]);
+        }
+      }
+    } finally { lock.releaseLock(); }
+  }
+  return Number(v);
+}
+
+// Status TANGKAS saat ini. Menit buka TIDAK dibocorkan sebelum waktunya.
+// {open:bool, openedAt:'HH:mm'|null, closeAt:'21:00'}
+function tangkasStatus() {
+  var tz  = 'Asia/Jakarta';
+  var now = new Date();
+  var tgl = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
+  var cur = Number(Utilities.formatDate(now, tz, 'H')) * 60 + Number(Utilities.formatDate(now, tz, 'm'));
+  var closeAt = ('0' + TANGKAS_CLOSE_H).slice(-2) + ':00';
+  if (TANGKAS_TEST) return { open: true, openedAt: null, closeAt: closeAt };
+  if (cur < TANGKAS_OPEN_H * 60 || cur >= TANGKAS_CLOSE_H * 60) return { open: false, openedAt: null, closeAt: closeAt };
+  var openAt = TANGKAS_OPEN_H * 60 + tangkasOpenMinute(tgl);
+  if (cur < openAt) return { open: false, openedAt: null, closeAt: closeAt };
+  return { open: true, openedAt: ('0' + Math.floor(openAt / 60)).slice(-2) + ':' + ('0' + (openAt % 60)).slice(-2), closeAt: closeAt };
+}
+
+
+//====================================================================
+//  SESI MEMBER (token) + DATA REKENING  -> tab "Registrasi Web"
+//  Kolom: A Waktu | B Nama | C Email | D WA | E Halaman | F Terakhir | G Jumlah
+//         H Bank | I No. Rekening | J Atas Nama | K Rekening Diverifikasi | L Token Sesi (hash)
+//====================================================================
+var WEB_EXTRA_HEADERS = ['Bank / E-wallet', 'No. Rekening', 'Atas Nama', 'Rekening Diverifikasi', 'Token Sesi (hash)'];
+
+function sha256Hex(t) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(t)).map(function (b) {
+    return ('0' + ((b + 256) % 256).toString(16)).slice(-2);
+  }).join('');
+}
+function webMemberSheet() {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(WEB_MEMBER_SHEET);
+  if (sh && String(sh.getRange(1, 8).getValue()) === '') {
+    sh.getRange(1, 8, 1, WEB_EXTRA_HEADERS.length).setValues([WEB_EXTRA_HEADERS])
+      .setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
+  }
+  return sh;
+}
+function findWebMemberRow(email) {
+  var sh = webMemberSheet();
+  if (!sh || sh.getLastRow() < 2) return 0;
+  var col = sh.getRange(2, 3, sh.getLastRow() - 1, 1).getDisplayValues();
+  for (var i = 0; i < col.length; i++) if (String(col[i][0]).trim().toLowerCase() === email) return i + 2;
+  return 0;
+}
+// Buat token sesi baru (dikirim ke browser), simpan hanya hash-nya di kolom L.
+function issueMemberToken(email) {
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  var r = findWebMemberRow(email);
+  if (r) webMemberSheet().getRange(r, 12).setValue(sha256Hex(token));
+  return token;
+}
+// Cek email + token -> data member, atau null.
+function authMember(p) {
+  var email = String((p && p.email) || '').trim().toLowerCase();
+  var token = String((p && p.token) || '');
+  if (!validEmailStr(email) || token.length < 32) return null;
+  var r = findWebMemberRow(email);
+  if (!r) return null;
+  var v = webMemberSheet().getRange(r, 1, 1, 12).getDisplayValues()[0];
+  if (!v[11] || v[11] !== sha256Hex(token)) return null;
+  return { row: r, nama: String(v[1]).trim(), email: email, wa: normPhone(String(v[3])),
+           bank: String(v[7]).trim(), rek: String(v[8]).replace(/[^0-9]/g, ''), an: String(v[9]).trim() };
+}
+function setMemberBank(row, bank, rek, an) {
+  webMemberSheet().getRange(row, 8, 1, 4).setValues([[bank, "'" + rek, an, new Date()]]);
+}
+function maskRek(rek) { rek = String(rek || ''); return rek.length <= 4 ? rek : new Array(rek.length - 3).join('\u2022') + rek.slice(-4); }
+
+//====================================================================
+//  TANGKAS — nomor urut, label & pemenang
+//  - Nomor urut = urutan masuk per hari (1, 2, 3, ...).
+//  - Label = nomor urut yang "berputar" sesuai jumlah hari bulan itu: bulan 30 hari -> 1..30, 31 -> 1, dst.
+//  - Pemenang = peserta dgn LABEL = TANGGAL hari itu (tgl 18 -> label 18), diambil sesuai urutan,
+//    sebanyak "Jumlah pemenang per hari" di tab "TANGKAS Pengaturan" (diisi admin).
+//  - Diumumkan di website setelah pukul 21:00 (kolom "Pemenang" dicentang otomatis).
+//====================================================================
+function daysInMonth(tgl) { var y = Number(tgl.slice(0, 4)), m = Number(tgl.slice(5, 7)); return new Date(y, m, 0).getDate(); }
+
+function tangkasSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(TANGKAS_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(TANGKAS_SHEET);
+    sh.getRange(1, 1, 1, 13).setValues([['Tanggal', 'Waktu', 'No. Urut', 'Label', 'Nama Panggilan', 'Email', 'WhatsApp',
+      'Bank / E-wallet', 'No. Rekening', 'Atas Nama', 'Pemenang', 'Ditransfer', 'Catatan Admin']])
+      .setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
+    sh.setFrozenRows(1);
+    sh.setColumnWidths(1, 13, 130);
+  }
+  return sh;
+}
+function tangkasWinnerCount() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(TANGKAS_CFG_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(TANGKAS_CFG_SHEET);
+    sh.getRange(1, 1, 3, 2).setValues([
+      ['Pengaturan', 'Nilai'],
+      ['Jumlah pemenang per hari', 1],
+      ['Keterangan', 'Pemenang = peserta dgn label = tanggal hari itu, diambil sesuai urutan masuk. Ubah angka di B2.']
+    ]);
+    sh.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
+    sh.setColumnWidth(1, 220); sh.setColumnWidth(2, 520);
+  }
+  var n = Number(sh.getRange(2, 2).getValue());
+  return (isNaN(n) || n < 0) ? 1 : Math.floor(n);
+}
+// Tentukan & centang pemenang untuk tanggal tgl (sekali saja). Mengembalikan daftar baris pemenang.
+function tangkasFinalize(tgl) {
+  var props = PropertiesService.getScriptProperties();
+  var sh = tangkasSheet();
+  var last = sh.getLastRow();
+  var rows = last >= 2 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];
+  var disp = last >= 2 ? sh.getRange(2, 1, last - 1, 1).getDisplayValues() : [];
+  var day = Number(tgl.slice(8, 10));
+  var done = props.getProperty('TANGKAS_FINAL_' + tgl) === '1';
+  var list = [], winners = [], need = done ? 0 : tangkasWinnerCount();
+  for (var i = 0; i < rows.length; i++) {
+    if (disp[i][0] !== tgl) continue;
+    var e = { r: i + 2, no: Number(rows[i][2]), label: Number(rows[i][3]), nama: String(rows[i][4]), email: String(rows[i][5]).toLowerCase(), win: rows[i][10] === true };
+    if (!done && need > 0 && e.label === day) { e.win = true; need--; sh.getRange(e.r, 11).setValue(true); }
+    list.push(e);
+    if (e.win) winners.push(e);
+  }
+  if (!done) props.setProperty('TANGKAS_FINAL_' + tgl, '1');
+  return { list: list, winners: winners };
+}
+function maskNama(n) { n = String(n || '').trim(); return n.length <= 2 ? n : n.slice(0, 2) + new Array(Math.min(n.length - 2, 4) + 1).join('*'); }
+
+// Status + pengumuman untuk halaman TANGKAS.
+//   Sebelum 21:00 -> pengumuman = hari kemarin; setelah 21:00 -> hari ini.
+function handleTangkasInfo(p) {
+  if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
+  var me = authMember(p);
+  if (!me) return otpOut({ result: 'auth' });
+  var tz = 'Asia/Jakarta', now = new Date();
+  var today = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
+  var cur = Number(Utilities.formatDate(now, tz, 'H')) * 60 + Number(Utilities.formatDate(now, tz, 'm'));
+  var closed = cur >= TANGKAS_CLOSE_H * 60;
+  var annDate = closed ? today : Utilities.formatDate(new Date(now.getTime() - 86400000), tz, 'yyyy-MM-dd');
+
+  // sudah ikut hari ini?
+  var sh = tangkasSheet(), last = sh.getLastRow(), joined = false;
+  if (last >= 2) {
+    var rows = sh.getRange(2, 1, last - 1, 6).getDisplayValues();
+    for (var i = 0; i < rows.length; i++) if (rows[i][0] === today && String(rows[i][5]).trim().toLowerCase() === me.email) { joined = true; break; }
+  }
+  // pengaman: hari ini TIDAK pernah difinalkan sebelum jam tutup
+  var fin = (annDate === today && !closed) ? { list: [], winners: [] } : tangkasFinalize(annDate), mine = null;
+  for (var j = 0; j < fin.list.length; j++) if (fin.list[j].email === me.email) { mine = fin.list[j]; break; }
+  return otpOut({
+    result: 'ok',
+    status: tangkasStatus(),
+    hasBank: !!me.rek,
+    bank: me.bank, rek: maskRek(me.rek), an: me.an,
+    joinedToday: joined,
+    announce: {
+      date: annDate,
+      day: Number(annDate.slice(8, 10)),
+      total: fin.list.length,
+      winners: fin.winners.map(function (w) { return { nama: maskNama(w.nama), no: w.no, label: w.label }; }),
+      me: mine ? { no: mine.no, label: mine.label, win: mine.win } : null
+    }
+  });
 }
