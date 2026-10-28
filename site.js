@@ -16,7 +16,7 @@
 
   var cur = document.body.getAttribute("data-page") || "";
   var MKEY = "apx_member";
-  function readMember(){ try{ var m=JSON.parse(localStorage.getItem(MKEY)||"null"); return (m && m.verified) ? m : null; }catch(_){ return null; } }
+  function readMember(){ try{ var m=JSON.parse(localStorage.getItem(MKEY)||"null"); return (m && m.verified && m.token) ? m : null; }catch(_){ return null; } }
   var loggedIn = !!readMember();
 
   // Menu atas ringkas. Belum login: Beranda + Gabung. Sudah login: hanya tombol Log Out.
@@ -243,7 +243,7 @@
       .then(function(res){
         busy("mregVerify",false,"Verifikasi &amp; Masuk");
         if(res && res.result==="ok"){
-          var m={ nama:res.nama||pending.nama, email:pending.email, wa:res.wa||pending.wa, verified:true, t:new Date().toISOString() };
+          var m={ nama:res.nama||pending.nama, email:pending.email, wa:res.wa||pending.wa, token:res.token||"", verified:true, t:new Date().toISOString() };
           saveMember(m); pending=null; clearInterval(timer);
           document.documentElement.classList.remove("mreg-lock"); modal.classList.remove("show");
           if(target && pageOf(target)!==pageOf(location.href)) location.href=target; else location.reload();
@@ -273,6 +273,15 @@
   if(loggedIn){ [].forEach.call(document.querySelectorAll("[data-join-label]"), function(el){ el.firstChild.nodeValue = el.getAttribute("data-join-label")+" "; }); }
 
   // ekspor untuk halaman yang butuh (mis. form)
-  window.APX = { WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember, url:SCRIPT_URL, key:REG_KEY, ready:backendReady };
+  // Panggilan API sebagai member login (email + token sesi). Bila sesi ditolak server -> keluar & minta Masuk ulang.
+  function memberApi(params){
+    var m=getMember(); if(!m) return Promise.reject(new Error("no-session"));
+    params.email=m.email; params.token=m.token;
+    return api(params).then(function(res){
+      if(res && res.result==="auth"){ try{ localStorage.removeItem(MKEY); }catch(_){} location.href="index.html"; throw new Error("auth"); }
+      return res;
+    });
+  }
+  window.APX = { WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember, url:SCRIPT_URL, key:REG_KEY, ready:backendReady, api:memberApi, esc:esc };
   document.dispatchEvent(new CustomEvent("apx:ready"));
 })();
