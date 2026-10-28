@@ -293,11 +293,12 @@ function doPost(e) {
     // ---- Registrasi MEMBER dari situs apocalypto.id (nama, email, WA) ----
     // (action=member tanpa OTP DINONAKTIFKAN — registrasi wajib lewat otp_send/otp_verify)
     if (p0.action === 'member') return ContentService.createTextOutput(JSON.stringify({ result: 'error', error: 'USE_OTP' })).setMimeType(ContentService.MimeType.JSON);
+    // Pastikan jadwal otomatis TANGKAS terpasang (sekali saja; aksi apa pun dari situs)
+    if (p0.action) ensureTangkasTriggers();
     // ---- Gabung dgn OTP email (situs apocalypto.id) ----
     if (p0.action === 'otp_send')   return handleOtpSend(p0);
     if (p0.action === 'otp_verify') return handleOtpVerify(p0);
     // ---- Entri harian TANGKAS dari situs ----
-    if (String(p0.action || '').indexOf('tangkas') === 0) ensureTangkasTriggers();
     if (p0.action === 'tangkas') return handleTangkas(p0);
     if (p0.action === 'tangkas_status') return otpOut(tangkasStatus());
     if (p0.action === 'tangkas_info')   return handleTangkasInfo(p0);
@@ -875,6 +876,8 @@ function setupSheet() {
   ensureInvoiceTab();
   ensureProfitTab();
   tangkasSheet();
+  PropertiesService.getScriptProperties().deleteProperty('TANGKAS_TRG_V1');
+  ensureTangkasTriggers();
 }
 
 // RESET TOTAL ke struktur v2 (menghapus SEMUA data). Dijalankan admin dari menu Apocalypto.
