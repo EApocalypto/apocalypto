@@ -330,6 +330,11 @@ function doPost(e) {
     if (p0.action === 'tangkas') return handleTangkas(p0);
     if (p0.action === 'tangkas_status') return otpOut(tangkasStatus());
     if (p0.action === 'tangkas_info')   return handleTangkasInfo(p0);
+    if (p0.action === 'profile_get') {
+      var mp = authMember(p0);
+      if (!mp) return otpOut({ result: 'auth' });
+      return otpOut({ result: 'ok', nama: mp.nama, email: mp.email, wa: mp.wa, bank: mp.bank, rek: maskRek(mp.rek), an: mp.an });
+    }
 
     var lock = LockService.getScriptLock();
     lock.tryLock(10000);
@@ -672,6 +677,10 @@ function onStatusEdit(e) {
   try {
     var range = e.range;
     var sheet = range.getSheet();
+    if (sheet.getName() === WEB_MEMBER_SHEET && range.getColumn() === WEB_BL_COL && range.getRow() >= 2) {
+      handleWebBlacklistEdit(range.getRow(), isBlacklisted(e.value));
+      return;
+    }
     if (sheet.getName() !== SHEET_NAME) return;
     var editCol = range.getColumn(), editRow = range.getRow();
     if (editRow < 2) return;
@@ -2003,6 +2012,7 @@ function upsertWebMember(nama, email, wa, hal) {
       }
     }
     sh.appendRow([now, nama, email, "'" + wa, hal, now, 1]);
+    sh.getRange(sh.getLastRow(), WEB_BL_COL).insertCheckboxes();
     return 'new';
   } finally {
     lock.releaseLock();
@@ -2072,13 +2082,28 @@ function otpKey(email){ return 'otp_' + Utilities.base64EncodeWebSafe(Utilities.
 
 function handleOtpSend(p) {
   if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
-  var mode  = (p.mode === 'login' || p.mode === 'bank') ? p.mode : 'join';
+  var mode  = (p.mode === 'login' || p.mode === 'bank' || p.mode === 'profile') ? p.mode : 'join';
+  var target = '', prof = null;
   var bank = '', rek = '', an = '';
   var nama  = String(p.nama || '').trim().slice(0, 40);
   var email = String(p.email || '').trim().toLowerCase().slice(0, 80);
   var wa    = normPhone(String(p.wa || ''));
   var hal   = String(p.halaman || '').trim().slice(0, 40);
-  if (mode === 'bank') {
+  if (mode === 'profile') {
+    // UBAH PROFIL: wajib login; OTP dikirim ke email BARU (bila diganti) atau email lama.
+    var meP = authMember(p);
+    if (!meP) return otpOut({ result: 'auth' });
+    var nE = String(p.new_email || '').trim().toLowerCase().slice(0, 80);
+    var nN = String(p.nama || '').trim().slice(0, 40);
+    var nW = normPhone(String(p.wa || ''));
+    var nB = String(p.bank || '').trim().slice(0, 40), nR = String(p.rek || '').replace(/[^0-9]/g, '').slice(0, 25), nA = String(p.an || '').trim().slice(0, 60);
+    if (!nN || !validEmailStr(nE) || !isDigitsStr(nW) || nW.length < 8) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+    if ((nB || nR || nA) && (!nB || nR.length < 6 || !nA)) return otpOut({ result: 'error', error: 'INVALID_BANK' });
+    var dupP = findWebMemberDup(nE, nW, meP.row);
+    if (dupP) return otpOut({ result: 'registered', by: dupP });
+    prof = { nama: nN, email: nE, wa: nW, bank: nB, rek: nR, an: nA };
+    email = meP.email; nama = nN; wa = nW; target = nE;
+  } else if (mode === 'bank') {
     // VERIFIKASI REKENING (TANGKAS): wajib sudah login (token sesi) -> data rekening disimpan setelah OTP benar
     var me = authMember(p);
     if (!me) return otpOut({ result: 'auth' });
@@ -2099,8 +2124,9 @@ function handleOtpSend(p) {
     }
     // GABUNG: tolak bila email ATAU WhatsApp sudah terdaftar -> arahkan ke Masuk
     var dup = findWebMemberDup(email, wa);
-    if (dup) return otpOut({ result: 'registered', by: dup });
+    if (dup) return otpOut({ result: dup === 'blacklist' ? 'blacklist' : 'registered', by: dup });
   }
+  if (mode === 'login' && webMemberBlocked(email)) return otpOut({ result: 'blacklist' });
 
   var cache = CacheService.getScriptCache();
   var k = otpKey(email);
@@ -2113,17 +2139,17 @@ function handleOtpSend(p) {
   if (cnt >= OTP_MAX_HOUR) return otpOut({ result: 'limit' });
 
   var code = String(Math.floor(100000 + Math.random() * 900000));
-  cache.put(k, JSON.stringify({ code: code, mode: mode, nama: nama, wa: wa, hal: hal, bank: bank, rek: rek, an: an, tries: 0 }), OTP_TTL_SEC);
+  cache.put(k, JSON.stringify({ code: code, mode: mode, nama: nama, wa: wa, hal: hal, bank: bank, rek: rek, an: an, prof: prof, tries: 0 }), OTP_TTL_SEC);
   cache.put(k + '_t', String(nowMs), OTP_RESEND_SEC + 5);
   cache.put(k + '_n', String(cnt + 1), 3600);
 
   try {
-    var tujuan = mode === 'login' ? 'masuk ke' : mode === 'bank' ? 'memverifikasi data rekening Anda di' : 'bergabung di';
+    var tujuan = mode === 'login' ? 'masuk ke' : mode === 'bank' ? 'memverifikasi data rekening Anda di' : mode === 'profile' ? 'menyimpan perubahan profil Anda di' : 'bergabung di';
     var intro = '<p style="margin:0 0 12px;">Berikut kode untuk ' + tujuan + ' <b>apocalypto.id</b>. Kode berlaku <b>10 menit</b>.</p>' +
       '<div style="text-align:center;margin:18px 0;"><span style="display:inline-block;font-size:32px;font-weight:bold;letter-spacing:10px;color:#0E1A2B;background:#F5ECD5;border:1px solid #E6D7A8;border-radius:10px;padding:12px 18px 12px 28px;">' + code + '</span></div>';
     var note = infoBox('Jangan berikan kode ini kepada siapa pun, termasuk yang mengaku sebagai admin. Abaikan email ini bila Anda tidak merasa meminta kode.', 'warn');
     sendMailUser({
-      to: email,
+      to: target || email,
       subject: 'Kode OTP Apocalypto: ' + code,
       body: 'Kode OTP Anda: ' + code + ' (berlaku 10 menit). Jangan berikan kode ini kepada siapa pun. Salam, Tim Apocalypto.',
       htmlBody: emailShell('Kode Verifikasi (OTP)', nama, intro, [], note),
@@ -2134,7 +2160,7 @@ function handleOtpSend(p) {
     cache.remove(k); cache.remove(k + '_t');
     return otpOut({ result: 'error', error: 'MAIL_FAILED' });
   }
-  return otpOut({ result: 'sent', wait: OTP_RESEND_SEC });
+  return otpOut({ result: 'sent', wait: OTP_RESEND_SEC, to: target || email });
 }
 
 // Cari member di tab "Registrasi Web" berdasarkan email -> {nama, wa} atau null.
@@ -2151,15 +2177,20 @@ function findWebMember(email) {
 }
 
 // Cek email / WA sudah ada di tab "Registrasi Web" -> 'email' | 'wa' | 'both' | null
-function findWebMemberDup(email, wa) {
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(WEB_MEMBER_SHEET);
+function findWebMemberDup(email, wa, excludeRow) {
+  // 'blacklist' bila email/WA cocok dgn member yg diblokir; selain itu 'email' | 'wa' | 'both' | null
+  var sh = webMemberSheet();
   if (!sh || sh.getLastRow() < 2) return null;
-  var rows = sh.getRange(2, 3, sh.getLastRow() - 1, 2).getDisplayValues();   // C email, D WA
-  var e = false, w = false;
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, WEB_BL_COL).getDisplayValues();
+  var e = false, w = false, bl = false;
   for (var i = 0; i < rows.length; i++) {
-    if (String(rows[i][0]).trim().toLowerCase() === email) e = true;
-    if (wa && normPhone(String(rows[i][1])) === wa) w = true;
+    if (excludeRow && i + 2 === excludeRow) continue;
+    var me = String(rows[i][2]).trim().toLowerCase() === email;
+    var mw = wa && normPhone(String(rows[i][3])) === wa;
+    if (me) e = true; if (mw) w = true;
+    if ((me || mw) && String(rows[i][WEB_BL_COL - 1]).toUpperCase() === 'TRUE') bl = true;
   }
+  if (bl) return 'blacklist';
   return (e && w) ? 'both' : e ? 'email' : w ? 'wa' : null;
 }
 
@@ -2180,6 +2211,16 @@ function handleOtpVerify(p) {
     if (d.tries >= OTP_MAX_TRY) { cache.remove(k); return otpOut({ result: 'too_many' }); }
     cache.put(k, JSON.stringify(d), OTP_TTL_SEC);
     return otpOut({ result: 'wrong', left: OTP_MAX_TRY - d.tries });
+  }
+  if (d.mode === 'profile') {
+    var meV = authMember(p);
+    if (!meV || meV.email !== email) return otpOut({ result: 'auth' });
+    cache.remove(k);
+    var pr = d.prof;
+    var dupV = findWebMemberDup(pr.email, pr.wa, meV.row);
+    if (dupV) return otpOut({ result: 'registered', by: dupV });
+    applyProfileChange(meV, pr);
+    return otpOut({ result: 'ok', nama: pr.nama, email: pr.email, wa: pr.wa, bank: pr.bank || meV.bank, rek: maskRek(pr.rek || meV.rek), an: pr.an || meV.an });
   }
   if (d.mode === 'bank') {
     var me = authMember(p);
@@ -2249,7 +2290,8 @@ function tangkasStatus() {
 //  Kolom: A Waktu | B Nama | C Email | D WA | E Halaman | F Terakhir | G Jumlah
 //         H Bank | I No. Rekening | J Atas Nama | K Rekening Diverifikasi | L Token Sesi (hash)
 //====================================================================
-var WEB_EXTRA_HEADERS = ['Bank', 'No. Rekening', 'Atas Nama', 'Rekening Diverifikasi', 'Token Sesi (hash)'];
+var WEB_EXTRA_HEADERS = ['Bank', 'No. Rekening', 'Atas Nama', 'Rekening Diverifikasi', 'Token Sesi (hash)', 'Blacklist'];
+var WEB_BL_COL = 13;   // M Blacklist (centang admin) -> memblokir member + semua akun MT5-nya di tab Member
 
 function sha256Hex(t) {
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(t)).map(function (b) {
@@ -2258,9 +2300,10 @@ function sha256Hex(t) {
 }
 function webMemberSheet() {
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(WEB_MEMBER_SHEET);
-  if (sh && String(sh.getRange(1, 8).getValue()) === '') {
+  if (sh && String(sh.getRange(1, WEB_BL_COL).getValue()) === '') {
     sh.getRange(1, 8, 1, WEB_EXTRA_HEADERS.length).setValues([WEB_EXTRA_HEADERS])
       .setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
+    if (sh.getLastRow() >= 2) sh.getRange(2, WEB_BL_COL, sh.getLastRow() - 1, 1).insertCheckboxes();
   }
   return sh;
 }
@@ -2285,8 +2328,9 @@ function authMember(p) {
   if (!validEmailStr(email) || token.length < 32) return null;
   var r = findWebMemberRow(email);
   if (!r) return null;
-  var v = webMemberSheet().getRange(r, 1, 1, 12).getDisplayValues()[0];
+  var v = webMemberSheet().getRange(r, 1, 1, WEB_BL_COL).getDisplayValues()[0];
   if (!v[11] || v[11] !== sha256Hex(token)) return null;
+  if (String(v[WEB_BL_COL - 1]).toUpperCase() === 'TRUE') return null;   // diblokir admin
   return { row: r, nama: String(v[1]).trim(), email: email, wa: normPhone(String(v[3])),
            bank: String(v[7]).trim(), rek: String(v[8]).replace(/[^0-9]/g, ''), an: String(v[9]).trim() };
 }
@@ -2540,5 +2584,62 @@ function tangkasResetDaily() {
   for (var k = 0; k < keys.length; k++) {
     var m = keys[k].match(/^TANGKAS_(APPR|WIN|TOK|ASKED|OPENED|FINAL|OPEN)_(\d{4}-\d{2}-\d{2})$/);
     if (m && m[2] < today) props.deleteProperty(keys[k]);
+  }
+}
+
+
+//====================================================================
+//  PROFIL MEMBER + BLACKLIST TERPUSAT (tab "Registrasi Web" = data induk)
+//====================================================================
+function webMemberBlocked(email) {
+  var r = findWebMemberRow(email);
+  if (!r) return false;
+  return String(webMemberSheet().getRange(r, WEB_BL_COL).getDisplayValue()).toUpperCase() === 'TRUE';
+}
+
+// Simpan perubahan profil + samakan Nama/WA/Email di SEMUA akun MT5 member ini (tab Member).
+function applyProfileChange(me, pr) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(15000);
+  try {
+    var sh = webMemberSheet();
+    var old = sh.getRange(me.row, 1, 1, 4).getDisplayValues()[0];
+    var oldEmail = String(old[2]).trim().toLowerCase(), oldWa = normPhone(String(old[3]));
+    sh.getRange(me.row, 2, 1, 3).setValues([[pr.nama, pr.email, "'" + pr.wa]]);
+    sh.getRange(me.row, 6).setValue(new Date());
+    if (pr.rek) sh.getRange(me.row, 8, 1, 4).setValues([[pr.bank, "'" + pr.rek, pr.an, new Date()]]);
+    var ms = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    if (ms && ms.getLastRow() >= 2) {
+      var data = ms.getRange(2, 1, ms.getLastRow() - 1, 7).getValues();
+      for (var i = 0; i < data.length; i++) {
+        var rE = String(data[i][6] || '').trim().toLowerCase(), rW = normPhone(String(data[i][5] || ''));
+        if ((oldEmail && rE === oldEmail) || (oldWa && rW === oldWa)) {
+          ms.getRange(i + 2, 4).setValue(pr.nama);          // D Nama
+          ms.getRange(i + 2, 6).setValue("'" + pr.wa);      // F WA
+          ms.getRange(i + 2, 7).setValue(pr.email);         // G Email
+        }
+      }
+    }
+  } finally { lock.releaseLock(); }
+}
+
+// Admin centang/cabut Blacklist di "Registrasi Web" -> berlaku ke semua akun MT5 (tab Member) dgn email/WA sama.
+function handleWebBlacklistEdit(row, isBlocked) {
+  var sh = webMemberSheet();
+  var v = sh.getRange(row, 1, 1, 4).getDisplayValues()[0];
+  var email = String(v[2]).trim().toLowerCase(), wa = normPhone(String(v[3]));
+  if (isBlocked) sh.getRange(row, 12).setValue('');          // putus sesi login (token)
+  var ms = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  if (!ms || ms.getLastRow() < 2) return;
+  var data = ms.getRange(2, 1, ms.getLastRow() - 1, 14).getValues();
+  for (var i = 0; i < data.length; i++) {
+    var rE = String(data[i][6] || '').trim().toLowerCase(), rW = normPhone(String(data[i][5] || ''));
+    if ((email && rE === email) || (wa && rW === wa)) {
+      if (isBlacklisted(data[i][13]) !== isBlocked) {
+        ms.getRange(i + 2, 14).setValue(isBlocked);
+        handleBlacklistCascade(ms, i + 2, isBlocked);   // pakai alur lama: status Inactive/Active + email
+      }
+      return;   // cascade lama sudah menjalar ke semua baris dgn WA/email sama
+    }
   }
 }

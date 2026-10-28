@@ -25,7 +25,7 @@
     return '<a href="'+m.href+'"'+(m.key===cur?' class="active"':'')+'>'+m.label+'</a>';
   }).join("");
   var cta = loggedIn
-    ? '<a class="nav-cta nav-out" href="#" id="apxLogout">Log Out</a>'
+    ? '<a class="nav-login'+(cur==="profil"?' active':'')+'" href="profil.html">Profil</a><a class="nav-cta nav-out" href="#" id="apxLogout">Log Out</a>'
     : '<a class="nav-login" href="layanan.html" data-login>Masuk</a><a class="nav-cta" href="layanan.html">Gabung</a>';
 
   var header =
@@ -70,7 +70,7 @@
   var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVpdxUgIbZKfqbpO6pv--hPbI0sfa0-y5go0kAiv_pRHAiLxhUkiIsYHY61roVuLtw/exec";   // backend Apps Script
   var REG_KEY    = "APOX-WEB-xBd7W3Yp-aQFm5xuA";      // kunci registrasi publik (BUKAN kunci admin EA)
   // Halaman yang wajib Gabung dulu. Tambah file baru di sini untuk kartu berikutnya.
-  var GATED = ["layanan.html","daftar.html","voucher.html"];
+  var GATED = ["layanan.html","daftar.html","voucher.html","profil.html"];
   var RESEND_SEC = 60;
 
   function getMember(){ return readMember(); }
@@ -207,6 +207,9 @@
     api({ action:"otp_send", mode:pending.mode, nama:pending.nama||"", email:pending.email, wa:pending.wa||"", halaman:pageOf(target||location.href) })
       .then(function(res){
         busy(first,false,"Kirim Kode OTP");
+        if(res && res.result==="blacklist"){
+          pending=null; msg(m1,'Akun ini diblokir. Silakan hubungi admin.'); return;
+        }
         if(res && res.result==="registered"){
           var what = res.by==="wa" ? "Nomor WhatsApp ini" : res.by==="both" ? "Email dan nomor WhatsApp ini" : "Email ini";
           var em = pending.email; pending=null;
@@ -282,6 +285,7 @@
       return res;
     });
   }
-  window.APX = { WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember, url:SCRIPT_URL, key:REG_KEY, ready:backendReady, api:memberApi, esc:esc };
+  function updateMember(patch){ var m=getMember(); if(!m) return; for(var k in patch) m[k]=patch[k]; saveMember(m); }
+  window.APX = { update:updateMember, WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember, url:SCRIPT_URL, key:REG_KEY, ready:backendReady, api:memberApi, esc:esc };
   document.dispatchEvent(new CustomEvent("apx:ready"));
 })();
