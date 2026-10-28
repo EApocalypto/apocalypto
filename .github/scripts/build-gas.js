@@ -1,5 +1,5 @@
 // Menyisipkan nilai rahasia (dari secret GAS_SECRETS) ke _gas/Code.js lalu menaruhnya
-// Dipanggil oleh .github/workflows/deploy-apps-script.yml
+// Dipanggil oleh .github/workflows/deploy-apps-script.yml (deploy otomatis)
 // menggantikan file utama (yang berisi "function doGet(") di project hasil clasp pull.
 // Gagal (exit 1) bila ada placeholder __GAS_..__ yang belum terisi -> backend lisensi EA tidak rusak.
 const fs = require('fs'), path = require('path');
