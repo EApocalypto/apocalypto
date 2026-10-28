@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<script src="gate.js?v=202610281227"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Profil — Apocalypto</title>
+<meta name="description" content="Profil member Apocalypto.">
+<meta name="theme-color" content="#060d1f">
+<link rel="canonical" href="https://apocalypto.id/profil.html">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="style.css?v=202610281200">
+<style>
+  .pf{max-width:552px;margin:0 auto;padding-top:22px;padding-bottom:48px}
+  .pf-back{display:inline-flex;align-items:center;gap:7px;color:var(--ink-dim);text-decoration:none;font-size:14px;font-weight:700;padding:8px 12px 8px 8px;border-radius:10px;border:1px solid var(--line-soft)}
+  .pf-back:hover{color:var(--gold-soft);border-color:var(--line)}
+  .pf h1{text-align:center;margin:22px 0 18px;font-size:clamp(28px,6vw,36px);font-weight:900}
+  .pf-card{padding:24px 22px}
+  .pf-card h2{margin:0 0 4px;font-size:16px;font-weight:900}
+  .pf-card .hint{margin:0 0 6px;font-size:12.5px;color:var(--ink-faint)}
+  .pf-card + .pf-card{margin-top:14px}
+  .pf label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-dim);margin:14px 0 6px}
+  .pf input,.pf select{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--field-line);border-radius:11px;padding:12px 13px;outline:none}
+  .pf input:focus,.pf select:focus{border-color:var(--gold)}
+  .pf input[readonly]{opacity:.75}
+  .pf .err{border-color:var(--danger)}
+  .pf .emsg{display:none;color:var(--danger);font-size:12px;margin-top:5px}
+  .pf .emsg.show{display:block}
+  .pf .msg{display:none;margin-top:12px;font-size:13px;text-align:center;color:var(--danger)}
+  .pf .msg.show{display:block}
+  .pf .msg.ok{color:var(--ok)}
+  .pf .btn-gold{width:100%;margin-top:18px}
+  .pf .btn-gold:disabled{opacity:.6;cursor:wait}
+  .pf-otp{text-align:center;font-size:24px !important;letter-spacing:.5em;font-weight:800;padding-left:calc(13px + .5em) !important}
+  .pf-links{display:flex;justify-content:space-between;gap:10px;margin-top:14px}
+  .pf-links button{background:none;border:0;padding:4px 0;font:inherit;font-size:13px;font-weight:700;color:var(--gold-soft);cursor:pointer}
+  .pf-links button:disabled{color:var(--ink-faint);cursor:default}
+  .pf-load{text-align:center;color:var(--ink-dim);padding:30px 0}
+</style>
+</head>
+<body data-page="profil">
+  <div id="siteHeader"></div>
+  <main class="container pf">
+    <a class="pf-back" href="layanan.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Kembali</a>
+    <h1>Profil</h1>
+
+    <div class="card pf-card pf-load" id="pLoad">Memuat&hellip;</div>
+
+    <form id="pForm" novalidate hidden>
+      <div class="card pf-card">
+        <h2>Data Diri</h2>
+        <label for="fNama">Nama panggilan</label>
+        <input id="fNama" type="text" maxlength="40">
+        <div class="emsg" data-for="fNama">Nama panggilan wajib diisi.</div>
+        <label for="fEmail">Email</label>
+        <input id="fEmail" type="email" maxlength="80">
+        <div class="emsg" data-for="fEmail">Masukkan email yang valid.</div>
+        <label for="fWa">Nomor WhatsApp</label>
+        <input id="fWa" type="tel" inputmode="tel" maxlength="20">
+        <div class="emsg" data-for="fWa">Masukkan nomor WhatsApp yang valid (min. 9 digit).</div>
+      </div>
+      <div class="card pf-card">
+        <h2>Rekening Hadiah</h2>
+        <p class="hint" id="fRekNow"></p>
+        <label for="fBank">Nama bank</label>
+        <select id="fBank">
+          <option value="">Pilih bank</option>
+          <option>BCA</option><option>BRI</option><option>Mandiri</option><option>BNI</option><option>BSI</option>
+          <option>CIMB Niaga</option><option>Permata</option><option>BTN</option><option>Danamon</option>
+          <option>OCBC</option><option>Maybank</option><option>Panin</option><option>BPD (Bank Daerah)</option>
+          <option>Bank Jago</option><option>SeaBank</option><option>Blu by BCA Digital</option>
+          <option value="Lainnya">Bank lainnya</option>
+        </select>
+        <div id="fOtherWrap" hidden>
+          <label for="fOther">Nama bank lainnya</label>
+          <input id="fOther" type="text" maxlength="40" placeholder="Tulis nama bank">
+        </div>
+        <label for="fRek">Nomor rekening</label>
+        <input id="fRek" type="text" inputmode="numeric" maxlength="25" placeholder="Kosongkan bila tidak diubah" autocomplete="off">
+        <div class="emsg" data-for="fRek">Lengkapi bank, nomor rekening (min. 6 digit) & nama pemilik, atau kosongkan ketiganya.</div>
+        <label for="fAn">Nama pemilik rekening</label>
+        <input id="fAn" type="text" maxlength="60" placeholder="Sesuai buku tabungan">
+        <div class="msg" id="pMsg1"></div>
+        <button type="submit" class="btn-gold" id="pSave">Simpan Perubahan</button>
+      </div>
+    </form>
+
+    <form class="card pf-card" id="pOtp" novalidate hidden>
+      <h2 style="text-align:center">Masukkan Kode OTP</h2>
+      <p class="hint" style="text-align:center" id="pSentTo"></p>
+      <label for="pCode">Kode OTP</label>
+      <input id="pCode" class="pf-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
+      <div class="msg" id="pMsg2"></div>
+      <button type="submit" class="btn-gold" id="pVerify">Verifikasi &amp; Simpan</button>
+      <div class="pf-links"><button type="button" id="pResend" disabled>Kirim ulang kode</button><button type="button" id="pBack">Ubah data</button></div>
+    </form>
+  </main>
+
+  <div id="siteFooter"></div>
+  <script src="site.js?v=202610281749" defer></script>
+  <script>
+  (function(){
+    var $=function(id){ return document.getElementById(id); };
+    var cur=null, pend=null, rT=null;
+    function esc(t){ return window.APX&&APX.esc?APX.esc(t):String(t); }
+    function fe(id,on){ var el=$(id); if(el) el.classList.toggle('err',on); var m=document.querySelector('.emsg[data-for="'+id+'"]'); if(m) m.classList.toggle('show',on); }
+    function msg(n,t,ok){ var el=$('pMsg'+n); el.textContent=t||''; el.className='msg'+(t?' show':'')+(ok?' ok':''); }
+    ['fNama','fEmail','fWa','fRek','fAn','fBank'].forEach(function(id){ $(id).addEventListener('input',function(){ fe(id,false); fe('fRek',false); msg(1,''); }); });
+    $('fBank').addEventListener('change',function(){ $('fOtherWrap').hidden=this.value!=='Lainnya'; fe('fRek',false); });
+    $('fRek').addEventListener('input',function(){ var v=this.value.replace(/\D/g,''); if(v!==this.value) this.value=v; });
+    $('pCode').addEventListener('input',function(){ this.value=this.value.replace(/\D/g,'').slice(0,6); msg(2,''); });
+    $('pBack').addEventListener('click',function(){ $('pOtp').hidden=true; $('pForm').hidden=false; });
+    $('pResend').addEventListener('click',function(){ if(pend) send(true); });
+
+    function fill(d){
+      cur=d; $('fNama').value=d.nama||''; $('fEmail').value=d.email||''; $('fWa').value=d.wa?('0'+String(d.wa).replace(/^0/,'')):'';
+      $('fRekNow').innerHTML = d.rek ? 'Saat ini: <b>'+esc(d.bank)+' '+esc(d.rek)+'</b> a.n. '+esc(d.an)+'. Isi kolom di bawah hanya bila ingin mengganti.' : 'Belum ada rekening. Isi bila ingin menambahkan.';
+      $('fBank').value=''; $('fRek').value=''; $('fAn').value=''; $('fOtherWrap').hidden=true;
+      $('pLoad').hidden=true; $('pOtp').hidden=true; $('pForm').hidden=false;
+    }
+    function load(){ APX.api({action:'profile_get'}).then(function(r){ if(r&&r.result==='ok') fill(r); else $('pLoad').textContent='Gagal memuat profil.'; }).catch(function(){ $('pLoad').textContent='Gagal terhubung. Muat ulang halaman.'; }); }
+
+    $('pForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      var nama=$('fNama').value.trim(), email=$('fEmail').value.trim().toLowerCase(), wa=$('fWa').value.replace(/[^0-9+]/g,'');
+      var bank=$('fBank').value==='Lainnya'?$('fOther').value.trim():$('fBank').value, rek=$('fRek').value.trim(), an=$('fAn').value.trim(), ok=true;
+      if(!nama){ fe('fNama',true); ok=false; }
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ fe('fEmail',true); ok=false; }
+      if(wa.replace(/\D/g,'').length<9){ fe('fWa',true); ok=false; }
+      if((bank||rek||an) && (!bank || !/^\d{6,25}$/.test(rek) || !an)){ fe('fRek',true); ok=false; }
+      if(!ok) return;
+      var curWa=String(cur.wa||''), newWa=wa.replace(/\D/g,'').replace(/^62/,'').replace(/^0/,'');
+      if(nama===cur.nama && email===cur.email && newWa===curWa && !rek){ msg(1,'Tidak ada perubahan.'); return; }
+      pend={ nama:nama, new_email:email, wa:wa, bank:bank, rek:rek, an:an }; send(false);
+    });
+    function countdown(sec){ var b=$('pResend'); clearInterval(rT); b.disabled=true;
+      function st(){ if(sec<=0){ clearInterval(rT); b.disabled=false; b.textContent='Kirim ulang kode'; return; } b.textContent='Kirim ulang kode ('+sec+'s)'; sec--; } st(); rT=setInterval(st,1000); }
+    function send(isResend){
+      var b=isResend?$('pResend'):$('pSave'); b.disabled=true; b.textContent='Mengirim...';
+      var q={action:'otp_send',mode:'profile'}; for(var k in pend) q[k]=pend[k];
+      APX.api(q).then(function(r){
+        $('pSave').disabled=false; $('pSave').textContent='Simpan Perubahan';
+        if(r&&(r.result==='sent'||r.result==='wait')){
+          $('pSentTo').innerHTML='Kode 6 digit telah dikirim ke <b>'+esc(r.to||pend.new_email)+'</b>.';
+          $('pForm').hidden=true; $('pOtp').hidden=false; $('pCode').value=''; $('pCode').focus(); countdown(r.wait||60);
+          if(r.result==='wait') msg(2,'Tunggu '+r.wait+' detik sebelum meminta kode baru.'); else if(isResend) msg(2,'Kode baru sudah dikirim.',true);
+        } else if(r&&r.result==='registered'){ msg(isResend?2:1,(r.by==='wa'?'Nomor WhatsApp':r.by==='both'?'Email dan nomor WhatsApp':'Email')+' ini sudah dipakai member lain.'); if(isResend) $('pResend').disabled=false; }
+        else if(r&&r.result==='blacklist'){ msg(isResend?2:1,'Email/WhatsApp ini tidak dapat digunakan. Hubungi admin.'); if(isResend) $('pResend').disabled=false; }
+        else if(r&&r.result==='limit'){ msg(isResend?2:1,'Terlalu banyak permintaan kode. Coba lagi dalam 1 jam.'); if(isResend) $('pResend').disabled=false; }
+        else { msg(isResend?2:1,'Perubahan belum bisa dikirim. Periksa data lalu coba lagi.'); if(isResend) $('pResend').disabled=false; }
+      }).catch(function(){ $('pSave').disabled=false; $('pSave').textContent='Simpan Perubahan'; msg(isResend?2:1,'Gagal terhubung. Periksa koneksi Anda.'); });
+    }
+    $('pOtp').addEventListener('submit',function(e){
+      e.preventDefault(); var code=$('pCode').value.trim(); if(!/^\d{6}$/.test(code)){ msg(2,'Masukkan 6 digit kode dari email.'); return; }
+      var b=$('pVerify'); b.disabled=true; b.textContent='Memeriksa...';
+      APX.api({action:'otp_verify',code:code}).then(function(r){
+        b.disabled=false; b.innerHTML='Verifikasi &amp; Simpan';
+        if(r&&r.result==='ok'){ clearInterval(rT); pend=null; APX.update({nama:r.nama,email:r.email,wa:r.wa}); fill(r); msg(1,'Profil berhasil diperbarui.',true); }
+        else if(r&&r.result==='wrong') msg(2,'Kode salah.'+(typeof r.left==='number'?' Sisa percobaan: '+r.left+'.':''));
+        else if(r&&r.result==='too_many') msg(2,'Terlalu banyak percobaan. Silakan minta kode baru.');
+        else if(r&&r.result==='expired') msg(2,'Kode sudah kedaluwarsa. Silakan minta kode baru.');
+        else if(r&&r.result==='registered') msg(2,'Email/WhatsApp sudah dipakai member lain.');
+        else msg(2,'Verifikasi gagal. Silakan coba lagi.');
+      }).catch(function(){ b.disabled=false; b.innerHTML='Verifikasi &amp; Simpan'; msg(2,'Gagal terhubung. Periksa koneksi Anda.'); });
+    });
+    function start(){ if(window.APX&&APX.member&&APX.member()) load(); }
+    if(window.APX) start(); else document.addEventListener('apx:ready',start);
+  })();
+  </script>
+</body>
+</html>
