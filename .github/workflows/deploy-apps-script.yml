@@ -67,7 +67,10 @@ jobs:
         run: |
           mkdir build
           printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > build/.clasp.json
-          cd build && clasp pull
+          cd build
+          set +e; clasp pull > ../pull.log 2>&1; rc=$?; set -e
+          cat ../pull.log
+          if [ $rc -ne 0 ]; then echo "::error title=clasp pull gagal::$(tail -n 6 ../pull.log | tr '\n' ' ' | cut -c1-600)"; exit $rc; fi
           echo "File di project:"; ls -1
 
       - name: Sisipkan kode terbaru + nilai rahasia
@@ -80,8 +83,12 @@ jobs:
         if: steps.cek.outputs.ready == 'true'
         working-directory: build
         run: |
-          clasp push --force
-          clasp update-deployment "$DEPLOYMENT_ID" --description "GitHub ${GITHUB_SHA::7}"
+          set +e
+          clasp push --force > ../push.log 2>&1; rc=$?; cat ../push.log
+          if [ $rc -ne 0 ]; then echo "::error title=clasp push gagal::$(tail -n 6 ../push.log | tr '\n' ' ' | cut -c1-600)"; exit $rc; fi
+          clasp update-deployment "$DEPLOYMENT_ID" --description "GitHub ${GITHUB_SHA::7}" > ../dep.log 2>&1; rc=$?; cat ../dep.log
+          if [ $rc -ne 0 ]; then echo "::error title=clasp deploy gagal::$(tail -n 6 ../dep.log | tr '\n' ' ' | cut -c1-600)"; exit $rc; fi
+          set -e
           echo "Deploy selesai: https://script.google.com/macros/s/$DEPLOYMENT_ID/exec"
 
       - name: Bersihkan kredensial
