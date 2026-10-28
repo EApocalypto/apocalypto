@@ -39,7 +39,7 @@
       '<div class="foot-grid">'+
         '<div class="foot-brand">'+
           '<div class="b"><img src="logo.svg" alt="Apocalypto"><b>APOCALYPTO</b></div>'+
-          '<p>Expert Advisor XAUUSD untuk MetaTrader 5. Pendaftaran & aktivasi lisensi resmi di apocalypto.id.</p>'+
+          '<p>Jurnal trading &amp; berbagi. Disiplin dalam trading, murah hati dalam berbagi. Situs resmi di apocalypto.id.</p>'+
         '</div>'+
         '<div class="foot-col"><h4>Menu</h4>'+footLinks+'<a href="daftar.html">Daftar</a></div>'+
         '<div class="foot-col"><h4>Kontak</h4>'+
