@@ -168,5 +168,6 @@
   if(!getMember() && GATED.indexOf(pageOf(location.href))>=0){ openModal(location.href,true); }
 
   // ekspor untuk halaman yang butuh (mis. form)
-  window.APX = { WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember };
+  window.APX = { WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember, url:SCRIPT_URL, key:REG_KEY, ready:backendReady };
+  document.dispatchEvent(new CustomEvent("apx:ready"));
 })();
