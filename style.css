@@ -170,7 +170,7 @@ html.mreg-lock,html.mreg-lock body{overflow:hidden}
 .mreg-x{position:absolute;top:10px;right:12px;width:34px;height:34px;border-radius:9px;border:1px solid var(--line-soft);background:transparent;color:var(--ink-dim);font-size:20px;line-height:1;cursor:pointer}
 .mreg-x:hover{color:var(--ink);background:rgba(231,199,102,.08)}
 .mreg-ic img{width:52px;height:52px;margin-bottom:6px}
-.mreg h2{margin:4px 0 6px;font-size:21px;font-weight:900}
+.mreg h2{margin:4px 0 14px;font-size:21px;font-weight:900}
 .mreg-sub{margin:0 0 18px;color:var(--ink-dim);font-size:13.5px;line-height:1.55}
 .mreg form{text-align:left}
 .mreg label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-dim);margin:12px 0 6px}

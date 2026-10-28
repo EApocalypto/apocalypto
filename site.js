@@ -103,7 +103,6 @@
         '<button type="button" class="mreg-x" aria-label="Tutup">&times;</button>'+
         '<div class="mreg-ic"><img src="logo.svg" alt=""></div>'+
         '<h2 id="mregTitle">Registrasi Member</h2>'+
-        '<p class="mreg-sub">Sekali saja, gratis. Cukup tiga data ini untuk membuka layanan Apocalypto.</p>'+
         '<form id="mregForm" novalidate>'+
           '<label for="m_nama">Nama panggilan</label>'+
           '<input id="m_nama" type="text" autocomplete="nickname" placeholder="Nama panggilan Anda" maxlength="40">'+
@@ -115,7 +114,6 @@
           '<input id="m_wa" type="tel" inputmode="tel" autocomplete="tel" placeholder="Contoh: 0812xxxxxxx" maxlength="20">'+
           '<div class="mreg-err" data-for="m_wa">Masukkan nomor WhatsApp yang valid (min. 9 digit).</div>'+
           '<button type="submit" class="btn-gold mreg-btn" id="mregBtn">Daftar &amp; Lanjutkan</button>'+
-          '<p class="mreg-note">Data Anda hanya dipakai untuk layanan Apocalypto. Kami tidak pernah meminta password trading.</p>'+
         '</form>'+
       '</div>';
     document.body.appendChild(modal);
