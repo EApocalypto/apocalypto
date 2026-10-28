@@ -2333,7 +2333,7 @@ function tangkasFinalize(tgl) {
   var list = [], winners = [], need = done ? 0 : tangkasWinnerCount();
   for (var i = 0; i < rows.length; i++) {
     if (disp[i][0] !== tgl) continue;
-    var e = { r: i + 2, no: Number(rows[i][2]), label: Number(rows[i][3]), nama: String(rows[i][4]), email: String(rows[i][5]).toLowerCase(), win: rows[i][10] === true };
+    var e = { r: i + 2, no: Number(rows[i][2]), label: Number(rows[i][3]), nama: String(rows[i][4]), email: String(rows[i][5]).toLowerCase(), wa: normPhone(String(rows[i][6])), win: rows[i][10] === true };
     if (!done && need > 0 && e.label === day) { e.win = true; need--; sh.getRange(e.r, 11).setValue(true); }
     list.push(e);
     if (e.win) winners.push(e);
@@ -2341,6 +2341,17 @@ function tangkasFinalize(tgl) {
   if (!done) props.setProperty('TANGKAS_FINAL_' + tgl, '1');
   return { list: list, winners: winners };
 }
+// budi.santoso@gmail.com -> bu**********@gm***.com
+function maskEmail(e) {
+  e = String(e || ''); var at = e.indexOf('@'); if (at < 1) return '***';
+  var u = e.slice(0, at), d = e.slice(at + 1), dot = d.lastIndexOf('.');
+  var dn = dot > 0 ? d.slice(0, dot) : d, tld = dot > 0 ? d.slice(dot) : '';
+  var mu = u.slice(0, Math.min(2, u.length)) + new Array(Math.max(u.length - 2, 1) + 1).join('*');
+  var md = dn.slice(0, Math.min(2, dn.length)) + new Array(Math.max(dn.length - 2, 1) + 1).join('*');
+  return mu + '@' + md + tld;
+}
+// 81234567890 -> ********7890
+function maskWa(w) { w = String(w || '').replace(/\D/g, ''); return w.length <= 4 ? w : new Array(w.length - 3).join('*') + w.slice(-4); }
 function maskNama(n) { n = String(n || '').trim(); return n.length <= 2 ? n : n.slice(0, 2) + new Array(Math.min(n.length - 2, 4) + 1).join('*'); }
 
 // Status + pengumuman untuk halaman TANGKAS.
@@ -2374,7 +2385,7 @@ function handleTangkasInfo(p) {
       date: annDate,
       day: Number(annDate.slice(8, 10)),
       total: fin.list.length,
-      winners: fin.winners.map(function (w) { return { nama: maskNama(w.nama), no: w.no, label: w.label }; }),
+      winners: fin.winners.map(function (w) { return { nama: w.nama, email: maskEmail(w.email), wa: maskWa(w.wa), no: w.no, label: w.label }; }),
       me: mine ? { no: mine.no, label: mine.label, win: mine.win } : null
     }
   });
