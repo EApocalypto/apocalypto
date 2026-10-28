@@ -140,7 +140,6 @@
           </svg>
           <div class="mid"><div class="t" id="mTime">--:--:--</div><div class="l" id="mLbl">menuju 21:00 WIB</div></div>
         </div>
-        <p class="tk-note" id="mNote"></p>
         <button type="button" class="btn-gold tk-go" id="mGo" disabled>Ikutan dong&hellip;</button>
         <div class="tk-wait" id="mWait">&#10003; Anda sudah ikut hari ini<small>Tunggu sampai system selesai pukul 21:00 WIB. Pemenang langsung diumumkan di halaman ini.</small></div>
         <div class="tk-err" id="mErr"></div>
@@ -193,19 +192,16 @@
         var oa=(info.status.openedAt||'20:00').split(':'), start=Number(oa[0])*3600+Number(oa[1])*60, total=Math.max(60,close-start), left=close-now;
         $('mTime').textContent=fmtHMS(left); $('mLbl').textContent='sisa waktu · tutup 21:00 WIB';
         ring.style.strokeDashoffset=(314.16*(1-left/total)).toFixed(2);
-        $('mNote').textContent='';
       } else if(inWin){
         badge.className='tk-badge off'; badge.textContent='System Belum Aktif';
-        $('mTime').textContent='--:--:--'; $('mLbl').textContent='aktif acak sebelum 21:00';
+        $('mTime').textContent='--:--:--'; $('mLbl').textContent='';
         ring.style.strokeDashoffset='314.16';
-        $('mNote').textContent='System aktif otomatis pada waktu acak antara pukul 20:00–21:00 WIB. Tetap di halaman ini.';
       } else {
         var done = now>=close;
         badge.className = done ? 'tk-badge done' : 'tk-badge off';
         badge.textContent = done ? 'System Selesai' : 'System Belum Aktif';
-        $('mTime').textContent = done ? '00:00:00' : '--:--:--'; $('mLbl').textContent = done ? 'system selesai' : 'aktif acak 20:00–21:00';
+        $('mTime').textContent = done ? '00:00:00' : '--:--:--'; $('mLbl').textContent = '';
         ring.style.strokeDashoffset = done ? '314.16' : '314.16';
-        $('mNote').textContent = done ? 'TANGKAS hari ini sudah selesai. Sampai jumpa besok pukul 20:00–21:00 WIB.' : 'System aktif setiap hari pada waktu acak antara pukul 20:00–21:00 WIB.';
       }
       var joined = info.joinedToday && inWin;
       go.style.display = joined ? 'none' : ''; $('mWait').style.display = joined ? 'block' : 'none';
