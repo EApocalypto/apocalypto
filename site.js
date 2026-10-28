@@ -141,7 +141,7 @@
     q("#mregLogin").addEventListener("submit", onLoginSend);
     q("#m_lemail").addEventListener("input", function(){ showE("m_lemail",false); msg(3,""); });
     [].forEach.call(q("#mregTabs").querySelectorAll("button"), function(b){ b.addEventListener("click", function(){ mode=b.getAttribute("data-mode"); step(1); }); });
-    modal.addEventListener("click", function(e){ var sw=e.target.closest && e.target.closest("[data-switch]"); if(sw){ e.preventDefault(); mode=sw.getAttribute("data-switch"); step(1); } });
+    modal.addEventListener("click", function(e){ var sw=e.target.closest && e.target.closest("[data-switch]"); if(sw){ e.preventDefault(); mode=sw.getAttribute("data-switch"); if(sw.getAttribute("data-email") && mode==="login") q("#m_lemail").value=sw.getAttribute("data-email"); msg(1,""); msg(3,""); step(1); } });
     q("#mregOtp").addEventListener("submit", onVerify);
     q("#mregResend").addEventListener("click", function(){ if(pending) sendOtp(true); });
     q("#mregBack").addEventListener("click", function(){ step(1); });
@@ -207,6 +207,11 @@
     api({ action:"otp_send", mode:pending.mode, nama:pending.nama||"", email:pending.email, wa:pending.wa||"", halaman:pageOf(target||location.href) })
       .then(function(res){
         busy(first,false,"Kirim Kode OTP");
+        if(res && res.result==="registered"){
+          var what = res.by==="wa" ? "Nomor WhatsApp ini" : res.by==="both" ? "Email dan nomor WhatsApp ini" : "Email ini";
+          var em = pending.email; pending=null;
+          msg(m1, what+' sudah terdaftar. Silakan <a href="#" data-switch="login" data-email="'+esc(em)+'">Masuk</a>.', false, true); return;
+        }
         if(res && res.result==="not_found"){
           pending=null;
           msg(m1,'Email ini belum terdaftar. <a href="#" data-switch="join">Gabung sekarang</a>.',false,true); return;
