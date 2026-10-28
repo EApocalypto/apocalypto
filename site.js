@@ -16,7 +16,9 @@
 
   var cur = document.body.getAttribute("data-page") || "";
 
-  var navItems = MENU.map(function(m){
+  // Menu atas sengaja ringkas: Beranda + tombol Gabung. Halaman lain tetap ada di footer.
+  var NAV = [ { href:"index.html", label:"Beranda", key:"beranda" } ];
+  var navItems = NAV.map(function(m){
     return '<a href="'+m.href+'"'+(m.key===cur?' class="active"':'')+'>'+m.label+'</a>';
   }).join("");
 
@@ -29,7 +31,7 @@
       '<button class="nav-toggle" id="navToggle" aria-label="Buka menu" aria-expanded="false">'+
         '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>'+
       '<nav class="nav-links" id="navLinks">'+navItems+
-        '<a class="nav-cta" href="daftar.html">Daftar Sekarang</a></nav>'+
+        '<a class="nav-cta" href="index.html#layanan" data-join>Gabung</a></nav>'+
     '</div></header>';
 
   var footLinks = MENU.map(function(m){ return '<a href="'+m.href+'">'+m.label+'</a>'; }).join("");
@@ -161,6 +163,7 @@
       document.documentElement.classList.remove("mreg-lock"); modal.classList.remove("show");
       document.dispatchEvent(new CustomEvent("apx:member", { detail:m }));
       if(target && pageOf(target)!==pageOf(location.href)) location.href=target;
+      else if(target && target.indexOf("#")>=0){ var s=document.querySelector(target.slice(target.indexOf("#"))); if(s) s.scrollIntoView({behavior:"smooth"}); }
       b.disabled=false; b.innerHTML="Daftar &amp; Lanjutkan";
     });
   }
@@ -168,7 +171,7 @@
   // klik ke halaman berpagar -> minta registrasi dulu
   document.addEventListener("click", function(e){
     var a=e.target.closest && e.target.closest("a[href]"); if(!a) return;
-    if(!getMember() && isGated(a.href)){ e.preventDefault(); openModal(a.href,false); }
+    if(!getMember() && (isGated(a.href) || a.hasAttribute("data-join"))){ e.preventDefault(); openModal(a.href,false); }
   });
   // buka langsung halaman berpagar (mis. dari link yang dibagikan) -> registrasi dulu
   if(!getMember() && GATED.indexOf(pageOf(location.href))>=0){ openModal(location.href,true); }
