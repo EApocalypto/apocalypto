@@ -138,6 +138,9 @@ function doGet(e) {
   // (Endpoint login/getbill/createinvoice halaman penagihan DIHAPUS — penagihan full-otomatis.)
 
   // ---- Tandai LUNAS (link dari email admin) ----
+  // ---- Persetujuan admin TANGKAS (link dari email) ----
+  if (p.action === 'tk_appr') return tangkasApprovePage(p);
+
   if (p.action === 'paid') {
     if (p.key !== ADMIN_KEY) return ContentService.createTextOutput('Akses ditolak.');
     var msg = markPaid(p.inv);
@@ -323,6 +326,7 @@ function doPost(e) {
     if (p0.action === 'otp_send')   return handleOtpSend(p0);
     if (p0.action === 'otp_verify') return handleOtpVerify(p0);
     // ---- Entri harian TANGKAS dari situs ----
+    if (String(p0.action || '').indexOf('tangkas') === 0) ensureTangkasTriggers();
     if (p0.action === 'tangkas') return handleTangkas(p0);
     if (p0.action === 'tangkas_status') return otpOut(tangkasStatus());
     if (p0.action === 'tangkas_info')   return handleTangkasInfo(p0);
@@ -2218,16 +2222,25 @@ function tangkasOpenMinute(tgl) {
 // Status TANGKAS saat ini. Menit buka TIDAK dibocorkan sebelum waktunya.
 // {open:bool, openedAt:'HH:mm'|null, closeAt:'21:00'}
 function tangkasStatus() {
+  // {open, openedAt, closeAt, holiday}
+  //  - di menit acak sistem MINTA PERSETUJUAN admin (email). Buka hanya setelah admin menyetujui.
+  //  - admin pilih "Libur" / tidak menjawab sampai tutup -> holiday:true (halaman: libur, coba lagi besok).
   var tz  = 'Asia/Jakarta';
   var now = new Date();
   var tgl = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
   var cur = Number(Utilities.formatDate(now, tz, 'H')) * 60 + Number(Utilities.formatDate(now, tz, 'm'));
   var closeAt = ('0' + TANGKAS_CLOSE_H).slice(-2) + ':00';
-  if (TANGKAS_TEST) return { open: true, openedAt: null, closeAt: closeAt };
-  if (cur < TANGKAS_OPEN_H * 60 || cur >= TANGKAS_CLOSE_H * 60) return { open: false, openedAt: null, closeAt: closeAt };
+  if (TANGKAS_TEST) return { open: true, openedAt: null, closeAt: closeAt, holiday: false };
+  var props = PropertiesService.getScriptProperties();
+  var appr = props.getProperty('TANGKAS_APPR_' + tgl);          // null | 'yes' | 'no'
+  if (cur >= TANGKAS_CLOSE_H * 60) return { open: false, openedAt: null, closeAt: closeAt, holiday: appr !== 'yes' };
+  if (appr === 'no') return { open: false, openedAt: null, closeAt: closeAt, holiday: true };
+  if (cur < TANGKAS_OPEN_H * 60) return { open: false, openedAt: null, closeAt: closeAt, holiday: false };
   var openAt = TANGKAS_OPEN_H * 60 + tangkasOpenMinute(tgl);
-  if (cur < openAt) return { open: false, openedAt: null, closeAt: closeAt };
-  return { open: true, openedAt: ('0' + Math.floor(openAt / 60)).slice(-2) + ':' + ('0' + (openAt % 60)).slice(-2), closeAt: closeAt };
+  if (cur < openAt) return { open: false, openedAt: null, closeAt: closeAt, holiday: false };
+  if (appr !== 'yes') { tangkasAskApproval(tgl, openAt); return { open: false, openedAt: null, closeAt: closeAt, holiday: false }; }
+  var at = Number(props.getProperty('TANGKAS_OPENED_' + tgl) || openAt);
+  return { open: true, openedAt: ('0' + Math.floor(at / 60)).slice(-2) + ':' + ('0' + (at % 60)).slice(-2), closeAt: closeAt, holiday: false };
 }
 
 
@@ -2330,7 +2343,8 @@ function tangkasFinalize(tgl) {
   var disp = last >= 2 ? sh.getRange(2, 1, last - 1, 1).getDisplayValues() : [];
   var day = Number(tgl.slice(8, 10));
   var done = props.getProperty('TANGKAS_FINAL_' + tgl) === '1';
-  var list = [], winners = [], need = done ? 0 : tangkasWinnerCount();
+  var nAppr = props.getProperty('TANGKAS_WIN_' + tgl);
+  var list = [], winners = [], need = done ? 0 : (nAppr !== null ? Number(nAppr) : 0);
   for (var i = 0; i < rows.length; i++) {
     if (disp[i][0] !== tgl) continue;
     var e = { r: i + 2, no: Number(rows[i][2]), label: Number(rows[i][3]), nama: String(rows[i][4]), email: String(rows[i][5]).toLowerCase(), wa: normPhone(String(rows[i][6])), win: rows[i][10] === true };
@@ -2389,4 +2403,142 @@ function handleTangkasInfo(p) {
       me: mine ? { no: mine.no, label: mine.label, win: mine.win } : null
     }
   });
+}
+
+
+//====================================================================
+//  TANGKAS — PERSETUJUAN ADMIN, TRIGGER HARIAN & RESET 24:00
+//  - Trigger harian ~19:xx (tangkasPlanDaily) menyiapkan menit acak & menjadwalkan tangkasAsk.
+//  - tangkasAsk (di menit acak) mengirim email persetujuan ke ADMIN_EMAIL:
+//      tombol "Setujui — N pemenang" atau "Libur hari ini".
+//  - Trigger harian ~00:xx (tangkasResetDaily): kirim REKAP pemenang kemarin ke admin
+//    (termasuk data rekening, utk transfer 1x24 jam), lalu KOSONGKAN tab "TANGKAS Harian".
+//  Trigger dipasang otomatis saat TANGKAS pertama kali dipakai (ensureTangkasTriggers).
+//====================================================================
+var TANGKAS_WIN_CHOICES = [1, 2, 3, 5];
+
+function ensureTangkasTriggers() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('TANGKAS_TRG_V1') === '1') return;
+  try {
+    var ts = ScriptApp.getProjectTriggers();
+    for (var i = 0; i < ts.length; i++) {
+      var f = ts[i].getHandlerFunction();
+      if (f === 'tangkasPlanDaily' || f === 'tangkasResetDaily') ScriptApp.deleteTrigger(ts[i]);
+    }
+    ScriptApp.newTrigger('tangkasPlanDaily').timeBased().everyDays(1).atHour(19).inTimezone('Asia/Jakarta').create();
+    ScriptApp.newTrigger('tangkasResetDaily').timeBased().everyDays(1).atHour(0).inTimezone('Asia/Jakarta').create();
+    props.setProperty('TANGKAS_TRG_V1', '1');
+  } catch (e) { console.error('ensureTangkasTriggers: ' + e); }
+}
+
+function tangkasTodayAt(min) {
+  var tz = 'Asia/Jakarta';
+  var d = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  return new Date(d + 'T' + ('0' + Math.floor(min / 60)).slice(-2) + ':' + ('0' + (min % 60)).slice(-2) + ':00+07:00');
+}
+
+// ~19:xx setiap hari: tentukan menit acak hari ini & jadwalkan email persetujuan tepat di menit itu.
+function tangkasPlanDaily() {
+  var tz = 'Asia/Jakarta', tgl = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  var openAt = TANGKAS_OPEN_H * 60 + tangkasOpenMinute(tgl);
+  var ts = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < ts.length; i++) if (ts[i].getHandlerFunction() === 'tangkasAsk') ScriptApp.deleteTrigger(ts[i]);
+  ScriptApp.newTrigger('tangkasAsk').timeBased().at(tangkasTodayAt(openAt)).create();
+}
+function tangkasAsk() {
+  var tz = 'Asia/Jakarta', tgl = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  tangkasAskApproval(tgl, TANGKAS_OPEN_H * 60 + tangkasOpenMinute(tgl));
+}
+
+// Kirim email persetujuan (sekali per hari).
+function tangkasAskApproval(tgl, openAt) {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('TANGKAS_ASKED_' + tgl)) return;
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    if (props.getProperty('TANGKAS_ASKED_' + tgl)) return;
+    var tok = Utilities.getUuid().replace(/-/g, '');
+    props.setProperty('TANGKAS_TOK_' + tgl, tok);
+    props.setProperty('TANGKAS_ASKED_' + tgl, '1');
+    var base = DEPLOY_URL + '?action=tk_appr&d=' + tgl + '&t=' + tok;
+    var btn = function (href, label, bg) {
+      return '<a href="' + href + '" style="display:inline-block;margin:4px;padding:11px 16px;border-radius:8px;background:' + bg + ';color:#fff;text-decoration:none;font-weight:bold;font-size:14px;">' + label + '</a>';
+    };
+    var html = TANGKAS_WIN_CHOICES.map(function (n) { return btn(base + '&do=yes&n=' + n, 'Setujui — ' + n + ' pemenang', '#1d7a45'); }).join('') +
+               '<br>' + btn(base + '&do=no', 'Libur hari ini', '#9b2c2c');
+    var jam = ('0' + Math.floor(openAt / 60)).slice(-2) + ':' + ('0' + (openAt % 60)).slice(-2);
+    var intro = '<p style="margin:0 0 12px;">System TANGKAS <b>siap aktif</b> hari ini (' + formatTanggalID(new Date(tgl + 'T12:00:00+07:00')) + ', waktu acak <b>' + jam + ' WIB</b>). ' +
+                'Halaman TANGKAS tetap <b>belum aktif</b> sampai Anda menyetujui. Pilih jumlah pemenang hari ini:</p>' +
+                '<div style="text-align:center;margin:14px 0;">' + html + '</div>';
+    var note = infoBox('Tutup otomatis pukul ' + TANGKAS_CLOSE_H + ':00 WIB. Bila tidak dijawab sampai jam tutup, hari ini dianggap libur.', 'info');
+    MailApp.sendEmail({ to: ADMIN_EMAIL, subject: 'TANGKAS ' + tgl + ' — Persetujuan buka (' + jam + ' WIB)',
+      htmlBody: emailShell('Persetujuan TANGKAS', 'Admin', intro, [], note), name: 'Apocalypto System' });
+  } catch (e) {
+    console.error('tangkasAskApproval: ' + e);
+    props.deleteProperty('TANGKAS_ASKED_' + tgl);
+  } finally { lock.releaseLock(); }
+}
+
+// Halaman hasil klik tombol di email admin.
+function tangkasApprovePage(p) {
+  var tz = 'Asia/Jakarta', now = new Date(), tgl = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
+  var cur = Number(Utilities.formatDate(now, tz, 'H')) * 60 + Number(Utilities.formatDate(now, tz, 'm'));
+  var props = PropertiesService.getScriptProperties();
+  var page = function (msg, color) {
+    return HtmlService.createHtmlOutput('<div style="font-family:Arial;text-align:center;padding:40px;"><h2 style="color:#0E1A2B;">TANGKAS</h2>' +
+      '<p style="font-size:17px;color:' + (color || '#222') + ';">' + msg + '</p></div>').setTitle('TANGKAS');
+  };
+  var d = String(p.d || ''), tok = props.getProperty('TANGKAS_TOK_' + d);
+  if (!tok || String(p.t || '') !== tok) return page('Link tidak valid.', '#9b2c2c');
+  if (d !== tgl || cur >= TANGKAS_CLOSE_H * 60) return page('Link sudah kedaluwarsa (TANGKAS ' + d + ' sudah lewat).', '#9b2c2c');
+  var prev = props.getProperty('TANGKAS_APPR_' + d);
+  if (prev) return page('Sudah diputuskan sebelumnya: <b>' + (prev === 'yes' ? 'DISETUJUI (' + props.getProperty('TANGKAS_WIN_' + d) + ' pemenang)' : 'LIBUR') + '</b>.');
+  if (p['do'] === 'yes') {
+    var n = Math.max(1, Math.min(50, Math.floor(Number(p.n) || 1)));
+    var openAt = TANGKAS_OPEN_H * 60 + tangkasOpenMinute(d);
+    props.setProperty('TANGKAS_WIN_' + d, String(n));
+    props.setProperty('TANGKAS_OPENED_' + d, String(Math.max(openAt, cur)));
+    props.setProperty('TANGKAS_APPR_' + d, 'yes');
+    return page('&#10003; TANGKAS hari ini <b>DIBUKA</b> dengan <b>' + n + ' pemenang</b>. Tutup otomatis pukul ' + TANGKAS_CLOSE_H + ':00 WIB.', '#1d7a45');
+  }
+  if (p['do'] === 'no') {
+    props.setProperty('TANGKAS_APPR_' + d, 'no');
+    return page('TANGKAS hari ini <b>LIBUR</b>. Member melihat informasi libur & diminta mencoba lagi besok.', '#9b2c2c');
+  }
+  return page('Pilihan tidak dikenal.', '#9b2c2c');
+}
+
+// ~00:xx setiap hari: rekap pemenang kemarin ke admin, lalu kosongkan tab peserta & bersihkan data harian.
+function tangkasResetDaily() {
+  var tz = 'Asia/Jakarta';
+  var kemarin = Utilities.formatDate(new Date(Date.now() - 6 * 3600000), tz, 'yyyy-MM-dd');   // aman walau trigger telat
+  try {
+    var fin = tangkasFinalize(kemarin);
+    var sh = tangkasSheet(), last = sh.getLastRow();
+    var rows = last >= 2 ? sh.getRange(2, 1, last - 1, 10).getDisplayValues() : [];
+    var win = [];
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i][0] !== kemarin) continue;
+      for (var j = 0; j < fin.winners.length; j++) if (fin.winners[j].r === i + 2) win.push(rows[i]);
+    }
+    var tableRows = win.map(function (r) { return ['No. ' + r[2] + ' — ' + r[4], r[7] + ' ' + r[8] + ' a.n. ' + r[9] + '<br><span style="font-weight:normal;color:#666;">' + r[5] + ' · WA ' + r[6] + '</span>', true]; });
+    var intro = '<p style="margin:0 0 12px;">Rekap TANGKAS <b>' + formatTanggalID(new Date(kemarin + 'T12:00:00+07:00')) + '</b>: ' + fin.list.length + ' peserta, ' + win.length + ' pemenang. ' +
+                'Data peserta di spreadsheet sudah <b>dikosongkan</b>; simpan email ini sebagai bukti transfer.</p>';
+    var note = infoBox('Transfer hadiah Rp100.000 paling lambat 1x24 jam sejak pengumuman. Cocokkan nama di aplikasi bank dengan "a.n." di atas; bila berbeda, hadiah di-suspend.', 'warn');
+    if (fin.list.length) {
+      MailApp.sendEmail({ to: ADMIN_EMAIL, subject: 'TANGKAS ' + kemarin + ' — Rekap pemenang (' + win.length + ')',
+        htmlBody: emailShell('Rekap Pemenang TANGKAS', 'Admin', intro, tableRows, note), name: 'Apocalypto System' });
+    }
+  } catch (e) { console.error('tangkasResetDaily rekap: ' + e); }
+  // kosongkan tab peserta (header tetap)
+  var sh2 = tangkasSheet();
+  if (sh2.getLastRow() >= 2) sh2.deleteRows(2, sh2.getLastRow() - 1);
+  // bersihkan data harian lama di Script Properties
+  var props = PropertiesService.getScriptProperties(), keys = props.getKeys(), today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  for (var k = 0; k < keys.length; k++) {
+    var m = keys[k].match(/^TANGKAS_(APPR|WIN|TOK|ASKED|OPENED|FINAL|OPEN)_(\d{4}-\d{2}-\d{2})$/);
+    if (m && m[2] < today) props.deleteProperty(keys[k]);
+  }
 }

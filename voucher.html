@@ -83,7 +83,7 @@
   <div id="siteHeader"></div>
 
   <main class="container tk">
-    <a class="tk-back" href="index.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Kembali</a>
+    <a class="tk-back" href="layanan.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Kembali</a>
 
     <div class="tk-head">
       <div class="eb">Tanggal &amp; Kasih Surprise</div>
@@ -196,7 +196,12 @@
       var t=wib(), now=t.h*3600+t.m*60+t.s, close=CLOSE_H*3600;
       var inWin = now>=OPEN_H*3600 && now<close, open = inWin && info.status && info.status.open;
       var badge=$('mBadge'), ring=$('mRing'), go=$('mGo');
-      if(open){
+      var holiday = info.status && info.status.holiday;
+      if(holiday){
+        badge.className='tk-badge done'; badge.textContent='Libur';
+        $('mTime').textContent='--:--:--'; $('mLbl').textContent='';
+        ring.style.strokeDashoffset='314.16';
+      } else if(open){
         badge.className='tk-badge on'; badge.textContent='System Aktif';
         var oa=(info.status.openedAt||'20:00').split(':'), start=Number(oa[0])*3600+Number(oa[1])*60, total=Math.max(60,close-start), left=close-now;
         $('mTime').textContent=fmtHMS(left); $('mLbl').textContent='sisa waktu · tutup 21:00 WIB';
@@ -214,8 +219,8 @@
       }
       var joined = info.joinedToday && inWin;
       go.style.display = joined ? 'none' : ''; $('mWait').style.display = joined ? 'block' : 'none';
-      go.disabled = !open || joining;
-      var needPoll = inWin && !open;
+      go.disabled = !open || joining || holiday;
+      var needPoll = inWin && !open && !holiday;
       if(needPoll && !polling){ polling=setInterval(load, POLL_MS); }
       if(!needPoll && polling){ clearInterval(polling); polling=null; }
       if(now>=close && !fetchedAfterClose && Date.now()-lastFetch>3000){ fetchedAfterClose=true; setTimeout(load, 2500); }
@@ -226,11 +231,13 @@
     function renderAnn(){
       var a=info && info.announce, box=$('mAnn'), t=wib(), now=t.h*3600+t.m*60+t.s;
       box.style.display='block';
-      var closedToday = now>=CLOSE_H*3600 && a && a.date===t.ymd;
+      var holiday = info.status && info.status.holiday;
+      var closedToday = !holiday && now>=CLOSE_H*3600 && a && a.date===t.ymd;
       $('aWait').hidden = closedToday; $('aRes').hidden = !closedToday;
       if(!closedToday){
         var active = now>=OPEN_H*3600 && now<CLOSE_H*3600 && info.status && info.status.open;
-        $('aWaitTxt').textContent = active ? 'Sambil menunggu yang lain ikutan… boleh sambil ngopi.' : 'Sambil menunggu system aktif… boleh sambil ngopi.';
+        $('aWaitTxt').textContent = holiday ? 'Hari ini system tidak aktif / libur. Silakan coba lagi esok hari.'
+          : active ? 'Sambil menunggu yang lain ikutan… boleh sambil ngopi.' : 'Sambil menunggu system aktif… boleh sambil ngopi.';
         return;
       }
       $('aSub').textContent=tglID(a.date)+' · nomor urut '+a.day+' · '+a.total+' peserta';
