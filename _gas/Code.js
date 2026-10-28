@@ -1811,6 +1811,7 @@ function sendPaidEmail(row){
 //  Jalankan dari menu "Apocalypto -> Build Profiling" atau Run buildProfiling().
 //====================================================================
 function onOpen(){
+  try{ webMemberSheet(); } catch(e){}      // pastikan kolom tambahan Registrasi Web (Bank..Blacklist) ada
   try{
     SpreadsheetApp.getUi().createMenu('Apocalypto')
       .addItem('🔎 Build Profiling', 'buildProfiling')
