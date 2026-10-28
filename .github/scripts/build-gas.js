@@ -17,6 +17,8 @@ if (/__GAS_[A-Z_]+__/.test(code)) { console.error('::error::Masih ada placeholde
 const files = fs.readdirSync(dir).filter(f => /\.(js|gs)$/.test(f));
 const main = files.find(f => /function\s+doGet\s*\(/.test(fs.readFileSync(path.join(dir, f), 'utf8')));
 const target = main || 'Code.js';
+const oldLines = main ? fs.readFileSync(path.join(dir, main), 'utf8').split('\n').length : 0;
 fs.writeFileSync(path.join(dir, target), code);
+console.log('Jumlah baris kode lama: ' + oldLines + ' -> baru: ' + code.split('\n').length);
 console.log('Kode utama ditulis ke: ' + target + (main ? ' (menggantikan file lama)' : ' (file baru)'));
 console.log('File lain yang dibiarkan: ' + (files.filter(f => f !== target).join(', ') || '-'));
