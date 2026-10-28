@@ -26,7 +26,7 @@
   }).join("");
   var cta = loggedIn
     ? '<a class="nav-cta nav-out" href="#" id="apxLogout">Log Out</a>'
-    : '<a class="nav-cta" href="layanan.html">Gabung</a>';
+    : '<a class="nav-login" href="layanan.html" data-login>Masuk</a><a class="nav-cta" href="layanan.html">Gabung</a>';
 
   var header =
     '<div class="topline"></div>'+
@@ -86,7 +86,7 @@
   function pageOf(href){ try{ var u=new URL(href, location.href); if(u.origin!==location.origin) return ""; return (u.pathname.split("/").pop()||"index.html"); }catch(_){ return ""; } }
   function isGated(href){ return GATED.indexOf(pageOf(href))>=0; }
 
-  var modal=null, target=null, forced=false, pending=null, timer=null;
+  var modal=null, target=null, forced=false, pending=null, timer=null, mode="join";
   function q(sel){ return modal.querySelector(sel); }
   function buildModal(){
     if(modal) return modal;
@@ -97,6 +97,18 @@
         '<button type="button" class="mreg-x" aria-label="Tutup">&times;</button>'+
         '<div class="mreg-ic"><img src="logo.svg" alt=""></div>'+
         '<h2 id="mregTitle">Gabung</h2>'+
+        '<div class="mreg-tabs" id="mregTabs" role="tablist">'+
+          '<button type="button" role="tab" data-mode="join" class="on">Gabung</button>'+
+          '<button type="button" role="tab" data-mode="login">Masuk</button>'+
+        '</div>'+
+        '<form id="mregLogin" novalidate style="display:none">'+
+          '<p class="mreg-info">Sudah pernah Gabung? Masukkan email Anda, kami kirim kode OTP.</p>'+
+          '<label for="m_lemail">Email</label>'+
+          '<input id="m_lemail" type="email" autocomplete="email" placeholder="nama@email.com" maxlength="80">'+
+          '<div class="mreg-err" data-for="m_lemail">Masukkan email yang valid.</div>'+
+          '<div class="mreg-msg" id="mregMsg3"></div>'+
+          '<button type="submit" class="btn-gold mreg-btn" id="mregLBtn">Kirim Kode OTP</button>'+
+        '</form>'+
         '<form id="mregForm" novalidate>'+
           '<label for="m_nama">Nama panggilan</label>'+
           '<input id="m_nama" type="text" autocomplete="nickname" placeholder="Nama panggilan Anda" maxlength="40">'+
@@ -127,18 +139,27 @@
     ["m_nama","m_email","m_wa"].forEach(function(id){ q("#"+id).addEventListener("input", function(){ showE(id,false); msg(1,""); }); });
     q("#m_otp").addEventListener("input", function(){ this.value=this.value.replace(/\D/g,"").slice(0,6); msg(2,""); });
     q("#mregForm").addEventListener("submit", onSend);
+    q("#mregLogin").addEventListener("submit", onLoginSend);
+    q("#m_lemail").addEventListener("input", function(){ showE("m_lemail",false); msg(3,""); });
+    [].forEach.call(q("#mregTabs").querySelectorAll("button"), function(b){ b.addEventListener("click", function(){ mode=b.getAttribute("data-mode"); step(1); }); });
+    modal.addEventListener("click", function(e){ var sw=e.target.closest && e.target.closest("[data-switch]"); if(sw){ e.preventDefault(); mode=sw.getAttribute("data-switch"); step(1); } });
     q("#mregOtp").addEventListener("submit", onVerify);
     q("#mregResend").addEventListener("click", function(){ if(pending) sendOtp(true); });
     q("#mregBack").addEventListener("click", function(){ step(1); });
     return modal;
   }
   function showE(id,on){ var i=q("#"+id), m=q('.mreg-err[data-for="'+id+'"]'); if(i) i.classList.toggle("err",on); if(m) m.classList.toggle("show",on); }
-  function msg(n,text,ok){ var el=q("#mregMsg"+n); el.textContent=text||""; el.className="mreg-msg"+(text?" show":"")+(ok?" ok":""); }
+  function msg(n,text,ok,html){ var el=q("#mregMsg"+n); if(html) el.innerHTML=text; else el.textContent=text||""; el.className="mreg-msg"+(text?" show":"")+(ok?" ok":""); }
   function step(n){
-    q("#mregForm").style.display = n===1 ? "" : "none";
-    q("#mregOtp").style.display  = n===2 ? "" : "none";
-    q("#mregTitle").textContent  = n===1 ? "Gabung" : "Masukkan Kode OTP";
-    setTimeout(function(){ var f=q(n===1?"#m_nama":"#m_otp"); if(f) f.focus(); }, 60);
+    var login = mode==="login";
+    q("#mregForm").style.display  = (n===1 && !login) ? "" : "none";
+    q("#mregLogin").style.display = (n===1 &&  login) ? "" : "none";
+    q("#mregOtp").style.display   = n===2 ? "" : "none";
+    q("#mregTabs").style.display  = n===1 ? "" : "none";
+    [].forEach.call(q("#mregTabs").querySelectorAll("button"), function(b){ var on=b.getAttribute("data-mode")===mode; b.classList.toggle("on",on); b.setAttribute("aria-selected",on?"true":"false"); });
+    q("#mregTitle").textContent = n===2 ? "Masukkan Kode OTP" : (login ? "Masuk" : "Gabung");
+    q("#mregBack").textContent  = login ? "Ganti email" : "Ganti data";
+    setTimeout(function(){ var f=q(n===2 ? "#m_otp" : (login ? "#m_lemail" : "#m_nama")); if(f) f.focus(); }, 60);
   }
   function countdown(sec){
     var b=q("#mregResend"); clearInterval(timer); b.disabled=true;
@@ -146,8 +167,9 @@
       b.textContent="Kirim ulang kode ("+sec+"s)"; sec--; })();
     timer=setInterval(function(){ if(sec<=0){ clearInterval(timer); b.disabled=false; b.textContent="Kirim ulang kode"; return; } b.textContent="Kirim ulang kode ("+sec+"s)"; sec--; },1000);
   }
-  function openModal(href, mustStay){
+  function openModal(href, mustStay, asLogin){
     buildModal(); target=href; forced=!!mustStay;
+    if(!pending) mode = asLogin ? "login" : "join";
     q(".mreg-x").textContent = forced ? "\u2190" : "\u00d7";
     q(".mreg-x").setAttribute("aria-label", forced ? "Kembali ke beranda" : "Tutup");
     step(pending ? 2 : 1);
@@ -167,16 +189,28 @@
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ showE("m_email",true); ok=false; }
     if(wa.replace(/\D/g,"").length<9){ showE("m_wa",true); ok=false; }
     if(!ok) return;
-    pending={ nama:nama, email:email, wa:wa };
+    pending={ nama:nama, email:email, wa:wa, mode:"join" };
+    sendOtp(false);
+  }
+  function onLoginSend(e){
+    e.preventDefault();
+    var email=q("#m_lemail").value.trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ showE("m_lemail",true); return; }
+    pending={ email:email, mode:"login" };
     sendOtp(false);
   }
   function sendOtp(isResend){
     if(!backendReady()){ msg(1,"Layanan belum tersambung. Silakan hubungi admin."); return; }
-    var bid = isResend ? "mregResend" : "mregBtn";
+    var first = pending.mode==="login" ? "mregLBtn" : "mregBtn", m1 = pending.mode==="login" ? 3 : 1;
+    var bid = isResend ? "mregResend" : first;
     busy(bid,true, isResend ? "Mengirim..." : "Mengirim kode...");
-    api({ action:"otp_send", nama:pending.nama, email:pending.email, wa:pending.wa, halaman:pageOf(target||location.href) })
+    api({ action:"otp_send", mode:pending.mode, nama:pending.nama||"", email:pending.email, wa:pending.wa||"", halaman:pageOf(target||location.href) })
       .then(function(res){
-        busy("mregBtn",false,"Kirim Kode OTP");
+        busy(first,false,"Kirim Kode OTP");
+        if(res && res.result==="not_found"){
+          pending=null;
+          msg(m1,'Email ini belum terdaftar. <a href="#" data-switch="join">Gabung sekarang</a>.',false,true); return;
+        }
         if(res && res.result==="sent"){
           q("#mregSentTo").innerHTML = 'Kode 6 digit telah dikirim ke <b>'+esc(pending.email)+'</b>. Cek juga folder Spam/Promosi.';
           q("#m_otp").value=""; step(2); countdown(res.wait||RESEND_SEC);
@@ -185,14 +219,14 @@
           step(2); countdown(res.wait||RESEND_SEC);
           msg(2,"Tunggu "+(res.wait||RESEND_SEC)+" detik sebelum meminta kode baru.");
         } else if(res && res.result==="limit"){
-          msg(isResend?2:1,"Terlalu banyak permintaan kode. Coba lagi dalam 1 jam."); if(isResend) busy("mregResend",false,"Kirim ulang kode");
+          msg(isResend?2:m1,"Terlalu banyak permintaan kode. Coba lagi dalam 1 jam."); if(isResend) busy("mregResend",false,"Kirim ulang kode");
         } else {
-          msg(isResend?2:1,"Kode belum bisa dikirim. Periksa data Anda lalu coba lagi."); if(isResend) busy("mregResend",false,"Kirim ulang kode");
+          msg(isResend?2:m1,"Kode belum bisa dikirim. Periksa data Anda lalu coba lagi."); if(isResend) busy("mregResend",false,"Kirim ulang kode");
         }
       })
       .catch(function(){
-        busy("mregBtn",false,"Kirim Kode OTP"); if(isResend) busy("mregResend",false,"Kirim ulang kode");
-        msg(isResend?2:1,"Gagal terhubung. Periksa koneksi internet Anda lalu coba lagi.");
+        busy(first,false,"Kirim Kode OTP"); if(isResend) busy("mregResend",false,"Kirim ulang kode");
+        msg(isResend?2:m1,"Gagal terhubung. Periksa koneksi internet Anda lalu coba lagi.");
       });
   }
   function onVerify(e){
@@ -224,12 +258,13 @@
   // klik ke halaman berpagar -> Gabung dulu
   document.addEventListener("click", function(e){
     var a=e.target.closest && e.target.closest("a[href]"); if(!a) return;
-    if(!getMember() && (isGated(a.href) || a.hasAttribute("data-join"))){ e.preventDefault(); openModal(a.href,false); }
+    if(!getMember() && (isGated(a.href) || a.hasAttribute("data-join"))){ e.preventDefault(); openModal(a.href,false,a.hasAttribute("data-login")); }
   });
   // buka langsung halaman berpagar (mis. dari link yang dibagikan) -> Gabung dulu
   if(!getMember() && GATED.indexOf(pageOf(location.href))>=0){ openModal(location.href,true); }
 
   // tombol "Gabung" di halaman: bila sudah login, labelnya jadi "Buka Layanan"
+  if(loggedIn){ [].forEach.call(document.querySelectorAll("[data-guest-only]"), function(el){ el.style.display="none"; }); }
   if(loggedIn){ [].forEach.call(document.querySelectorAll("[data-join-label]"), function(el){ el.firstChild.nodeValue = el.getAttribute("data-join-label")+" "; }); }
 
   // ekspor untuk halaman yang butuh (mis. form)
