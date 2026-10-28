@@ -70,7 +70,7 @@
     </div>
 
     <div class="card tk-info">
-      Program ini berjalan <b>otomatis setiap hari pukul 20:00&ndash;21:00 WIB</b>. Silakan input data Anda &mdash; bagi yang beruntung, admin akan memberikan voucher <span class="amt">Rp100.000</span> langsung ke rekening Anda.
+      Program ini dibuka <b>otomatis setiap hari pada waktu acak antara pukul 20:00&ndash;21:00 WIB</b> dan ditutup tepat pukul 21:00 WIB. Silakan input data Anda &mdash; bagi yang beruntung, admin akan memberikan voucher <span class="amt">Rp100.000</span> langsung ke rekening Anda.
     </div>
 
     <form class="card tk-form" id="tkForm" novalidate>
@@ -121,7 +121,9 @@
   <script src="site.js?v=202610281220" defer></script>
   <script>
   (function(){
-    var OPEN_H = 20, CLOSE_H = 21;            // jam buka-tutup (WIB). Server juga memeriksa.
+    var OPEN_H = 20, CLOSE_H = 21;            // jendela acak (WIB): buka di menit acak 20:00-21:00, tutup tepat 21:00. Server menentukan.
+    var POLL_MS = 20000;                      // selama jendela, cek status ke server tiap 20 detik
+    var srv = { open:false, openedAt:null, checkedYmd:null }, polling=null;
     var LKEY = 'apx_tangkas', RKEY = 'apx_tangkas_rek';
     var $ = function(id){ return document.getElementById(id); };
     var form=$('tkForm'), btn=$('tkBtn'), pill=$('tkPill'), clock=$('tkClock'), shut=$('tkShut');
@@ -131,7 +133,20 @@
     function pad(n){ return (n<10?'0':'')+n; }
     function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(_){ return null; } }
     function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(_){} }
-    function isOpen(t){ return t.h>=OPEN_H && t.h<CLOSE_H; }
+    function inWindow(t){ return t.h>=OPEN_H && t.h<CLOSE_H; }
+    function isOpen(t){ return inWindow(t) && srv.open; }
+    function checkStatus(){
+      var A=window.APX||{}; if(!A.ready || !A.ready()) return;
+      fetch(A.url,{ method:'POST', body:new URLSearchParams({ action:'tangkas_status', key:A.key }) })
+        .then(function(r){ return r.json(); })
+        .then(function(res){ if(res){ srv.open=!!res.open; srv.openedAt=res.openedAt||null; srv.checkedYmd=wib().ymd; tick(); } })
+        .catch(function(){});
+    }
+    function managePolling(t){
+      var need = inWindow(t) && !srv.open && !doneToday(t);
+      if(need && !polling){ checkStatus(); polling=setInterval(checkStatus, POLL_MS); }
+      if(!need && polling){ clearInterval(polling); polling=null; }
+    }
     function fmtLeft(sec){ var h=Math.floor(sec/3600), m=Math.floor(sec%3600/60); return (h?h+' jam ':'')+m+' menit'; }
     function doneToday(t){ var x=lsGet(LKEY); return x && x.ymd===t.ymd; }
 
@@ -140,18 +155,25 @@
     function tick(){
       var t=wib(); clock.textContent=pad(t.h)+':'+pad(t.m)+':'+pad(t.s);
       var nowSec=t.h*3600+t.m*60+t.s;
+      if(!inWindow(t)) srv.open=false;
       if(isOpen(t)){
         var left=CLOSE_H*3600-nowSec;
-        pill.className='tk-pill open'; pill.textContent='Dibuka · tutup '+fmtLeft(left)+' lagi';
+        pill.className='tk-pill open'; pill.textContent='Dibuka'+(srv.openedAt?' '+srv.openedAt:'')+' · tutup '+fmtLeft(left)+' lagi';
         btn.disabled=sending; shut.classList.remove('show');
+      } else if(inWindow(t)){
+        pill.className='tk-pill shut'; pill.textContent='Menunggu dibuka · acak sebelum 21:00';
+        btn.disabled=true;
+        shut.textContent='TANGKAS akan dibuka otomatis pada waktu acak sebelum pukul 21:00 WIB. Tetap di halaman ini, form aktif sendiri begitu dibuka.';
+        shut.classList.add('show');
       } else {
         var next = (nowSec < OPEN_H*3600 ? OPEN_H*3600 : OPEN_H*3600+86400) - nowSec;
         pill.className='tk-pill shut'; pill.textContent='Ditutup · buka '+fmtLeft(next)+' lagi';
         btn.disabled=true;
-        shut.textContent='TANGKAS dibuka setiap hari pukul 20:00–21:00 WIB. Silakan kembali di jam tersebut.';
+        shut.textContent='TANGKAS dibuka setiap hari pada waktu acak antara pukul 20:00–21:00 WIB dan ditutup tepat 21:00 WIB.';
         shut.classList.add('show');
       }
       if(doneToday(t)) showDone();
+      managePolling(t);
     }
 
     function fillWho(){
