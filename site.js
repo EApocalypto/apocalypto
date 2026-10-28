@@ -70,7 +70,7 @@
   var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVpdxUgIbZKfqbpO6pv--hPbI0sfa0-y5go0kAiv_pRHAiLxhUkiIsYHY61roVuLtw/exec";   // backend Apps Script
   var REG_KEY    = "APOX-WEB-xBd7W3Yp-aQFm5xuA";      // kunci registrasi publik (BUKAN kunci admin EA)
   // Halaman yang wajib Gabung dulu. Tambah file baru di sini untuk kartu berikutnya.
-  var GATED = ["layanan.html","daftar.html","voucher.html","profil.html"];
+  var GATED = ["layanan.html","apocalypto.html","daftar.html","voucher.html","profil.html"];
   var RESEND_SEC = 60;
 
   function getMember(){ return readMember(); }
