@@ -2150,11 +2150,10 @@ function tangkasAskApproval(tgl, openAt) {
     var btn = function (href, label, bg) {
       return '<a href="' + href + '" style="display:inline-block;margin:4px;padding:11px 16px;border-radius:8px;background:' + bg + ';color:#fff;text-decoration:none;font-weight:bold;font-size:14px;">' + label + '</a>';
     };
-    var html = TANGKAS_WIN_CHOICES.map(function (n) { return btn(base + '&do=yes&n=' + n, 'Setujui — ' + n + ' pemenang', '#1d7a45'); }).join('') +
-               '<br>' + btn(base + '&do=no', 'Libur hari ini', '#9b2c2c');
+    var html = btn(base + '&do=form', 'Setujui', '#1d7a45') + btn(base + '&do=no', 'Libur', '#9b2c2c');
     var jam = ('0' + Math.floor(openAt / 60)).slice(-2) + ':' + ('0' + (openAt % 60)).slice(-2);
     var intro = '<p style="margin:0 0 12px;">System TANGKAS <b>siap aktif</b> hari ini (' + formatTanggalID(new Date(tgl + 'T12:00:00+07:00')) + ', waktu acak <b>' + jam + ' WIB</b>). ' +
-                'Halaman TANGKAS tetap <b>belum aktif</b> sampai Anda menyetujui. Pilih jumlah pemenang hari ini:</p>' +
+                'Halaman TANGKAS tetap <b>belum aktif</b> sampai Anda menyetujui. Klik <b>Setujui</b> lalu isi jumlah pemenang hari ini, atau <b>Libur</b>.</p>' +
                 '<div style="text-align:center;margin:14px 0;">' + html + '</div>';
     var note = infoBox('Tutup otomatis pukul ' + TANGKAS_CLOSE_H + ':00 WIB. Bila tidak dijawab sampai jam tutup, hari ini dianggap libur.', 'info');
     MailApp.sendEmail({ to: ADMIN_EMAIL, subject: 'TANGKAS ' + tgl + ' — Persetujuan buka (' + jam + ' WIB)',
@@ -2179,6 +2178,16 @@ function tangkasApprovePage(p) {
   if (d !== tgl || cur >= TANGKAS_CLOSE_H * 60) return page('Link sudah kedaluwarsa (TANGKAS ' + d + ' sudah lewat).', '#9b2c2c');
   var prev = props.getProperty('TANGKAS_APPR_' + d);
   if (prev) return page('Sudah diputuskan sebelumnya: <b>' + (prev === 'yes' ? 'DISETUJUI (' + props.getProperty('TANGKAS_WIN_' + d) + ' pemenang)' : 'LIBUR') + '</b>.');
+  if (p['do'] === 'form') {
+    var f = '<form method="get" action="' + DEPLOY_URL + '" target="_top" style="margin-top:18px;">' +
+      '<input type="hidden" name="action" value="tk_appr"><input type="hidden" name="d" value="' + d + '">' +
+      '<input type="hidden" name="t" value="' + tok + '"><input type="hidden" name="do" value="yes">' +
+      '<label style="display:block;font-size:15px;color:#333;margin-bottom:10px;">Jumlah pemenang hari ini</label>' +
+      '<input type="number" name="n" value="1" min="1" max="50" required style="width:110px;font-size:22px;padding:10px;text-align:center;border:2px solid #1d7a45;border-radius:10px;">' +
+      '<div style="margin-top:18px;"><button type="submit" style="padding:12px 28px;border:0;border-radius:10px;background:#1d7a45;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;">Setujui &amp; Buka TANGKAS</button></div></form>';
+    return HtmlService.createHtmlOutput('<div style="font-family:Arial;text-align:center;padding:40px;"><h2 style="color:#0E1A2B;">TANGKAS ' + d + '</h2>' + f + '</div>')
+      .setTitle('TANGKAS').addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  }
   if (p['do'] === 'yes') {
     var n = Math.max(1, Math.min(50, Math.floor(Number(p.n) || 1)));
     var openAt = TANGKAS_OPEN_H * 60 + tangkasOpenMinute(d);
