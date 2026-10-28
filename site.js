@@ -11,7 +11,7 @@
     { href:"edukasi.html", label:"Edukasi",      key:"edukasi" },
     { href:"live.html",    label:"Live Trading", key:"live" },
     { href:"youtube.html", label:"YouTube",      key:"youtube" },
-    { href:"voucher.html", label:"Voucher",      key:"voucher" }
+    { href:"voucher.html", label:"TANGKAS",      key:"voucher" }
   ];
 
   var cur = document.body.getAttribute("data-page") || "";
