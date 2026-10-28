@@ -91,26 +91,26 @@
       <form id="bankForm" novalidate>
         <h2>Data Rekening Hadiah</h2>
         <p class="sub">Isi sekali saja. Hadiah dikirim ke rekening ini, diverifikasi dengan kode OTP ke email Anda.</p>
-        <label for="bBank">Bank / E-wallet</label>
+        <label for="bBank">Nama bank</label>
         <select id="bBank">
-          <option value="">Pilih bank / e-wallet</option>
+          <option value="">Pilih bank</option>
           <option>BCA</option><option>BRI</option><option>Mandiri</option><option>BNI</option><option>BSI</option>
           <option>CIMB Niaga</option><option>Permata</option><option>BTN</option><option>Danamon</option>
-          <option>Bank Jago</option><option>SeaBank</option>
-          <option>DANA</option><option>OVO</option><option>GoPay</option><option>ShopeePay</option>
-          <option>Lainnya</option>
+          <option>OCBC</option><option>Maybank</option><option>Panin</option><option>BPD (Bank Daerah)</option>
+          <option>Bank Jago</option><option>SeaBank</option><option>Blu by BCA Digital</option>
+          <option value="Lainnya">Bank lainnya</option>
         </select>
-        <div class="emsg" data-for="bBank">Pilih bank atau e-wallet.</div>
+        <div class="emsg" data-for="bBank">Pilih bank.</div>
         <div id="bOtherWrap" hidden>
-          <label for="bOther">Nama bank / e-wallet</label>
-          <input id="bOther" type="text" maxlength="40" placeholder="Tulis nama bank / e-wallet">
-          <div class="emsg" data-for="bOther">Tulis nama bank / e-wallet.</div>
+          <label for="bOther">Nama bank lainnya</label>
+          <input id="bOther" type="text" maxlength="40" placeholder="Tulis nama bank">
+          <div class="emsg" data-for="bOther">Tulis nama bank.</div>
         </div>
-        <label for="bRek">Nomor rekening / nomor e-wallet</label>
+        <label for="bRek">Nomor rekening</label>
         <input id="bRek" type="text" inputmode="numeric" maxlength="25" placeholder="Contoh: 1234567890" autocomplete="off">
         <div class="emsg" data-for="bRek">Masukkan nomor rekening yang valid (angka, min. 6 digit).</div>
         <label for="bAn">Nama pemilik rekening</label>
-        <input id="bAn" type="text" maxlength="60" placeholder="Sesuai buku tabungan / aplikasi">
+        <input id="bAn" type="text" maxlength="60" placeholder="Sesuai buku tabungan">
         <div class="emsg" data-for="bAn">Isi nama pemilik rekening.</div>
         <label class="chk"><input type="checkbox" id="bOk"> <span>Data rekening di atas sudah benar dan atas nama saya sendiri.</span></label>
         <div class="emsg" data-for="bOk">Centang untuk melanjutkan.</div>
