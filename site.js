@@ -26,7 +26,7 @@
     '<div class="topline"></div>'+
     '<header class="site-head"><div class="container bar">'+
       '<a class="brand" href="index.html"><img class="logo" src="logo.svg" alt="Apocalypto logo">'+
-        '<span class="wm"><b>APOCALYPTO</b><small>Expert Advisor</small></span></a>'+
+        '<span class="wm"><b>APOCALYPTO</b></span></a>'+
       '<span class="nav-spacer"></span>'+
       '<button class="nav-toggle" id="navToggle" aria-label="Buka menu" aria-expanded="false">'+
         '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>'+
@@ -38,17 +38,13 @@
 
   var footer =
     '<footer class="site-foot"><div class="container">'+
-      '<div class="foot-grid">'+
+      '<div class="foot-grid foot-2">'+
         '<div class="foot-brand">'+
           '<div class="b"><img src="logo.svg" alt="Apocalypto"><b>APOCALYPTO</b></div>'+
-          '<p>Jurnal trading &amp; berbagi. Disiplin dalam trading, murah hati dalam berbagi. Situs resmi di apocalypto.id.</p>'+
         '</div>'+
-        '<div class="foot-col"><h4>Menu</h4>'+footLinks+'<a href="daftar.html">Daftar</a></div>'+
         '<div class="foot-col"><h4>Kontak</h4>'+
           '<a href="'+WA+'" target="_blank" rel="noopener">Hubungi Admin (WhatsApp)</a>'+
           '<a href="'+GRUP+'" target="_blank" rel="noopener">Grup Komunitas</a>'+
-          '<a href="'+YT+'" target="_blank" rel="noopener">Channel YouTube</a>'+
-          '<a href="mailto:'+EMAIL+'">'+EMAIL+'</a>'+
         '</div>'+
       '</div>'+
       '<p class="foot-risk"><strong>Peringatan risiko.</strong> Trading forex/emas (XAUUSD) dengan leverage berisiko tinggi dan dapat menyebabkan kerugian sebagian atau seluruh modal. EA Apocalypto adalah alat bantu otomatis, bukan jaminan keuntungan. Kinerja masa lalu tidak menjamin hasil di masa depan.</p>'+
