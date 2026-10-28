@@ -30,7 +30,16 @@
        (URL Web App tetap sama, EA tidak perlu diubah.)
     ================================================================ */
 
-var SHEET_NAME = 'Member';
+// ===== STRUKTUR DATA (v2) =====
+// Tab "Member"  : 1 baris per ORANG (data diri, rekening, blacklist). Kunci = Kode Member (APX-0001).
+// Tab "Akun EA" : 1 baris per AKUN MT5. Hanya menyimpan Kode Member sbg penghubung (tanpa email/WA).
+var SHEET_NAME  = 'Akun EA';     // tab akun MT5 (dibaca utk lisensi EA)
+var MEMBER_SHEET = 'Member';     // tab data induk member
+var MB = { KODE:1, DAFTAR:2, NAMA:3, EMAIL:4, WA:5, BANK:6, REK:7, AN:8, REKVER:9, BL:10, LAST:11, TOKEN:12 };
+var MB_HEADERS = ['Kode Member','Waktu Daftar','Nama Panggilan','Email','WhatsApp','Bank','No. Rekening','Atas Nama',
+                  'Rekening Diverifikasi','Blacklist','Login Terakhir','Token Sesi (hash)'];
+var AC = { LOGIN:1, EXP:2, STATUS:3, KODE:4, SISA:5, NAMA:6, MASA:7, PS:8, SERVER:9, JENIS:10, DAFTAR:11, AKTIVASI:12, REMIND:13 };
+var PAKET = { '1 Bulan':'30%', '3 Bulan':'20%', '6 Bulan':'10%', '12 Bulan':'5%' };   // masa langganan -> profit sharing
 
 // ====== KONFIGURASI EMAIL & FILE PRODUK (ISI BAGIAN INI) ======
 var ADMIN_EMAIL      = 'admin@apocalypto.id';                   // email admin utk notifikasi pendaftar baru (internal = tidak kena restriksi akun baru)
@@ -47,7 +56,7 @@ var API_KEY      = '__GAS_API_KEY__';   // KUNCI RAHASIA: wajib dikirim EA (prof
 // Kunci PUBLIK khusus situs (boleh terlihat di kode situs). Hanya bisa dipakai untuk
 // registrasi member & pendaftaran EA — TIDAK bisa dipakai untuk laporan profit EA.
 var REG_KEY      = 'APOX-WEB-xBd7W3Yp-aQFm5xuA';
-var WEB_MEMBER_SHEET = 'Registrasi Web';      // tab pencatatan registrasi member dari situs (nama, email, WA)
+var WEB_MEMBER_SHEET = MEMBER_SHEET;          // (alias lama)
 var TANGKAS_SHEET    = 'TANGKAS Harian';      // tab entri harian TANGKAS (Tanggal & Kasih Surprise)
 var TANGKAS_CFG_SHEET = 'TANGKAS Pengaturan'; // tab pengaturan admin (jumlah pemenang per hari)
 var TANGKAS_OPEN_H   = 20;                    // awal jendela (WIB, zona waktu script = Asia/Jakarta)
@@ -87,23 +96,19 @@ var QUOTA_WARN_AT   = 15;                      // kirim peringatan ke admin bila
 // Kolom VPS Adress, Password Investor, Periode Penagihan, Total Profit DIHAPUS.
 // Profit & periode invoice sekarang diambil OTOMATIS dari tab Profit.
 var HEADERS = [
-  'Nomor Akun / Login MT5',        // A
-  'Expired',                       // B
-  'Status',                        // C
-  'Nama Panggilan',                // D
-  'Sisa Waktu',                    // E (rumus otomatis)
-  'Nomor WhatsApp',                // F
-  'Email',                         // G
-  'Server Broker',                 // H (diisi otomatis oleh EA)
-  'Skema Layanan',                 // I
-  'Masa Berlaku Lisensi',          // J
-  'Profit Sharing',                // K
-  'Pilihan VPS',                   // L
-  'Waktu Daftar',                  // M
-  'Blacklist',                     // N (centang oleh admin utk memblokir)
-  'Jenis Akun',                    // O (Demo = auto-aktif, Real = perlu ACC admin)
-  'Reminder Perpanjang',           // P (diisi sistem: tanggal expired yg sudah diingatkan)
-  'Tanggal Aktivasi'               // Q (otomatis saat akun jadi Active; batas awal hitung profit)
+  'Nomor Akun / Login MT5',        // A  (dibaca EA)
+  'Expired',                       // B  (dibaca EA)
+  'Status',                        // C  (dibaca EA) Active / Inactive / Pending / Rejected
+  'Kode Member',                   // D  penghubung ke tab Member
+  'Sisa Waktu',                    // E  (rumus otomatis)
+  'Nama Member',                   // F  (rumus otomatis dari tab Member — hanya tampilan)
+  'Masa Berlaku Lisensi',          // G  paket: 1/3/6/12 Bulan
+  'Profit Sharing',                // H  dari paket (kosong utk Demo)
+  'Server Broker',                 // I  (diisi otomatis oleh EA)
+  'Jenis Akun',                    // J  (otomatis: USD/Cent / Real/Demo)
+  'Waktu Daftar',                  // K
+  'Tanggal Aktivasi',              // L  (otomatis saat Active; batas awal hitung profit)
+  'Reminder Perpanjang'            // M  (diisi sistem)
 ];
 
 // ---------- 1. CEK LISENSI (dipanggil EA) + CEK DUPLIKAT (dipanggil form) ----------
@@ -127,13 +132,6 @@ function doGet(e) {
     return handleProfit(e);
   }
 
-  // ---- Pre-check dari FORM: cek duplikat akun + blacklist WA/email ----
-  if (p.action === 'precheck') {
-    var res = precheck(p);                       // {dup:bool, blacklist:bool}
-    var json = JSON.stringify(res);
-    if (cb) return ContentService.createTextOutput(cb + '(' + json + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
-    return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
-  }
 
   // (Endpoint login/getbill/createinvoice halaman penagihan DIHAPUS — penagihan full-otomatis.)
 
@@ -157,27 +155,18 @@ function doGet(e) {
 }
 
 // Cek gabungan: nomor akun sudah ada? WA/email cocok dgn baris ber-Blacklist?
-function precheck(p) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  var data = sheet.getDataRange().getValues();
-  var acc   = (p.account || '').toString().trim();
-  var wa    = normPhone((p.wa || '').toString());
-  var email = (p.email || '').toString().trim().toLowerCase();
-  var dup = false, black = false;
-  // index kolom: 0=A akun, 5=F WA, 6=G email, 13=N blacklist
-  for (var i = 1; i < data.length; i++) {
-    if (acc && data[i][0].toString().trim() === acc) dup = true;
-    if (isBlacklisted(data[i][13])) {
-      var rowWa    = normPhone((data[i][5] || '').toString());
-      var rowEmail = (data[i][6] || '').toString().trim().toLowerCase();
-      if (wa && rowWa && rowWa === wa) black = true;
-      if (email && rowEmail && rowEmail === email) black = true;
-    }
-  }
-  var quota = 999;
-  try { quota = MailApp.getRemainingDailyQuota(); } catch (e) { quota = 999; }
-  return { dup: dup, blacklist: black, quota: quota };
+
+// ---- Akun EA: helper ----
+function accSheet() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME); }
+// Data kontak pemilik akun (dari tab Member via Kode Member)
+function accContact(sheet, row) {
+  var kode = String(sheet.getRange(row, AC.KODE).getValue() || '').trim();
+  var m = kode ? memberByKode(kode) : null;
+  return { kode: kode, login: String(sheet.getRange(row, AC.LOGIN).getValue() || '').trim(),
+           nama: m ? m.nama : '', email: m ? m.email : '', wa: m ? m.wa : '', blocked: !!(m && m.blocked) };
 }
+function setSisaFormula(sheet, row) { sheet.getRange(row, AC.SISA).setFormula('=IF($B' + row + '="","",INT($B' + row + '-NOW()))'); }
+function setNamaFormula(sheet, row) { sheet.getRange(row, AC.NAMA).setFormula('=IFERROR(VLOOKUP($D' + row + ',' + "'" + MEMBER_SHEET + "'" + '!$A:$C,3,FALSE),"")'); }
 
 // Normalisasi nomor HP: buang non-digit, hilangkan awalan 62 / 0
 function normPhone(s) {
@@ -223,38 +212,30 @@ function getLicenseText(e) {
   if (!acc) return "ERROR|NO_ACCOUNT_PROVIDED";
   var server = (p.server || '').toString().trim();   // dikirim EA utk sinkronisasi
   var currency = (p.cur || '').toString().trim();    // ACCOUNT_CURRENCY dari EA (utk deteksi Cent)
+  var tz = Session.getScriptTimeZone();
 
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var sheet = accSheet();
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
-    if (data[i][0].toString().trim() === acc) {
-      var row = i + 1;
-      var status = (data[i][2] || '').toString().toUpperCase().trim();
-      var curServer = (data[i][7] || '').toString().trim();   // H Server Broker
-
-      // ---- PENGAMAN: akun di-BLACKLIST -> selalu INACTIVE (EA tidak jalan) ----
-      if (isBlacklisted(data[i][13])) return "INACTIVE|-";    // N Blacklist
-
-      // ---- DITOLAK admin (Rejected) -> EA nonaktif & JANGAN sinkron ulang (biar reject nempel) ----
-      if (status === "REJECTED") return "INACTIVE|-";
-
-      // ---- SINKRONISASI PERTAMA: EA kirim server & kolom Server masih kosong ----
-      if (server && !curServer) {
-        return firstSync(sheet, row, server, currency);
-      }
-
-      if (status === "ACTIVE") {
-        var exp = data[i][1];
-        var formatted = exp ? Utilities.formatDate(new Date(exp), Session.getScriptTimeZone(), "yyyy.MM.dd") : "";
-        var actM = data[i][16] || data[i][12];   // Q Tanggal Aktivasi (fallback M Waktu Daftar utk akun lama) -> batas awal hitung profit
-        var actStr = actM ? Utilities.formatDate(new Date(actM), Session.getScriptTimeZone(), "yyyy.MM.dd") : "";
-        return "ACTIVE|" + formatted + "|" + actStr;
-      }
-      if (status === "PENDING") return "PENDING|-";   // terdaftar, menunggu sinkronisasi/verifikasi admin
-      return "INACTIVE|-";                            // dinonaktifkan admin
+    if (data[i][AC.LOGIN - 1].toString().trim() !== acc) continue;
+    var row = i + 1;
+    var status = (data[i][AC.STATUS - 1] || '').toString().toUpperCase().trim();
+    var curServer = (data[i][AC.SERVER - 1] || '').toString().trim();
+    // PENGAMAN: pemilik akun di-BLACKLIST (tab Member) -> selalu INACTIVE
+    var owner = memberByKode(String(data[i][AC.KODE - 1] || '').trim());
+    if (owner && owner.blocked) return "INACTIVE|-";
+    if (status === "REJECTED") return "INACTIVE|-";
+    if (server && !curServer) return firstSync(sheet, row, server, currency);
+    if (status === "ACTIVE") {
+      var exp = data[i][AC.EXP - 1];
+      var actM = data[i][AC.AKTIVASI - 1] || data[i][AC.DAFTAR - 1];
+      return "ACTIVE|" + (exp ? Utilities.formatDate(new Date(exp), tz, "yyyy.MM.dd") : "") + "|" +
+             (actM ? Utilities.formatDate(new Date(actM), tz, "yyyy.MM.dd") : "");
     }
+    if (status === "PENDING") return "PENDING|-";
+    return "INACTIVE|-";
   }
-  return "UNREGISTERED|-";   // belum pernah terdaftar
+  return "UNREGISTERED|-";
 }
 
 // Sinkronisasi pertama kali EA melapor server: catat jenis & server + deteksi demo/real.
@@ -264,46 +245,36 @@ function getLicenseText(e) {
 function firstSync(sheet, row, server, currency){
   var lock = LockService.getScriptLock();
   lock.tryLock(10000);
+  var tz = Session.getScriptTimeZone();
   try {
-    var curServer = (sheet.getRange(row, 8).getValue() || '').toString().trim();
+    var curServer = (sheet.getRange(row, AC.SERVER).getValue() || '').toString().trim();
     if (curServer) {   // sudah ter-sync oleh request lain -> balas status terkini
-      var st0 = (sheet.getRange(row, 3).getValue() || '').toString().toUpperCase().trim();
+      var st0 = (sheet.getRange(row, AC.STATUS).getValue() || '').toString().toUpperCase().trim();
       if (st0 === 'ACTIVE') {
-        var ex0 = sheet.getRange(row, 2).getValue();
-        var ac0 = sheet.getRange(row, 17).getValue() || sheet.getRange(row, 13).getValue();   // Q Aktivasi (fallback M)
-        return "ACTIVE|" + (ex0 ? Utilities.formatDate(new Date(ex0), Session.getScriptTimeZone(), "yyyy.MM.dd") : "")
-             + "|" + (ac0 ? Utilities.formatDate(new Date(ac0), Session.getScriptTimeZone(), "yyyy.MM.dd") : "");
+        var ex0 = sheet.getRange(row, AC.EXP).getValue();
+        var ac0 = sheet.getRange(row, AC.AKTIVASI).getValue() || sheet.getRange(row, AC.DAFTAR).getValue();
+        return "ACTIVE|" + (ex0 ? Utilities.formatDate(new Date(ex0), tz, "yyyy.MM.dd") : "") + "|" + (ac0 ? Utilities.formatDate(new Date(ac0), tz, "yyyy.MM.dd") : "");
       }
       return (st0 === 'PENDING') ? "PENDING|-" : "INACTIVE|-";
     }
-
-    // (1) Jenis Akun dulu, (2) baru Server Broker
-    var jenis = detectJenis(server);                          // 'Demo' / 'Real' (utk logika)
-    sheet.getRange(row, 15).setValue(labelJenis(server, currency)); // O Jenis Akun: "USC->Cent / Real", dst (deteksi dari mata uang)
-    sheet.getRange(row, 8).setValue(server);                 // H Server Broker
-
+    var jenis = detectJenis(server);
+    sheet.getRange(row, AC.JENIS).setValue(labelJenis(server, currency));
+    sheet.getRange(row, AC.SERVER).setValue(server);
     if (jenis === 'Demo') {
-      // Demo = GRATIS: hapus Skema Layanan & Profit Sharing
-      sheet.getRange(row, 9).setValue('');                   // I Skema Layanan -> dikosongkan
-      sheet.getRange(row, 11).setValue('');                  // K Profit Sharing -> dikosongkan
-      var masaStr = (sheet.getRange(row, 10).getValue() || '').toString();   // J Masa Berlaku
-      var months = parseInt(masaStr.replace(/[^0-9]/g, ''), 10);
-      var d = new Date();
-      if (months) d.setMonth(d.getMonth() + months); else d.setMonth(d.getMonth() + 1);
-      d.setHours(23, 59, 0, 0);
-      sheet.getRange(row, 2).setValue(d).setNumberFormat('yyyy.MM.dd HH:mm');          // B Expired
-      sheet.getRange(row, 5).setFormula('=IF($B' + row + '="","",INT($B' + row + '-NOW()))'); // E Sisa Waktu
-      sheet.getRange(row, 16).setValue('');                  // P reset penanda reminder
-      sheet.getRange(row, 3).setValue('Active');             // C Status -> Active
+      sheet.getRange(row, AC.PS).setValue('');                         // Demo = GRATIS
+      var months = parseInt(String(sheet.getRange(row, AC.MASA).getValue() || '').replace(/[^0-9]/g, ''), 10);
+      var d = new Date(); d.setMonth(d.getMonth() + (months || 1)); d.setHours(23, 59, 0, 0);
+      sheet.getRange(row, AC.EXP).setValue(d).setNumberFormat('yyyy.MM.dd HH:mm');
+      setSisaFormula(sheet, row);
+      sheet.getRange(row, AC.REMIND).setValue('');
+      sheet.getRange(row, AC.STATUS).setValue('Active');
       var actNow = new Date();
-      sheet.getRange(row, 17).setValue(actNow).setNumberFormat('yyyy.MM.dd');  // Q Tanggal Aktivasi (demo auto-aktif)
-      try { sendActivationEmail(sheet, row, d); } catch (e2) {}   // Email: demo aktif
-      return "ACTIVE|" + Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy.MM.dd")
-           + "|" + Utilities.formatDate(actNow, Session.getScriptTimeZone(), "yyyy.MM.dd");
+      sheet.getRange(row, AC.AKTIVASI).setValue(actNow).setNumberFormat('yyyy.MM.dd');
+      try { sendActivationEmail(sheet, row, d); } catch (e2) {}
+      return "ACTIVE|" + Utilities.formatDate(d, tz, "yyyy.MM.dd") + "|" + Utilities.formatDate(actNow, tz, "yyyy.MM.dd");
     } else {
-      // Real: Skema Layanan (K) & Profit Sharing (M) DIPERTAHANKAN (tidak diubah).
-      sheet.getRange(row, 3).setValue('Inactive');           // C Status -> Inactive (parkir, tunggu verifikasi admin)
-      try { sendPendingRealEmail(sheet, row, server); } catch (e3) {}   // Email: sedang diverifikasi
+      sheet.getRange(row, AC.STATUS).setValue('Inactive');             // Real: parkir, tunggu verifikasi admin
+      try { sendPendingRealEmail(sheet, row, server); } catch (e3) {}
       return "INACTIVE|-";
     }
   } catch (err) {
@@ -336,87 +307,59 @@ function doPost(e) {
       return otpOut({ result: 'ok', nama: mp.nama, email: mp.email, wa: mp.wa, bank: mp.bank, rek: maskRek(mp.rek), an: mp.an });
     }
 
-    var lock = LockService.getScriptLock();
-    lock.tryLock(10000);
+    // ---- Expert Advisor (member login): daftar akun MT5 + daftar akun milik member ----
+    if (p0.action === 'ea_list')     return handleEaList(p0);
+    if (p0.action === 'ea_register') return handleEaRegister(p0);
 
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_NAME);
-    var p = e.parameter || {};
-    var login = (p.login || '').toString().trim();
-
-    // Tolak bila kunci rahasia salah/absen (anti daftar liar dari internet)
-    if (!checkFormKey(p)) {
-      lock.releaseLock();
-      return ContentService.createTextOutput(JSON.stringify({ result: 'error', error: 'BAD_KEY' })).setMimeType(ContentService.MimeType.JSON);
-    }
-    // Validasi input dasar (login angka, email & WA valid, nama terisi)
-    if (!isDigitsStr(login) || !validEmailStr(p.email) || !isDigitsStr(normPhone(p.wa)) || !String(p.nama||'').trim()) {
-      lock.releaseLock();
-      return ContentService.createTextOutput(JSON.stringify({ result: 'error', error: 'INVALID_INPUT' })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // Wajib ada nomor akun
-    if (login === '') {
-      lock.releaseLock();
-      return ContentService.createTextOutput(JSON.stringify({ result: 'error', error: 'NO_LOGIN' })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    var wa    = normPhone((p.wa || '').toString());
-    var email = (p.email || '').toString().trim().toLowerCase();
-
-    var data = sheet.getDataRange().getValues();
-    for (var i = 1; i < data.length; i++) {
-      // TOLAK jika nomor akun sudah pernah terdaftar (tidak boleh dobel)
-      if (data[i][0].toString().trim() === login) {
-        lock.releaseLock();
-        return ContentService.createTextOutput(JSON.stringify({ result: 'duplicate' })).setMimeType(ContentService.MimeType.JSON);
-      }
-      // TOLAK jika WA/email cocok dengan baris yang di-Blacklist (kolom N)
-      if (isBlacklisted(data[i][13])) {
-        var rowWa    = normPhone((data[i][5] || '').toString());
-        var rowEmail = (data[i][6] || '').toString().trim().toLowerCase();
-        if ((wa && rowWa && rowWa === wa) || (email && rowEmail && rowEmail === email)) {
-          lock.releaseLock();
-          return ContentService.createTextOutput(JSON.stringify({ result: 'blacklist' })).setMimeType(ContentService.MimeType.JSON);
-        }
-      }
-    }
-
-    // ALUR BARU: semua pendaftar masuk sebagai PENDING.
-    // Jenis akun (Demo/Real) & Server Broker TIDAK diisi dari form — nanti dideteksi
-    // otomatis saat EA melapor server pertama kali (firstSync). Expired & Jenis menyusul.
-    {
-      var r = sheet.getLastRow() + 1;
-      sheet.getRange(r, 1, 1, 16).setValues([[
-        login,            // A Nomor Akun / Login MT5
-        '',               // B Expired (terisi otomatis saat sinkronisasi/ACC)
-        'Pending',        // C Status (menunggu sinkronisasi EA)
-        p.nama || '',     // D Nama Panggilan
-        '',               // E Sisa Waktu (rumus di bawah)
-        p.wa || '',       // F Nomor WhatsApp
-        p.email || '',    // G Email
-        '',               // H Server Broker (diisi otomatis oleh EA saat sinkronisasi)
-        p.skema || '',    // I Skema Layanan
-        p.masa || '',     // J Masa Berlaku Lisensi
-        p.psharing || '', // K Profit Sharing
-        p.vps || '',      // L Pilihan VPS
-        new Date(),       // M Waktu Daftar
-        false,            // N Blacklist (default tidak)
-        '',               // O Jenis Akun (diisi otomatis saat deteksi server)
-        ''                // P Reminder Perpanjang
-      ]]);
-      sheet.getRange(r, 5).setFormula('=IF($B' + r + '="","",INT($B' + r + '-NOW()))'); // E Sisa Waktu
-      var rule = SpreadsheetApp.newDataValidation().requireValueInList(['Active', 'Inactive', 'Pending', 'Rejected'], true).build();
-      sheet.getRange(r, 3).setDataValidation(rule);            // dropdown Status
-      sheet.getRange(r, 14).setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build()); // N checkbox Blacklist
-    }
-
-    lock.releaseLock();
-    sendRegistrationEmails(p);   // kirim EA ke pendaftar + notif ke admin
-    return ContentService.createTextOutput(JSON.stringify({ result: 'ok' })).setMimeType(ContentService.MimeType.JSON);
+    // Form pendaftaran lama (tanpa login) sudah tidak dipakai.
+    return otpOut({ result: 'error', error: 'USE_SITE' });
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ result: 'error', error: String(err) })).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// ---------- 2. EXPERT ADVISOR: pendaftaran akun MT5 oleh member login ----------
+function handleEaList(p) {
+  if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
+  var me = authMember(p);
+  if (!me) return otpOut({ result: 'auth' });
+  var sh = accSheet(), out = [], tz = Session.getScriptTimeZone();
+  if (sh && sh.getLastRow() >= 2) {
+    var d = sh.getRange(2, 1, sh.getLastRow() - 1, HEADERS.length).getValues();
+    for (var i = 0; i < d.length; i++) {
+      if (String(d[i][AC.KODE - 1]).trim() !== me.kode) continue;
+      var exp = d[i][AC.EXP - 1];
+      out.push({ login: String(d[i][AC.LOGIN - 1]), status: String(d[i][AC.STATUS - 1]), masa: String(d[i][AC.MASA - 1]),
+                 ps: String(d[i][AC.PS - 1]), jenis: String(d[i][AC.JENIS - 1]),
+                 exp: (exp instanceof Date) ? Utilities.formatDate(exp, tz, 'yyyy-MM-dd') : '' });
+    }
+  }
+  return otpOut({ result: 'ok', kode: me.kode, akun: out, paket: PAKET });
+}
+function handleEaRegister(p) {
+  if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
+  var me = authMember(p);
+  if (!me) return otpOut({ result: 'auth' });
+  var login = String(p.login || '').replace(/\D/g, '');
+  var masa = String(p.paket || '');
+  if (!isDigitsStr(login) || !PAKET[masa]) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+  var lock = LockService.getScriptLock();
+  lock.tryLock(15000);
+  try {
+    var sh = accSheet();
+    var d = sh.getLastRow() >= 2 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
+    for (var i = 0; i < d.length; i++) if (String(d[i][0]).trim() === login) return otpOut({ result: 'duplicate' });
+    var r = sh.getLastRow() + 1;
+    var row = new Array(HEADERS.length); for (var k = 0; k < row.length; k++) row[k] = '';
+    row[AC.LOGIN - 1] = login; row[AC.STATUS - 1] = 'Pending'; row[AC.KODE - 1] = me.kode;
+    row[AC.MASA - 1] = masa; row[AC.PS - 1] = PAKET[masa]; row[AC.DAFTAR - 1] = new Date();
+    sh.getRange(r, 1, 1, HEADERS.length).setValues([row]);
+    sh.getRange(r, AC.LOGIN).setNumberFormat('@');
+    setSisaFormula(sh, r); setNamaFormula(sh, r);
+    sh.getRange(r, AC.STATUS).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Active', 'Inactive', 'Pending', 'Rejected'], true).build());
+  } finally { lock.releaseLock(); }
+  sendRegistrationEmails(me, login, masa, PAKET[masa]);
+  return otpOut({ result: 'ok' });
 }
 
 // Ambil SEMUA file di dalam folder "Produk" sebagai lampiran.
@@ -530,90 +473,53 @@ function formatTanggalID(d){
 
 // Cari akun LAIN (login berbeda) dgn WA ATAU email sama -> teks peringatan utk ADMIN.
 // Dipakai sbg dasar admin memutuskan blacklist (mencegah penghindaran profit sharing).
-function dupIdentityWarn(login, wa, email){
+// Akun EA LAIN milik member yang sama -> teks info utk ADMIN (cek tunggakan sebelum verifikasi).
+function dupIdentityWarn(login, kode){
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    var data = sheet.getDataRange().getValues();
-    login = (login || '').toString().trim();
-    wa = normPhone((wa || '').toString());
-    email = (email || '').toString().trim().toLowerCase();
-    var hits = [];
+    var sh = accSheet(), data = sh.getDataRange().getValues(), hits = [];
     for (var i = 1; i < data.length; i++){
-      var rLogin = (data[i][0] || '').toString().trim();
-      if (!rLogin || rLogin === login) continue;                 // lewati baris pendaftar ini sendiri
-      var rWa    = normPhone((data[i][5] || '').toString());
-      var rEmail = (data[i][6] || '').toString().trim().toLowerCase();
-      if (!((wa && rWa && rWa === wa) || (email && rEmail && rEmail === email))) continue;
-      var st = (data[i][2] || '').toString().trim() || '-';
-      var jn = (data[i][14] || '').toString().trim() || '-';
-      var bl = isBlacklisted(data[i][13]) ? ' [BLACKLIST]' : '';
-      hits.push('   - Login ' + rLogin + ' | Status: ' + st + ' | Jenis: ' + jn + bl);
+      var rLogin = String(data[i][AC.LOGIN - 1] || '').trim();
+      if (!rLogin || rLogin === String(login) || String(data[i][AC.KODE - 1]).trim() !== kode) continue;
+      hits.push('   - Login ' + rLogin + ' | Status: ' + (String(data[i][AC.STATUS - 1]) || '-') + ' | Jenis: ' + (String(data[i][AC.JENIS - 1]) || '-'));
     }
     if (!hits.length) return '';
-    return '\n⚠️ PERINGATAN DUPLIKAT IDENTITAS\n' +
-           'WA/email pendaftar ini SUDAH terdaftar di akun lain:\n' +
-           hits.join('\n') + '\n' +
-           'Cek dulu apakah ada profit sharing TERTUNGGAK sebelum verifikasi. Bila terbukti menghindar, lakukan BLACKLIST.\n';
+    return '\nℹ️ Member ini juga punya akun lain:\n' + hits.join('\n') + '\nCek dulu tunggakan profit sharing sebelum verifikasi.\n';
   } catch (e) { return ''; }
 }
 
 // ---------- 2b. KIRIM EMAIL: file produk ke pendaftar + notifikasi ke admin ----------
-function sendRegistrationEmails(p) {
-  var login  = (p.login || '').toString().trim();
-  var nama   = (p.nama  || '').toString().trim();
-  var email  = (p.email || '').toString().trim();
-
-  // (1) EMAIL #1 ke PENDAFTAR: kirim file EA + panduan, arahkan aktivasi WebRequest & sinkronisasi.
-  if (email) {
+function sendRegistrationEmails(m, login, masa, ps) {
+  if (m.email) {
     try {
       var attachments = getProductBlobs();
-      var introU = '<p style="margin:0 0 12px;">Terima kasih sudah mendaftar <b>EA Apocalypto</b>. Pendaftaran Anda <b>berhasil</b> dan lolos verifikasi awal. File EA (.ex5) &amp; panduan pemasangan sudah terlampir pada email ini.</p>';
-      var rowsU = [ ['Nomor Akun / Login MT5', login], ['Status saat ini', 'Menunggu Sinkronisasi'] ];
+      var introU = '<p style="margin:0 0 12px;">Terima kasih sudah mendaftar <b>EA Apocalypto</b>. Pendaftaran Anda <b>berhasil</b>. File EA (.ex5) &amp; panduan pemasangan sudah terlampir pada email ini.</p>';
+      var rowsU = [ ['Kode Member', m.kode], ['Nomor Akun / Login MT5', login], ['Paket', masa + (ps ? ' (profit sharing ' + ps + ')' : '')], ['Status saat ini', 'Menunggu Sinkronisasi'] ];
       var langkah = infoBox(
         '<b>TAHAP SINKRONISASI (wajib, sekali saja):</b>' +
         '<ol style="margin:8px 0 0;padding-left:18px;">' +
           '<li style="margin-bottom:6px;">Pasang EA sesuai panduan terlampir.</li>' +
           '<li style="margin-bottom:6px;">Aktifkan izin WebRequest di MT5: <b>Tools &rarr; Options &rarr; Expert Advisors</b>, centang <b>"Allow WebRequest for listed URL"</b>, tambahkan: <b>https://script.google.com</b>, klik OK.</li>' +
           '<li>Attach EA ke chart &amp; pastikan tombol <b>Algo Trading</b> menyala (hijau).</li>' +
-        '</ol>', 'info');
-      var htmlU = emailShell('Pendaftaran Berhasil &amp; Tahap Sinkronisasi', nama, introU, rowsU, langkah);
-      sendMailUser({
-        to: email,
-        subject: 'EA Apocalypto — File EA, Panduan & Langkah Aktivasi',
+        '</ol>' +
+        '<p style="margin:10px 0 0;">Akun <b>Demo</b> aktif otomatis &amp; gratis. Akun <b>Real</b> diverifikasi admin terlebih dahulu.</p>', 'info');
+      sendMailUser({ to: m.email, subject: 'EA Apocalypto — File EA, Panduan & Langkah Aktivasi',
         body: 'Pendaftaran berhasil. File EA & panduan terlampir. Pasang EA untuk aktivasi. Butuh bantuan: ' + ADMIN_WA_URL,
-        htmlBody: htmlU,
-        name: 'EA Apocalypto',
-        attachments: attachments
-      });
-    } catch (err) { /* jangan gagalkan pendaftaran karena email */ }
+        htmlBody: emailShell('Pendaftaran Berhasil &amp; Tahap Sinkronisasi', m.nama, introU, rowsU, langkah), name: 'EA Apocalypto', attachments: attachments });
+    } catch (err) {}
   }
-
-  // (2) Notifikasi ke ADMIN — pendaftar baru (jenis akun belum diketahui sampai EA sinkron).
   if (ADMIN_EMAIL) {
     try {
-      var bodyA =
-        'Ada pendaftar BARU (status: Pending — menunggu sinkronisasi EA):\n\n' +
-        'Nama Panggilan : ' + (p.nama || '-') + '\n' +
-        'Login MT5      : ' + login + '\n' +
-        'WhatsApp       : ' + (p.wa || '-') + '\n' +
-        'Email          : ' + (p.email || '-') + '\n' +
-        'Skema Layanan  : ' + (p.skema || '-') + '\n' +
-        'Masa Berlaku   : ' + (p.masa || '-') + '\n' +
-        'Profit Sharing : ' + (p.psharing || '-') + '\n' +
-        'Pilihan VPS    : ' + (p.vps || '-') + '\n\n' +
-        'Jenis akun (Demo/Real) & Server Broker akan terisi OTOMATIS saat EA melapor ' +
-        'server pertama kali. Jika Demo -> aktif otomatis. Jika Real -> Anda akan ' +
-        'menerima notifikasi untuk verifikasi (ubah Status menjadi "Active").\n' +
-        dupIdentityWarn(login, p.wa, p.email) +
-        '\nBuka Google Sheet:\n' + SHEET_URL;
-      var adaDup = dupIdentityWarn(login, p.wa, p.email) !== '';
-      MailApp.sendEmail({
-        to: ADMIN_EMAIL,
-        subject: (adaDup ? '⚠️ Pendaftar Baru (DUPLIKAT identitas): ' : '🔔 Pendaftar Baru (Pending): ') + (nama || '-') + ' (' + login + ')',
-        body: bodyA,
-        name: 'Apocalypto System'
-      });
-    } catch (err) { /* diamkan */ }
+      var info = dupIdentityWarn(login, m.kode);
+      MailApp.sendEmail({ to: ADMIN_EMAIL,
+        subject: '🔔 Pendaftaran EA Baru (Pending): ' + (m.nama || '-') + ' · ' + m.kode + ' (' + login + ')',
+        body: 'Ada pendaftaran akun EA BARU (status: Pending — menunggu sinkronisasi EA):\n\n' +
+              'Kode Member    : ' + m.kode + '\nNama Panggilan : ' + (m.nama || '-') + '\nLogin MT5      : ' + login + '\n' +
+              'WhatsApp       : ' + (m.wa ? '0' + m.wa : '-') + '\nEmail          : ' + (m.email || '-') + '\n' +
+              'Paket          : ' + masa + '\nProfit Sharing : ' + (ps || '-') + '\n\n' +
+              'Jenis akun (Demo/Real) & Server Broker terisi OTOMATIS saat EA melapor pertama kali. Demo -> aktif otomatis; ' +
+              'Real -> Anda menerima notifikasi untuk verifikasi (ubah Status menjadi "Active").\n' + info + '\nBuka Google Sheet:\n' + SHEET_URL,
+        name: 'Apocalypto System' });
+    } catch (err) {}
   }
   maybeWarnQuota();
 }
@@ -621,52 +527,27 @@ function sendRegistrationEmails(p) {
 // ---------- EMAIL #2 (REAL): sinkronisasi berhasil, lisensi menunggu verifikasi admin ----------
 // Dikirim dari firstSync() saat EA melapor server & terdeteksi akun Real/Live.
 function sendPendingRealEmail(sheet, row, server) {
-  // (a) ke USER: beri tahu akun terdeteksi Real -> menunggu verifikasi admin
+  var c = accContact(sheet, row);
   try {
-    var email = (sheet.getRange(row, 7).getValue() || '').toString().trim();   // G Email
-    var nama  = (sheet.getRange(row, 4).getValue() || '').toString().trim();   // D Nama
-    var login = (sheet.getRange(row, 1).getValue() || '').toString().trim();   // A Login
-    if (email) {
+    if (c.email) {
       var introU = '<p style="margin:0 0 12px;">Tahap Sinkronisasi EA Apocalypto Anda <b>berhasil</b>.</p>';
-      var rowsU = [ ['Nomor Akun / Login MT5', login], ['Status', 'Menunggu Verifikasi'] ];
+      var rowsU = [ ['Nomor Akun / Login MT5', c.login], ['Status', 'Menunggu Verifikasi'] ];
       var noteU = infoBox('Proses aktivasi EA sedang dalam proses verifikasi oleh admin. Silakan pasang ulang EA ke chart setelah proses verifikasi selesai.', 'warn');
-      sendMailUser({
-        to: email,
-        subject: 'EA Apocalypto — Akun Real Terdeteksi, Menunggu Verifikasi Admin',
+      sendMailUser({ to: c.email, subject: 'EA Apocalypto — Akun Real Terdeteksi, Menunggu Verifikasi Admin',
         body: 'Tahap sinkronisasi berhasil. Proses aktivasi sedang diverifikasi admin. Pasang ulang EA ke chart setelah verifikasi selesai.',
-        htmlBody: emailShell('Menunggu Verifikasi Admin', nama, introU, rowsU, noteU, '#B45309'),   // header amber/oranye
-        name: 'EA Apocalypto'
-      });
+        htmlBody: emailShell('Menunggu Verifikasi Admin', c.nama, introU, rowsU, noteU, '#B45309'), name: 'EA Apocalypto' });
     }
   } catch (err) { console.error('sendPendingRealEmail (user) gagal: ' + err); }
-
-  // (b) ke ADMIN: minta verifikasi akun Real ini
   if (ADMIN_EMAIL) {
     try {
-      var nmA = (sheet.getRange(row, 4).getValue() || '').toString().trim();
-      var lgA = (sheet.getRange(row, 1).getValue() || '').toString().trim();
-      var waA = (sheet.getRange(row, 6).getValue() || '').toString().trim();
-      var emA = (sheet.getRange(row, 7).getValue() || '').toString().trim();
-      var bodyA =
-        'PERLU VERIFIKASI — akun REAL baru tersinkronisasi:\n\n' +
-        'Nama Panggilan : ' + (nmA || '-') + '\n' +
-        'Login MT5      : ' + lgA + '\n' +
-        'Server Broker  : ' + server + ' (terdeteksi: Real)\n' +
-        'WhatsApp       : ' + (waA || '-') + '\n' +
-        'Email          : ' + (emA || '-') + '\n\n' +
-        'CARA APPROVE: buka Google Sheet, cari baris login ' + lgA + ', ubah kolom Status ' +
-        'menjadi "Active". Tanggal Expired akan terisi OTOMATIS sesuai Masa Berlaku, dan ' +
-        'email konfirmasi aktif akan dikirim ke user.\n' +
-        dupIdentityWarn(lgA, waA, emA) +
-        '\nBuka Google Sheet:\n' + SHEET_URL;
-      var adaDupR = dupIdentityWarn(lgA, waA, emA) !== '';
-      MailApp.sendEmail({
-        to: ADMIN_EMAIL,
-        subject: (adaDupR ? '⚠️🔴 Verifikasi Akun Real (DUPLIKAT identitas): ' : '🔴 Verifikasi Akun Real: ') + (nmA || '-') + ' (' + lgA + ')',
-        body: bodyA,
-        name: 'Apocalypto System'
-      });
-    } catch (err) { /* diamkan */ }
+      MailApp.sendEmail({ to: ADMIN_EMAIL, subject: '🔴 Verifikasi Akun Real: ' + (c.nama || '-') + ' · ' + c.kode + ' (' + c.login + ')',
+        body: 'PERLU VERIFIKASI — akun REAL baru tersinkronisasi:\n\n' +
+              'Kode Member    : ' + c.kode + '\nNama Panggilan : ' + (c.nama || '-') + '\nLogin MT5      : ' + c.login + '\n' +
+              'Server Broker  : ' + server + ' (terdeteksi: Real)\nWhatsApp       : ' + (c.wa ? '0' + c.wa : '-') + '\nEmail          : ' + (c.email || '-') + '\n\n' +
+              'CARA APPROVE: buka tab "Akun EA", cari login ' + c.login + ', ubah Status menjadi "Active". Expired terisi OTOMATIS sesuai Masa Berlaku, ' +
+              'dan email konfirmasi aktif dikirim ke member.\n' + dupIdentityWarn(c.login, c.kode) + '\nBuka Google Sheet:\n' + SHEET_URL,
+        name: 'Apocalypto System' });
+    } catch (err) {}
   }
   maybeWarnQuota();
 }
@@ -677,61 +558,40 @@ function onStatusEdit(e) {
   try {
     var range = e.range;
     var sheet = range.getSheet();
-    if (sheet.getName() === WEB_MEMBER_SHEET && range.getColumn() === WEB_BL_COL && range.getRow() >= 2) {
-      handleWebBlacklistEdit(range.getRow(), isBlacklisted(e.value));
+    var editCol = range.getColumn(), editRow = range.getRow();
+    if (editRow < 2) return;
+    // ---- Tab Member: Blacklist dicentang/dicabut -> semua akun EA milik member ikut ----
+    if (sheet.getName() === MEMBER_SHEET) {
+      if (editCol === MB.BL) handleMemberBlacklistEdit(editRow, isBlacklisted(e.value));
       return;
     }
     if (sheet.getName() !== SHEET_NAME) return;
-    var editCol = range.getColumn(), editRow = range.getRow();
-    if (editRow < 2) return;
-
-    // ---- Kolom N (Blacklist) dicentang / dicabut admin -> cascade ke ID dgn WA/email sama ----
-    if (editCol === 14) {
-      handleBlacklistCascade(sheet, editRow, isBlacklisted(e.value));
-      return;
-    }
-
-    // ---- Kolom B (Expired) diubah manual admin -> PERPANJANGAN lisensi ----
-    if (editCol === 2) {
-      handleRenewal(sheet, editRow);
-      return;
-    }
-
-    if (editCol !== 3) return;                                      // selain Status/Blacklist/Expired -> abaikan
+    if (editCol === AC.EXP) { handleRenewal(sheet, editRow); return; }   // perpanjangan manual
+    if (editCol !== AC.STATUS) return;
 
     var val = (e.value || '').toString().toUpperCase().trim();
     var old = (e.oldValue || '').toString().toUpperCase().trim();
-    if (val === old) return;                                        // nilai tidak berubah -> abaikan
-    var row = range.getRow();
-
+    if (val === old) return;
+    var row = editRow;
     if (val === 'ACTIVE') {
-      sheet.getRange(row, 17).setValue(new Date()).setNumberFormat('yyyy.MM.dd');  // Q Tanggal Aktivasi (saat admin aktifkan)
-      var expCell = sheet.getRange(row, 2);                         // B Expired
+      sheet.getRange(row, AC.AKTIVASI).setValue(new Date()).setNumberFormat('yyyy.MM.dd');
+      var expCell = sheet.getRange(row, AC.EXP);
       var cur = expCell.getValue();
-      var d = (cur instanceof Date) ? cur : null;                  // pakai expired yg sudah ada bila valid
-      if (!d) {                                                     // belum ada -> hitung dari Masa Berlaku
-        var masaStr = sheet.getRange(row, 10).getValue().toString(); // J Masa Berlaku Lisensi
-        var months = parseInt(masaStr.replace(/[^0-9]/g, ''), 10);
+      var d = (cur instanceof Date) ? cur : null;
+      if (!d) {
+        var months = parseInt(String(sheet.getRange(row, AC.MASA).getValue() || '').replace(/[^0-9]/g, ''), 10);
         if (months) {
-          d = new Date();
-          d.setMonth(d.getMonth() + months);
-          d.setHours(23, 59, 0, 0);
+          d = new Date(); d.setMonth(d.getMonth() + months); d.setHours(23, 59, 0, 0);
           expCell.setValue(d).setNumberFormat('yyyy.MM.dd HH:mm');
-          sheet.getRange(row, 5).setFormula('=IF($B' + row + '="","",INT($B' + row + '-NOW()))'); // E Sisa Waktu
-          sheet.getRange(row, 16).setValue('');                    // P reset penanda reminder utk siklus baru
+          setSisaFormula(sheet, row);
+          sheet.getRange(row, AC.REMIND).setValue('');
         }
       }
-      if (d) {
-        sendActivationEmail(sheet, row, d);                        // beri tahu user: lisensi sudah aktif (selalu dikirim tiap approve)
-      } else {
-        console.error('Aktivasi baris ' + row + ' gagal: Masa Berlaku & Expired kosong, email tidak dikirim.');
-      }
-    }
-    else if (val === 'REJECTED') {
-      // TOLAK pendaftaran (lunak): EA tetap nonaktif, BUKAN blacklist (WA/email tidak diblokir).
+      if (d) sendActivationEmail(sheet, row, d);
+      else console.error('Aktivasi baris ' + row + ' gagal: Masa Berlaku & Expired kosong.');
+    } else if (val === 'REJECTED') {
       sendRejectionEmail(sheet, row);
     }
-    // Penonaktifan MANUAL (Active -> Inactive) TIDAK mengirim email (SOP full-otomatis).
   } catch (err) { console.error('onStatusEdit gagal: ' + err); }
 }
 
@@ -742,15 +602,15 @@ function onStatusEdit(e) {
 // Perubahan Expired oleh sistem (aktivasi) TIDAK memicu fungsi ini (setValue tak picu onEdit).
 function handleRenewal(sheet, row){
   try {
-    if ((sheet.getRange(row, 1).getValue() || '').toString().trim() === '') return;  // baris kosong
-    var cell = sheet.getRange(row, 2);                       // B Expired
+    if ((sheet.getRange(row, AC.LOGIN).getValue() || '').toString().trim() === '') return;
+    var cell = sheet.getRange(row, AC.EXP);
     var raw = cell.getValue();
     var d = (raw instanceof Date) ? raw : parseExpired((raw || '').toString());
-    if (!d) return;                                          // kosong / tidak valid -> abaikan
-    if (!(raw instanceof Date)) cell.setValue(d).setNumberFormat('yyyy.MM.dd HH:mm');  // teks -> Date asli
-    sheet.getRange(row, 5).setFormula('=IF($B' + row + '="","",INT($B' + row + '-NOW()))'); // E Sisa Waktu
-    sheet.getRange(row, 16).setValue('');                    // P reset penanda reminder (siklus baru)
-    var st = (sheet.getRange(row, 3).getValue() || '').toString().toUpperCase().trim();
+    if (!d) return;
+    if (!(raw instanceof Date)) cell.setValue(d).setNumberFormat('yyyy.MM.dd HH:mm');
+    setSisaFormula(sheet, row);
+    sheet.getRange(row, AC.REMIND).setValue('');
+    var st = (sheet.getRange(row, AC.STATUS).getValue() || '').toString().toUpperCase().trim();
     if (st === 'ACTIVE') { try { sendRenewalConfirmEmail(sheet, row, d); } catch (e1) {} }
   } catch (err) { console.error('handleRenewal gagal: ' + err); }
 }
@@ -758,10 +618,8 @@ function handleRenewal(sheet, row){
 // Email ke user: lisensi telah DIPERPANJANG sampai tanggal baru (header hijau).
 function sendRenewalConfirmEmail(sheet, row, expDate){
   try {
-    var email = (sheet.getRange(row, 7).getValue() || '').toString().trim();   // G Email
+    var c = accContact(sheet, row), email = c.email, nama = c.nama, login = c.login;
     if (!email) return;
-    var nama  = (sheet.getRange(row, 4).getValue() || '').toString().trim();   // D Nama
-    var login = (sheet.getRange(row, 1).getValue() || '').toString().trim();   // A Login
     var expID = formatTanggalID(expDate);                                      // "03 April 2027"
     var introU = '<p style="margin:0 0 12px;"><b>Terima kasih!</b> Lisensi EA Apocalypto Anda telah <b>diperpanjang</b>.</p>';
     var rowsU = [ ['Nomor Akun / Login MT5', login], ['Status', 'AKTIF'], ['Berlaku sampai', expID, true] ];
@@ -781,75 +639,31 @@ function sendRenewalConfirmEmail(sheet, row, expDate){
 // Dicentang  : SEMUA baris dgn WA ATAU Email sama -> Blacklist=TRUE + Status=Inactive + email "diblokir".
 // Dicabut    : SEMUA baris dgn WA ATAU Email sama -> Blacklist=FALSE + Status=Active (yg punya Expired).
 //              EA mengecek lisensi 1x/hari, jadi akun efektif aktif kembali dalam <= 1x24 jam.
-function handleBlacklistCascade(sheet, row, isBlocked) {
-  var wa    = normPhone((sheet.getRange(row, 6).getValue() || '').toString());        // F WhatsApp
-  var email = (sheet.getRange(row, 7).getValue() || '').toString().trim().toLowerCase(); // G Email
-  if (!wa && !email) return;
-
-  var data = sheet.getDataRange().getValues();
-  var emailedTo = {};   // hindari dobel email ke alamat yg sama
-  for (var i = 1; i < data.length; i++) {
-    var r = i + 1;
-    var rWa    = normPhone((data[i][5] || '').toString());
-    var rEmail = (data[i][6] || '').toString().trim().toLowerCase();
-    var match  = (wa && rWa && rWa === wa) || (email && rEmail && rEmail === email);
-    if (!match) continue;
-
-    if (isBlocked) {
-      if (!isBlacklisted(data[i][13])) sheet.getRange(r, 14).setValue(true);           // N Blacklist = TRUE
-      var st = (data[i][2] || '').toString().toUpperCase().trim();
-      if (st !== 'INACTIVE') sheet.getRange(r, 3).setValue('Inactive');                // C Status -> Inactive
-      if (rEmail && !emailedTo[rEmail]) { emailedTo[rEmail] = true; try { sendBlacklistEmail(sheet, r); } catch (e1) {} }
-    } else {
-      if (isBlacklisted(data[i][13])) sheet.getRange(r, 14).setValue(false);           // N Blacklist = FALSE
-      var exp = data[i][1];
-      if (exp instanceof Date) sheet.getRange(r, 3).setValue('Active');                // C Status -> Active (punya Expired)
-      if (rEmail && !emailedTo[rEmail]) { emailedTo[rEmail] = true; try { sendRehabEmail(sheet, r); } catch (e2) {} }
-    }
-  }
-}
 
 // Email ke user bahwa ID-nya DIBLOKIR (blacklist) -> arahkan ke admin utk rehabilitasi.
-function sendBlacklistEmail(sheet, row) {
+function sendBlacklistEmail(m, logins) {
   try {
-    var email = (sheet.getRange(row, 7).getValue() || '').toString().trim();   // G Email
-    if (!email) return;
-    var nama  = (sheet.getRange(row, 4).getValue() || '').toString().trim();   // D Nama
-    var login = (sheet.getRange(row, 1).getValue() || '').toString().trim();   // A Login
-    var introU = '<p style="margin:0 0 12px;">Kami informasikan bahwa ID / akun trading Anda telah <b>DIBLOKIR</b> dari layanan EA Apocalypto.</p>';
-    var rowsU = [ ['Nomor Akun / Login MT5', login], ['Status', 'DIBLOKIR'] ];
-    var noteU = infoBox('Selama diblokir, EA tidak akan berjalan. Untuk melakukan <b>rehabilitasi ID</b> silakan menghubungi admin.', 'danger');
-    sendMailUser({
-      to: email,
-      subject: 'EA Apocalypto — ID Anda Diblokir',
-      body: 'ID / akun trading Anda diblokir. Untuk rehabilitasi ID silakan menghubungi admin: ' + ADMIN_WA_URL,
-      htmlBody: emailShell('Pemberitahuan Pemblokiran ID', nama, introU, rowsU, noteU, '#9B2C2C'),   // header MERAH
-      name: 'EA Apocalypto'
-    });
+    if (!m || !m.email) return;
+    var introU = '<p style="margin:0 0 12px;">Kami informasikan bahwa keanggotaan Apocalypto Anda telah <b>DIBLOKIR</b>.</p>';
+    var rowsU = [ ['Kode Member', m.kode], ['Akun EA', (logins && logins.length) ? logins.join(', ') : '-'], ['Status', 'DIBLOKIR'] ];
+    var noteU = infoBox('Selama diblokir, EA tidak akan berjalan dan Anda tidak dapat masuk ke apocalypto.id. Untuk <b>rehabilitasi</b> silakan menghubungi admin.', 'danger');
+    sendMailUser({ to: m.email, subject: 'Apocalypto — Keanggotaan Anda Diblokir',
+      body: 'Keanggotaan Anda diblokir. Untuk rehabilitasi silakan menghubungi admin: ' + ADMIN_WA_URL,
+      htmlBody: emailShell('Pemberitahuan Pemblokiran', m.nama, introU, rowsU, noteU, '#9B2C2C'), name: 'EA Apocalypto' });
     maybeWarnQuota();
   } catch (err) { console.error('sendBlacklistEmail gagal: ' + err); }
 }
 
 // Email ke user: ID telah DIREHABILITASI (blacklist dicabut admin) -> aktif kembali.
-function sendRehabEmail(sheet, row) {
+function sendRehabEmail(m, logins) {
   try {
-    var email = (sheet.getRange(row, 7).getValue() || '').toString().trim();   // G Email
-    if (!email) return;
-    var nama  = (sheet.getRange(row, 4).getValue() || '').toString().trim();   // D Nama
-    var login = (sheet.getRange(row, 1).getValue() || '').toString().trim();   // A Login
-    var exp   = sheet.getRange(row, 2).getValue();                             // B Expired
-    var introU = '<p style="margin:0 0 12px;"><b>Kabar baik!</b> ID / akun trading Anda telah <b>direhabilitasi</b> dan aktif kembali.</p>';
-    var rowsU = [ ['Nomor Akun / Login MT5', login], ['Status', 'AKTIF'] ];
-    if (exp instanceof Date) rowsU.push(['Berlaku sampai', formatTanggalID(exp), true]);
-    var noteU = infoBox('Silakan <b>pasang ulang EA</b> ke chart. EA akan aktif kembali dalam waktu <b>maksimal 1&times;24 jam</b>. Terima kasih telah menyelesaikan kewajiban Anda. Salam profit! 🚀', 'ok') +
-                infoBox('Masa perpanjangan dihitung dari <b>tanggal berakhir lisensi Anda</b>, bukan dari tanggal pembayaran. Jadi memperpanjang lebih awal <b>tidak membuat sisa hari Anda hangus</b> &mdash; justru lebih aman agar EA tidak terputus.', 'info');
-    sendMailUser({
-      to: email,
-      subject: 'EA Apocalypto — ID Anda Telah Direhabilitasi',
-      body: 'ID / akun Anda telah direhabilitasi dan aktif kembali. Silakan pasang ulang EA ke chart.',
-      htmlBody: emailShell('ID Direhabilitasi', nama, introU, rowsU, noteU, '#1E7A46'),   // header HIJAU
-      name: 'EA Apocalypto'
-    });
+    if (!m || !m.email) return;
+    var introU = '<p style="margin:0 0 12px;"><b>Kabar baik!</b> Keanggotaan Apocalypto Anda telah <b>direhabilitasi</b> dan aktif kembali.</p>';
+    var rowsU = [ ['Kode Member', m.kode], ['Akun EA', (logins && logins.length) ? logins.join(', ') : '-'], ['Status', 'AKTIF'] ];
+    var noteU = infoBox('Silakan masuk kembali di apocalypto.id. Bila punya akun EA, <b>pasang ulang EA</b> ke chart; EA aktif kembali dalam waktu <b>maksimal 1&times;24 jam</b>.', 'ok');
+    sendMailUser({ to: m.email, subject: 'Apocalypto — Keanggotaan Anda Telah Direhabilitasi',
+      body: 'Keanggotaan Anda telah direhabilitasi dan aktif kembali.',
+      htmlBody: emailShell('Keanggotaan Direhabilitasi', m.nama, introU, rowsU, noteU, '#1E7A46'), name: 'EA Apocalypto' });
     maybeWarnQuota();
   } catch (err) { console.error('sendRehabEmail gagal: ' + err); }
 }
@@ -858,48 +672,34 @@ function sendRehabEmail(sheet, row) {
 
 // ---------- 3b. REMINDER PERPANJANG: cek harian, kirim saat sisa <= 3 hari ----------
 function checkExpiringLicenses() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var sheet = accSheet();
   var last = sheet.getLastRow();
   if (last < 2) return;
-  var tz = Session.getScriptTimeZone();
-  var now = new Date();
-
+  var tz = Session.getScriptTimeZone(), now = new Date();
   for (var r = 2; r <= last; r++) {
-    var status = (sheet.getRange(r, 3).getValue() || '').toString().toUpperCase().trim();
+    var status = (sheet.getRange(r, AC.STATUS).getValue() || '').toString().toUpperCase().trim();
     if (status !== 'ACTIVE') continue;
-
-    var exp = sheet.getRange(r, 2).getValue();                     // B Expired
+    var exp = sheet.getRange(r, AC.EXP).getValue();
     if (!exp || !(exp instanceof Date)) continue;
-
     var daysLeft = Math.floor((exp.getTime() - now.getTime()) / 86400000);
-
-    // ---- SUDAH LEWAT EXPIRED: nonaktifkan otomatis + email "berakhir" (sekali) ----
     if (daysLeft < 0) {
-      sheet.getRange(r, 3).setValue('Inactive');                   // C Status -> Inactive
-      var emailExp = (sheet.getRange(r, 7).getValue() || '').toString().trim();
-      if (emailExp) { try { sendExpiredEmail(sheet, r, exp); } catch (e0) {} }
-      continue;   // baris jadi Inactive -> tidak diproses lagi besok
+      sheet.getRange(r, AC.STATUS).setValue('Inactive');
+      try { sendExpiredEmail(sheet, r, exp); } catch (e0) {}
+      continue;
     }
-
-    if (daysLeft > 3) continue;                                    // belum masuk H-3
-
+    if (daysLeft > 3) continue;
     var expStr = Utilities.formatDate(new Date(exp), tz, 'yyyy.MM.dd');
-    var remindedFor = (sheet.getRange(r, 16).getValue() || '').toString().trim(); // P
-    if (remindedFor === expStr) continue;                          // sudah diingatkan utk siklus ini
-
-    var email = (sheet.getRange(r, 7).getValue() || '').toString().trim();
-    if (email) sendRenewalReminder(sheet, r, exp, daysLeft);
-    sheet.getRange(r, 16).setValue(expStr);                        // P tandai sudah diingatkan
+    if ((sheet.getRange(r, AC.REMIND).getValue() || '').toString().trim() === expStr) continue;
+    sendRenewalReminder(sheet, r, exp, daysLeft);
+    sheet.getRange(r, AC.REMIND).setValue(expStr);
   }
 }
 
 // Email ke user: masa lisensi TELAH BERAKHIR & EA dinonaktifkan otomatis.
 function sendExpiredEmail(sheet, row, expDate){
   try {
-    var email = (sheet.getRange(row, 7).getValue() || '').toString().trim();   // G Email
+    var c = accContact(sheet, row), email = c.email, nama = c.nama, login = c.login;
     if (!email) return;
-    var nama  = (sheet.getRange(row, 4).getValue() || '').toString().trim();   // D Nama
-    var login = (sheet.getRange(row, 1).getValue() || '').toString().trim();   // A Login
     var expID = formatTanggalID(expDate);                                      // "03 Januari 2027"
     var introU = '<p style="margin:0 0 12px;">Masa aktif lisensi EA Apocalypto Anda telah <b>berakhir</b>, dan EA kini <b>nonaktif</b> otomatis.</p>';
     var rowsU = [ ['Nomor Akun / Login MT5', login], ['Status', 'NONAKTIF (Expired)'], ['Berakhir pada', expID, true] ];
@@ -919,10 +719,8 @@ function sendExpiredEmail(sheet, row, expDate){
 // Email pengingat perpanjang ke user
 function sendRenewalReminder(sheet, row, expDate, daysLeft) {
   try {
-    var email = (sheet.getRange(row, 7).getValue() || '').toString().trim();
+    var c = accContact(sheet, row), email = c.email, nama = c.nama, login = c.login;
     if (!email) return;
-    var nama  = (sheet.getRange(row, 4).getValue() || '').toString().trim();
-    var login = (sheet.getRange(row, 1).getValue() || '').toString().trim();
     var expStr = formatTanggalID(expDate);   // "03 Januari 2027"
     var sisa = (daysLeft <= 0) ? 'hari ini' : (daysLeft + ' hari lagi');
     var introU = '<p style="margin:0 0 12px;">Masa aktif lisensi EA Apocalypto Anda akan <b>segera berakhir</b>.</p>';
@@ -943,10 +741,8 @@ function sendRenewalReminder(sheet, row, expDate, daysLeft) {
 // Email ke user Real bahwa lisensinya sudah DIAKTIFKAN admin
 function sendActivationEmail(sheet, row, expDate) {
   try {
-    var email = (sheet.getRange(row, 7).getValue() || '').toString().trim();   // G Email
+    var c = accContact(sheet, row), email = c.email, nama = c.nama, login = c.login;
     if (!email) return;
-    var nama  = (sheet.getRange(row, 4).getValue() || '').toString().trim();   // D Nama Panggilan
-    var login = (sheet.getRange(row, 1).getValue() || '').toString().trim();   // A Login
     var expStr = Utilities.formatDate(new Date(expDate), Session.getScriptTimeZone(), 'yyyy.MM.dd');
     // CATATAN: email ini TIDAK melampirkan file EA (user sudah dapat di email pertama).
     // Tanpa lampiran, respons sinkronisasi EA jadi cepat (hindari "Gagal Konek" krn timeout).
@@ -970,10 +766,8 @@ function sendActivationEmail(sheet, row, expDate) {
 // Dikirim saat admin ubah Status jadi "Rejected". EA tetap nonaktif; WA/email orangnya TIDAK diblokir.
 function sendRejectionEmail(sheet, row) {
   try {
-    var email = (sheet.getRange(row, 7).getValue() || '').toString().trim();   // G Email
+    var c = accContact(sheet, row), email = c.email, nama = c.nama, login = c.login;
     if (!email) return;
-    var nama  = (sheet.getRange(row, 4).getValue() || '').toString().trim();   // D Nama Panggilan
-    var login = (sheet.getRange(row, 1).getValue() || '').toString().trim();   // A Login
     var introU = '<p style="margin:0 0 12px;">Terima kasih atas minat Anda terhadap EA Apocalypto dan telah melakukan pendaftaran. Setelah kami tinjau, dengan menyesal kami sampaikan bahwa pendaftaran berikut <b>belum dapat kami proses saat ini</b>.</p>';
     var rowsU = [ ['Nomor Akun / Login MT5', login], ['Status', 'Tidak Disetujui'] ];
     var noteU = infoBox('Hal ini dapat terjadi karena data yang belum lengkap atau kurang sesuai, maupun pendaftaran ganda. Bila Anda merasa ini keliru atau ingin mendaftar ulang dengan data yang benar, silakan hubungi admin kami &mdash; dengan senang hati kami bantu.', 'danger');
@@ -1063,58 +857,45 @@ function installTriggers() {
 }
 
 // ---------- 4. SETUP SEKALI: rapikan kolom, header, rumus, warna ----------
+// Pemasangan rutin (aman dijalankan berulang): header, rumus, format, trigger, tab pendukung.
 function setupSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_NAME);
-
-  // (a) Hapus kolom-kolom LAMA yang sudah tidak dipakai (cocokkan nama header).
-  //     Termasuk: Broker, VPS Adress, Password Investor, Periode Penagihan, Total Profit.
-  //     Data otomatis bergeser kiri -> cocok dgn susunan kolom baru (A..P).
-  var obsolete = ['broker', 'vps adress', 'vps address',
-                  'password investor / read-only', 'password investor',
-                  'periode penagihan', 'total profit'];
-  var lastCol = sheet.getLastColumn();
-  var hdr = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  for (var c = hdr.length; c >= 1; c--) {   // kanan -> kiri agar index tidak bergeser saat dihapus
-    var h = (hdr[c - 1] || '').toString().trim().toLowerCase();
-    if (obsolete.indexOf(h) >= 0) sheet.deleteColumn(c);
-  }
-
-  // (b) Tulis header final (baris 1 saja)
+  memberSheet();
+  var sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
   ensureHeaders(sheet);
-
-  // (b2) Ubah tanggal Expired yang masih berupa TEKS jadi tanggal asli
-  //      (supaya rumus Sisa Waktu tidak #VALUE!)
+  sheet.getRange(1, 1, 1, HEADERS.length).setBackground('#0E1A2B').setFontColor('#E7C766');
+  sheet.setColumnWidths(1, HEADERS.length, 140);
+  sheet.getRange('A:A').setNumberFormat('@');
   normalizeExpiredDates(sheet);
-
-  // (c) Pasang rumus Sisa Waktu utk semua baris berisi akun
   var last = sheet.getLastRow();
-  for (var r = 2; r <= last; r++) {
-    if (sheet.getRange(r, 1).getValue() !== '') {
-      sheet.getRange(r, 5).setFormula('=IF($B' + r + '="","",INT($B' + r + '-NOW()))');
-    }
-  }
-
-  // (d) Warna kuning saat Sisa Waktu <= 3 hari (0..3)
+  for (var r = 2; r <= last; r++) if (sheet.getRange(r, 1).getValue() !== '') { setSisaFormula(sheet, r); setNamaFormula(sheet, r); }
   applySisaWaktuFormat(sheet);
-
-  // (e) Pasang checkbox kolom Blacklist (P) utk semua baris berisi akun
-  applyBlacklistCheckboxes(sheet);
-
-  // (e2) Pasang dropdown Status (Active/Inactive/Pending/Rejected) di semua baris berisi akun
   applyStatusValidation(sheet);
-
-  // (f) Pasang installable trigger utk email aktivasi (Status -> Active)
   installTriggers();
-
-  // (g) Buat tab "Invoice" utk pencatatan penagihan
   ensureInvoiceTab();
-
-  // (h) Buat tab "Profit" utk pencatatan profit bulanan otomatis dari EA
   ensureProfitTab();
+  tangkasSheet();
+}
 
-  // (i) Bersihkan baris ganda di tab Profit (kalau ada) + rapikan kolom Bulan jadi teks
-  dedupeProfitSheet();
+// RESET TOTAL ke struktur v2 (menghapus SEMUA data). Dijalankan admin dari menu Apocalypto.
+function resetDatabaseV2() {
+  var ui = null;
+  try { ui = SpreadsheetApp.getUi(); } catch (e) {}
+  if (ui) {
+    var ok = ui.alert('Reset Database', 'SEMUA data (Member, Akun EA, Profit, Invoice, TANGKAS, Profiling, Registrasi Web lama) akan DIHAPUS dan dibuat ulang dengan struktur baru.\n\nLanjutkan?', ui.ButtonSet.YES_NO);
+    if (ok !== ui.Button.YES) return;
+  }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var keep = ss.insertSheet('_tmp_' + Date.now());
+  ['Registrasi Web', 'TANGKAS Pengaturan', 'Profiling', MEMBER_SHEET, SHEET_NAME, PROFIT_SHEET, INVOICE_SHEET, TANGKAS_SHEET].forEach(function (n) {
+    var sh = ss.getSheetByName(n); if (sh) ss.deleteSheet(sh);
+  });
+  setupSheet();
+  ss.deleteSheet(keep);
+  ss.setActiveSheet(ss.getSheetByName(MEMBER_SHEET));
+  var props = PropertiesService.getScriptProperties();
+  props.getKeys().forEach(function (k) { if (/^TANGKAS_(APPR|WIN|TOK|ASKED|OPENED|FINAL|OPEN)_/.test(k)) props.deleteProperty(k); });
+  if (ui) ui.alert('Selesai', 'Database sudah dikosongkan & memakai struktur baru (tab Member + Akun EA).', ui.ButtonSet.OK);
 }
 
 // Pasang dropdown Status (Active/Inactive/Pending/Rejected) di kolom C semua baris berisi akun.
@@ -1219,19 +1000,6 @@ function handleProfit(e){
 }
 
 // Jadikan kolom N (Blacklist) checkbox; sel kosong -> FALSE (belum blacklist)
-function applyBlacklistCheckboxes(sheet) {
-  var last = sheet.getLastRow();
-  if (last < 2) return;
-  var col = 14; // N
-  var rng = sheet.getRange(2, col, last - 1, 1);
-  var vals = rng.getValues();
-  for (var i = 0; i < vals.length; i++) {
-    if (vals[i][0] === '' || vals[i][0] === null) vals[i][0] = false;
-    else vals[i][0] = isBlacklisted(vals[i][0]); // teks lama (YA/x) -> boolean
-  }
-  rng.setValues(vals);
-  rng.setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build());
-}
 
 function ensureHeaders(sheet) {
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
@@ -1435,43 +1203,30 @@ function monthToPeriode(month){
 function getBillData(login, month){
   login = (login || '').toString().trim();
   if (!login) return { ok:false, error:'NO_LOGIN' };
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var sheet = accSheet();
   var row = findMemberRow(sheet, login);
   if (row < 0) return { ok:false, error:'NOT_FOUND' };
-  var v = sheet.getRange(row, 1, 1, 16).getValues()[0];
-  var jenis  = (v[14] || '').toString();      // O Jenis Akun (mis. "USD / Real", "Cent / Real", "USD / Demo")
-  var isCent = /cent/i.test(jenis);           // akun Cent -> profit dari EA 100x lipat
-  var persen = parsePersen(v[10]);            // K Profit Sharing
-
-  // Bulan yang ditagih: pakai param, atau default bulan berjalan (YYYY-MM).
+  var v = sheet.getRange(row, 1, 1, HEADERS.length).getValues()[0];
+  var c = accContact(sheet, row);
+  var jenis  = (v[AC.JENIS - 1] || '').toString();
+  var isCent = /cent/i.test(jenis);
+  var persen = parsePersen(v[AC.PS - 1]);
   var tz = Session.getScriptTimeZone();
   month = (month || '').toString().trim();
   if (!/^\d{4}-\d{2}$/.test(month)) month = Utilities.formatDate(new Date(), tz, 'yyyy-MM');
   var periode = monthToPeriode(month);
-
-  // Profit OTOMATIS dari tab Profit (login + bulan). null = belum ada datanya.
   var meta = getProfitMeta(login, month);
   if (meta === null) return { ok:false, error:'NO_PROFIT', periode:periode, month:month };
-  var profitRaw = meta.profit;
-  var profitUSD = isCent ? (profitRaw / 100) : profitRaw;   // akun Cent -> bagi 100 jadi USD
-
-  // Data siap ditagih HANYA bila EA sudah menandai bulan ini "final" (ditulis utuh saat ganti bulan).
-  // Backend tidak menebak weekend/libur — cukup percaya penanda final dari EA.
-  var finalized = (meta.final === true);
-  var lastUpdateStr = meta.updMs ? Utilities.formatDate(new Date(meta.updMs), tz, 'yyyy-MM-dd HH:mm') : '';
-
-  var shareUSD = profitUSD * persen / 100;    // bagian profit sharing dalam USD
-  var kurs = getKurs();                        // kurs saat ini (Rp/USD)
+  var profitUSD = isCent ? (meta.profit / 100) : meta.profit;
+  var shareUSD = profitUSD * persen / 100;
+  var kurs = getKurs();
   var tagihan = kurs ? Math.round(shareUSD * kurs) : 0;
   return {
-    ok:true, login:login, month:month,
-    finalized:finalized, lastUpdateStr:lastUpdateStr,
-    nama:(v[3]||'').toString(), email:(v[6]||'').toString(), wa:(v[5]||'').toString(),
-    status:(v[2]||'').toString(),
-    jenis:jenis, satuan:(isCent ? 'Cent' : 'USD'),
-    persen:persen, periode:periode,
-    profitInput:profitUSD,
-    profitUSD:profitUSD, profitUSDStr: formatUSD(profitUSD),
+    ok:true, login:login, month:month, kode:c.kode,
+    finalized:(meta.final === true), lastUpdateStr: meta.updMs ? Utilities.formatDate(new Date(meta.updMs), tz, 'yyyy-MM-dd HH:mm') : '',
+    nama:c.nama, email:c.email, wa:c.wa, status:(v[AC.STATUS - 1]||'').toString(),
+    jenis:jenis, satuan:(isCent ? 'Cent' : 'USD'), persen:persen, periode:periode,
+    profitInput:profitUSD, profitUSD:profitUSD, profitUSDStr: formatUSD(profitUSD),
     shareUSD:shareUSD, shareUSDStr: formatUSD(shareUSD),
     kurs:kurs, kursStr: kurs ? formatRupiah(kurs) : '(gagal ambil kurs)',
     tagihan:tagihan, tagihanStr: formatRupiah(tagihan),
@@ -1480,7 +1235,7 @@ function getBillData(login, month){
 }
 
 function ensureInvoiceHeaders(inv){
-  var head = ['No Invoice','Tanggal','Login MT5','Nama','Email','Periode','Profit (input)','Satuan','Profit USD','Persen','Kurs','Tagihan','Kode Unik','Status','Waktu Lunas'];
+  var head = ['No Invoice','Tanggal','Login MT5','Kode Member','Nama Member','Periode','Profit (input)','Satuan','Profit USD','Persen','Kurs','Tagihan','Kode Unik','Status','Waktu Lunas'];
   // Selalu tulis ulang baris header (idempoten) agar tab lama ikut ter-update ke kolom baru.
   inv.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold');
   inv.setFrozenRows(1);
@@ -1510,7 +1265,7 @@ function createInvoice(login, month){
   var inv = ss.getSheetByName(INVOICE_SHEET) || ss.insertSheet(INVOICE_SHEET);
   ensureInvoiceHeaders(inv);
   var invId = 'INV' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
-  inv.appendRow([ invId, new Date(), b.login, b.nama, b.email, b.periode,
+  inv.appendRow([ invId, new Date(), b.login, b.kode, b.nama, b.periode,
                   b.profitInput, b.satuan, Math.round(b.profitUSD * 100) / 100, b.persen + '%',
                   b.kurs, b.tagihan, (b.kodeUnik || ''), 'Belum Lunas', '' ]);
   try { sendInvoiceEmail(b, invId); } catch (e) {}
@@ -1542,7 +1297,7 @@ function createDemoStatement(login, month){
   var inv = ss.getSheetByName(INVOICE_SHEET) || ss.insertSheet(INVOICE_SHEET);
   ensureInvoiceHeaders(inv);
   var invId = 'FREE' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
-  inv.appendRow([ invId, new Date(), b.login, b.nama, b.email, b.periode,
+  inv.appendRow([ invId, new Date(), b.login, b.kode, b.nama, b.periode,
                   b.profitInput, 'Free', Math.round(b.profitUSD * 100) / 100, '0%',
                   '', 0, '', 'Free', '' ]);     // Tagihan 0, Status "Free"
   try { sendDemoStatementEmail(b, invId); } catch (e) {}
@@ -1581,7 +1336,7 @@ function createLossStatement(login, month){
   var inv = ss.getSheetByName(INVOICE_SHEET) || ss.insertSheet(INVOICE_SHEET);
   ensureInvoiceHeaders(inv);
   var invId = 'LOSS' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMddHHmmss');
-  inv.appendRow([ invId, new Date(), b.login, b.nama, b.email, b.periode,
+  inv.appendRow([ invId, new Date(), b.login, b.kode, b.nama, b.periode,
                   b.profitInput, b.satuan, Math.round(b.profitUSD * 100) / 100, '0%',
                   '', 0, '', 'Rugi', '' ]);     // Tagihan 0, Status "Rugi"
   try { sendLossEncouragementEmail(b, invId); } catch (e) {}
@@ -1633,18 +1388,18 @@ function monthlyBillingRun(){
   var month = Utilities.formatDate(prev, tz, 'yyyy-MM');
   var periode = monthToPeriode(month);
 
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var sheet = accSheet();
   var data = sheet.getDataRange().getValues();
   var ok = 0, skip = 0;
   var needReview = [];   // akun Real aktif yg invoice-nya DITAHAN (data basi/kosong) -> verifikasi admin
   for (var i = 1; i < data.length; i++){
-    var login = (data[i][0] || '').toString().trim();
+    var login = (data[i][AC.LOGIN - 1] || '').toString().trim();
     if (!login) continue;
-    var status = (data[i][2] || '').toString().toUpperCase().trim();
-    var jenis  = (data[i][14] || '').toString().toLowerCase();        // O Jenis Akun
+    var status = (data[i][AC.STATUS - 1] || '').toString().toUpperCase().trim();
+    var jenis  = (data[i][AC.JENIS - 1] || '').toString().toLowerCase();
     if (status !== 'ACTIVE') { skip++; continue; }                    // hanya aktif
     // Jangan proses periode SEBELUM member aktif (mis. tagih September utk member yg baru aktif Oktober).
-    var actRaw = data[i][16] || data[i][12];                          // Q Tanggal Aktivasi (fallback M Waktu Daftar)
+    var actRaw = data[i][AC.AKTIVASI - 1] || data[i][AC.DAFTAR - 1];
     if (actRaw) {
       var actKey = Utilities.formatDate(new Date(actRaw), tz, 'yyyy-MM');
       if (actKey > month) { skip++; continue; }                       // aktif setelah periode tagih -> lewati total
@@ -1655,7 +1410,7 @@ function monthlyBillingRun(){
       var r;
       if (isReal) {
         var bd = getBillData(login, month);
-        var nmR = (data[i][3] || '').toString();
+        var nmR = (data[i][AC.KODE - 1] || '').toString();
         if (!bd.ok) {                                                          // tak ada data profit -> TAHAN
           needReview.push(login + ' | ' + nmR + ' | TIDAK ADA data profit periode ini');
           r = { result:'skip', error: bd.error };
@@ -1785,22 +1540,18 @@ function markPaid(invId){
 }
 
 function sendPaidEmail(row){
-  var email = (row[4] || '').toString().trim();
+  var m = memberByKode(String(row[3] || '').trim());
+  var email = m ? m.email : '';
   if (!email) return;
-  var periode = formatPeriode(row[5]);   // rapikan walau tersimpan sbg tanggal panjang
-  var nama = (row[3]||'').toString() || 'Member';
+  var periode = formatPeriode(row[5]);
+  var nama = (m && m.nama) || (row[4]||'').toString() || 'Member';
   var introU = '<p style="margin:0 0 12px;">Pembayaran Profit Sharing Anda sudah kami <b>terima</b>. Terima kasih! 🙏</p>';
-  var rowsU = [
-    ['No. Invoice', (row[0]||'').toString()],
-    ['Nomor Akun', (row[2]||'').toString()],
-    ['Periode', periode],
-    ['Jumlah Dibayar', formatRupiah(row[11])],
-    ['Status', 'LUNAS', true]
-  ];
+  var rowsU = [ ['No. Invoice', (row[0]||'').toString()], ['Nomor Akun', (row[2]||'').toString()], ['Periode', periode],
+                ['Jumlah Dibayar', formatRupiah(row[11])], ['Status', 'LUNAS', true] ];
   var noteU = infoBox('Pembayaran Anda telah lunas. EA Apocalypto Anda tetap aktif &mdash; salam profit! 🚀', 'ok');
   sendMailUser({ to: email, subject: 'Pembayaran Diterima (LUNAS) — EA Apocalypto (' + periode + ')',
                  body: 'Pembayaran Profit Sharing periode ' + periode + ' (' + formatRupiah(row[11]) + ') sudah diterima. Status: LUNAS.',
-                 htmlBody: emailShell('Pembayaran Diterima', nama, introU, rowsU, noteU, '#1E7A46'), name:'EA Apocalypto' });   // header HIJAU
+                 htmlBody: emailShell('Pembayaran Diterima', nama, introU, rowsU, noteU, '#1E7A46'), name:'EA Apocalypto' });
   maybeWarnQuota();
 }
 
@@ -1811,10 +1562,12 @@ function sendPaidEmail(row){
 //  Jalankan dari menu "Apocalypto -> Build Profiling" atau Run buildProfiling().
 //====================================================================
 function onOpen(){
-  try{ webMemberSheet(); } catch(e){}      // pastikan kolom tambahan Registrasi Web (Bank..Blacklist) ada
   try{
     SpreadsheetApp.getUi().createMenu('Apocalypto')
       .addItem('🔎 Build Profiling', 'buildProfiling')
+      .addItem('🛠️ Pasang / Rapikan Struktur', 'setupSheet')
+      .addSeparator()
+      .addItem('♻️ Reset Database (hapus semua data)', 'resetDatabaseV2')
       .addToUi();
   } catch(e){}
 }
@@ -1842,35 +1595,31 @@ function buildProfiling(){
     for (var k in hist) hist[k].sort(function(a,b){return a.idx-b.idx;});
   }
 
-  // ---- 2. Baca member + deteksi duplikat WA/email ----
+  // ---- 2. Baca akun EA + data member (via Kode Member) ----
   var last = mSheet.getLastRow();
   if (last < 2) return;
-  var md = mSheet.getRange(2, 1, last-1, 17).getValues();   // A..Q
-  var waCount={}, emCount={};
-  for (var i=0;i<md.length;i++){
-    var wa = String(md[i][5]||'').replace(/\D/g,'');
-    var em = String(md[i][6]||'').trim().toLowerCase();
-    if (wa) waCount[wa]=(waCount[wa]||0)+1;
-    if (em) emCount[em]=(emCount[em]||0)+1;
-  }
+  var md = mSheet.getRange(2, 1, last-1, HEADERS.length).getValues();
+  var accPerKode = {};
+  for (var i=0;i<md.length;i++){ var kd=String(md[i][AC.KODE-1]||'').trim(); if (kd) accPerKode[kd]=(accPerKode[kd]||0)+1; }
 
-  // ---- 3. Hitung profil tiap member ----
+  // ---- 3. Hitung profil tiap akun ----
   var out = [];
   for (var i=0;i<md.length;i++){
     var r = md[i];
-    var login = String(r[0]||'').trim(); if (!login) continue;
-    var nama   = String(r[3]||'');
-    var status = String(r[2]||'').trim();
+    var login = String(r[AC.LOGIN-1]||'').trim(); if (!login) continue;
+    var kode   = String(r[AC.KODE-1]||'').trim();
+    var mem    = kode ? memberByKode(kode) : null;
+    var nama   = mem ? mem.nama : '';
+    var status = String(r[AC.STATUS-1]||'').trim();
     var stLow  = status.toLowerCase();
-    var jenis  = String(r[14]||'').trim();         // Demo / Real
-    var jnLow  = jenis.toLowerCase();
-    var broker = String(r[7]||'');
-    var skema  = String(r[8]||'');
-    var psharing = String(r[10]||'');
-    var blk    = (r[13]===true || String(r[13]).toUpperCase()==='TRUE');
-
-    var regDate = r[12] ? new Date(r[12]) : null;
-    var expDate = r[1]  ? new Date(r[1])  : null;
+    var jenis  = String(r[AC.JENIS-1]||'').trim();
+    var jnLow  = jenis.toLowerCase().indexOf('real')>=0 ? 'real' : (jenis ? 'demo' : '');
+    var broker = String(r[AC.SERVER-1]||'');
+    var skema  = String(r[AC.MASA-1]||'');
+    var psharing = String(r[AC.PS-1]||'');
+    var blk    = !!(mem && mem.blocked);
+    var regDate = r[AC.DAFTAR-1] ? new Date(r[AC.DAFTAR-1]) : null;
+    var expDate = r[AC.EXP-1]  ? new Date(r[AC.EXP-1])  : null;
     var daysReg = (regDate && !isNaN(regDate)) ? Math.floor((now-regDate)/86400000) : '';
     var daysExp = (expDate && !isNaN(expDate)) ? Math.ceil((expDate-now)/86400000)  : '';
 
@@ -1908,10 +1657,8 @@ function buildProfiling(){
     var posP=0; for (var j=0;j<n;j++){ if (h[j].profit>0) posP+=h[j].profit; }
     var estShare = (jnLow==='real' && shareFrac>0) ? Math.round(posP*shareFrac*100)/100 : '';
 
-    // --- Integritas ---
-    var wa=String(r[5]||'').replace(/\D/g,''), em=String(r[6]||'').trim().toLowerCase();
-    var dWA=(wa && waCount[wa]>1), dEM=(em && emCount[em]>1);
-    var dupTxt = dWA ? (dEM?'WA+Email':'WA') : (dEM?'Email':'-');
+    // --- Akun lain milik member yg sama ---
+    var dupTxt = (kode && accPerKode[kode]>1) ? (accPerKode[kode]+' akun') : '-';
 
     // --- Segmen ---
     var seg='', note=[];
@@ -1928,7 +1675,7 @@ function buildProfiling(){
       else seg='🔻 Rugi';
     }
     if (nearExp)        note.push('Dekat expired '+daysExp+'h');
-    if (dupTxt!=='-')   note.push('Duplikat '+dupTxt);
+    if (dupTxt!=='-')   note.push('Member punya '+dupTxt);
 
     // --- Skor 0..100 ---
     var score=0;
@@ -1944,17 +1691,17 @@ function buildProfiling(){
     }
     score = Math.max(0, Math.min(100, score));
 
-    out.push([ login, nama, jenis, status, seg, score, n,
+    out.push([ login, kode, nama, jenis, status, seg, score, n,
                Math.round(tot*100)/100, Math.round(avg*100)/100, lastPr, winrate, tren, vol,
                daysReg, daysExp, dormant, skema, psharing, estShare, broker, dupTxt, (blk?'YA':'-'), note.join('; ') ]);
   }
 
-  out.sort(function(a,b){ return b[5]-a[5]; });   // skor tertinggi di atas
+  out.sort(function(a,b){ return b[6]-a[6]; });   // skor tertinggi di atas
 
   // ---- 4. Tulis tab "Profiling" ----
-  var headers = ['Login','Nama','Jenis','Status','Segmen','Skor','Bln Data','Total Profit','Rata2/Bln',
+  var headers = ['Login','Kode Member','Nama','Jenis','Status','Segmen','Skor','Bln Data','Total Profit','Rata2/Bln',
                  'Profit Terakhir','Winrate%','Tren','Volatilitas','Umur Daftar (hr)','Sisa Expired (hr)',
-                 'Dormant (bln)','Skema','Profit Sharing','Est. Sharing','Broker','Duplikat','Blacklist','Catatan'];
+                 'Dormant (bln)','Paket','Profit Sharing','Est. Sharing','Broker','Akun Member','Blacklist','Catatan'];
   var sh = ss.getSheetByName('Profiling') || ss.insertSheet('Profiling');
   sh.clear();
   sh.getRange(1,1,1,headers.length).setValues([headers]).setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#FFFFFF');
@@ -1966,59 +1713,13 @@ function buildProfiling(){
 
 
 //====================================================================
-//  REGISTRASI MEMBER dari situs apocalypto.id -> tab "Registrasi Web"
+//  REGISTRASI MEMBER dari situs apocalypto.id -> tab "Member"
 //  Situs mengirim (POST): action=member, nama, email, wa, halaman, key=REG_KEY
 //  Satu baris per email: kalau email sudah ada, data & "Terakhir" diperbarui
 //  dan "Jumlah Registrasi" bertambah (bukan baris baru).
 //====================================================================
-function handleWebMember(p) {
-  var out = function(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); };
-  if (!checkFormKey(p)) return out({ result: 'error', error: 'BAD_KEY' });
-  var nama  = String(p.nama || '').trim().slice(0, 40);
-  var email = String(p.email || '').trim().toLowerCase().slice(0, 80);
-  var wa    = normPhone(String(p.wa || ''));
-  var hal   = String(p.halaman || '').trim().slice(0, 40);
-  if (!nama || !validEmailStr(email) || !isDigitsStr(wa)) return out({ result: 'error', error: 'INVALID_INPUT' });
 
-  upsertWebMember(nama, email, wa, hal);
-  return out({ result: 'ok' });
-}
-
-// Simpan / perbarui 1 baris per email di tab "Registrasi Web".
-function upsertWebMember(nama, email, wa, hal) {
-  var lock = LockService.getScriptLock();
-  lock.tryLock(10000);
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sh = ss.getSheetByName(WEB_MEMBER_SHEET);
-    if (!sh) {
-      sh = ss.insertSheet(WEB_MEMBER_SHEET);
-      sh.getRange(1, 1, 1, 7).setValues([['Waktu Registrasi', 'Nama Panggilan', 'Email', 'WhatsApp', 'Halaman Tujuan', 'Terakhir', 'Jumlah Registrasi']])
-        .setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
-      sh.setFrozenRows(1);
-      sh.setColumnWidths(1, 7, 160);
-    }
-    webMemberSheet();
-    var now = new Date();
-    var last = sh.getLastRow();
-    if (last >= 2) {
-      var emails = sh.getRange(2, 3, last - 1, 1).getValues();
-      for (var i = 0; i < emails.length; i++) {
-        if (String(emails[i][0]).trim().toLowerCase() === email) {
-          var r = i + 2;
-          var cnt = Number(sh.getRange(r, 7).getValue()) || 1;
-          sh.getRange(r, 2, 1, 6).setValues([[nama, email, "'" + wa, hal, now, cnt + 1]]);
-          return 'update';
-        }
-      }
-    }
-    sh.appendRow([now, nama, email, "'" + wa, hal, now, 1]);
-    sh.getRange(sh.getLastRow(), WEB_BL_COL).insertCheckboxes();
-    return 'new';
-  } finally {
-    lock.releaseLock();
-  }
-}
+// Simpan / perbarui 1 baris per email di tab "Member".
 
 
 //====================================================================
@@ -2114,7 +1815,7 @@ function handleOtpSend(p) {
     if (!bank || rek.length < 6 || !an) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
     email = me.email; nama = me.nama; wa = me.wa;
   } else if (mode === 'login') {
-    // MASUK: member lama cukup email -> nama & WA diambil dari tab "Registrasi Web"
+    // MASUK: member lama cukup email -> nama & WA diambil dari tab "Member"
     if (!validEmailStr(email)) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
     var found = findWebMember(email);
     if (!found) return otpOut({ result: 'not_found' });
@@ -2164,36 +1865,9 @@ function handleOtpSend(p) {
   return otpOut({ result: 'sent', wait: OTP_RESEND_SEC, to: target || email });
 }
 
-// Cari member di tab "Registrasi Web" berdasarkan email -> {nama, wa} atau null.
-function findWebMember(email) {
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(WEB_MEMBER_SHEET);
-  if (!sh || sh.getLastRow() < 2) return null;
-  var rows = sh.getRange(2, 2, sh.getLastRow() - 1, 3).getDisplayValues();   // B nama, C email, D WA
-  for (var i = 0; i < rows.length; i++) {
-    if (String(rows[i][1]).trim().toLowerCase() === email) {
-      return { nama: String(rows[i][0]).trim(), wa: normPhone(String(rows[i][2])) };
-    }
-  }
-  return null;
-}
+// Cari member di tab "Member" berdasarkan email -> {nama, wa} atau null.
 
-// Cek email / WA sudah ada di tab "Registrasi Web" -> 'email' | 'wa' | 'both' | null
-function findWebMemberDup(email, wa, excludeRow) {
-  // 'blacklist' bila email/WA cocok dgn member yg diblokir; selain itu 'email' | 'wa' | 'both' | null
-  var sh = webMemberSheet();
-  if (!sh || sh.getLastRow() < 2) return null;
-  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, WEB_BL_COL).getDisplayValues();
-  var e = false, w = false, bl = false;
-  for (var i = 0; i < rows.length; i++) {
-    if (excludeRow && i + 2 === excludeRow) continue;
-    var me = String(rows[i][2]).trim().toLowerCase() === email;
-    var mw = wa && normPhone(String(rows[i][3])) === wa;
-    if (me) e = true; if (mw) w = true;
-    if ((me || mw) && String(rows[i][WEB_BL_COL - 1]).toUpperCase() === 'TRUE') bl = true;
-  }
-  if (bl) return 'blacklist';
-  return (e && w) ? 'both' : e ? 'email' : w ? 'wa' : null;
-}
+// Cek email / WA sudah ada di tab "Member" -> 'email' | 'wa' | 'both' | null
 
 function handleOtpVerify(p) {
   if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
@@ -2287,57 +1961,19 @@ function tangkasStatus() {
 
 
 //====================================================================
-//  SESI MEMBER (token) + DATA REKENING  -> tab "Registrasi Web"
+//  SESI MEMBER (token) + DATA REKENING  -> tab "Member"
 //  Kolom: A Waktu | B Nama | C Email | D WA | E Halaman | F Terakhir | G Jumlah
 //         H Bank | I No. Rekening | J Atas Nama | K Rekening Diverifikasi | L Token Sesi (hash)
 //====================================================================
-var WEB_EXTRA_HEADERS = ['Bank', 'No. Rekening', 'Atas Nama', 'Rekening Diverifikasi', 'Token Sesi (hash)', 'Blacklist'];
-var WEB_BL_COL = 13;   // M Blacklist (centang admin) -> memblokir member + semua akun MT5-nya di tab Member
+
 
 function sha256Hex(t) {
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(t)).map(function (b) {
     return ('0' + ((b + 256) % 256).toString(16)).slice(-2);
   }).join('');
 }
-function webMemberSheet() {
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(WEB_MEMBER_SHEET);
-  if (sh && String(sh.getRange(1, WEB_BL_COL).getValue()) === '') {
-    sh.getRange(1, 8, 1, WEB_EXTRA_HEADERS.length).setValues([WEB_EXTRA_HEADERS])
-      .setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
-    if (sh.getLastRow() >= 2) sh.getRange(2, WEB_BL_COL, sh.getLastRow() - 1, 1).insertCheckboxes();
-  }
-  return sh;
-}
-function findWebMemberRow(email) {
-  var sh = webMemberSheet();
-  if (!sh || sh.getLastRow() < 2) return 0;
-  var col = sh.getRange(2, 3, sh.getLastRow() - 1, 1).getDisplayValues();
-  for (var i = 0; i < col.length; i++) if (String(col[i][0]).trim().toLowerCase() === email) return i + 2;
-  return 0;
-}
 // Buat token sesi baru (dikirim ke browser), simpan hanya hash-nya di kolom L.
-function issueMemberToken(email) {
-  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-  var r = findWebMemberRow(email);
-  if (r) webMemberSheet().getRange(r, 12).setValue(sha256Hex(token));
-  return token;
-}
 // Cek email + token -> data member, atau null.
-function authMember(p) {
-  var email = String((p && p.email) || '').trim().toLowerCase();
-  var token = String((p && p.token) || '');
-  if (!validEmailStr(email) || token.length < 32) return null;
-  var r = findWebMemberRow(email);
-  if (!r) return null;
-  var v = webMemberSheet().getRange(r, 1, 1, WEB_BL_COL).getDisplayValues()[0];
-  if (!v[11] || v[11] !== sha256Hex(token)) return null;
-  if (String(v[WEB_BL_COL - 1]).toUpperCase() === 'TRUE') return null;   // diblokir admin
-  return { row: r, nama: String(v[1]).trim(), email: email, wa: normPhone(String(v[3])),
-           bank: String(v[7]).trim(), rek: String(v[8]).replace(/[^0-9]/g, ''), an: String(v[9]).trim() };
-}
-function setMemberBank(row, bank, rek, an) {
-  webMemberSheet().getRange(row, 8, 1, 4).setValues([[bank, "'" + rek, an, new Date()]]);
-}
 function maskRek(rek) { rek = String(rek || ''); return rek.length <= 4 ? rek : new Array(rek.length - 3).join('\u2022') + rek.slice(-4); }
 
 //====================================================================
@@ -2590,57 +2226,129 @@ function tangkasResetDaily() {
 
 
 //====================================================================
-//  PROFIL MEMBER + BLACKLIST TERPUSAT (tab "Registrasi Web" = data induk)
+//  PROFIL MEMBER + BLACKLIST TERPUSAT (tab "Member" = data induk)
 //====================================================================
-function webMemberBlocked(email) {
-  var r = findWebMemberRow(email);
-  if (!r) return false;
-  return String(webMemberSheet().getRange(r, WEB_BL_COL).getDisplayValue()).toUpperCase() === 'TRUE';
-}
 
 // Simpan perubahan profil + samakan Nama/WA/Email di SEMUA akun MT5 member ini (tab Member).
-function applyProfileChange(me, pr) {
+
+// (lihat handleMemberBlacklistEdit)
+
+
+//====================================================================
+//  TAB "Member" (data induk orang) — v2
+//====================================================================
+function memberSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(MEMBER_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(MEMBER_SHEET);
+    sh.getRange(1, 1, 1, MB_HEADERS.length).setValues([MB_HEADERS]).setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
+    sh.setFrozenRows(1);
+    sh.setColumnWidths(1, MB_HEADERS.length, 150);
+  }
+  return sh;
+}
+function memberRows() {
+  var sh = memberSheet();
+  return sh.getLastRow() >= 2 ? sh.getRange(2, 1, sh.getLastRow() - 1, MB_HEADERS.length).getDisplayValues() : [];
+}
+function memberObj(v, row) {
+  return { row: row, kode: String(v[MB.KODE - 1]).trim(), nama: String(v[MB.NAMA - 1]).trim(),
+           email: String(v[MB.EMAIL - 1]).trim().toLowerCase(), wa: normPhone(String(v[MB.WA - 1])),
+           bank: String(v[MB.BANK - 1]).trim(), rek: String(v[MB.REK - 1]).replace(/[^0-9]/g, ''), an: String(v[MB.AN - 1]).trim(),
+           blocked: String(v[MB.BL - 1]).toUpperCase() === 'TRUE', tokenHash: String(v[MB.TOKEN - 1]) };
+}
+function findMemberBy(field, value) {   // field: 'email' | 'kode'
+  var rows = memberRows();
+  value = String(value || '').trim(); if (field === 'email') value = value.toLowerCase();
+  if (!value) return null;
+  for (var i = 0; i < rows.length; i++) {
+    var m = memberObj(rows[i], i + 2);
+    if (m[field] === value) return m;
+  }
+  return null;
+}
+function memberByKode(kode) { return findMemberBy('kode', kode); }
+function findWebMember(email) { return findMemberBy('email', email); }
+function findWebMemberRow(email) { var m = findMemberBy('email', email); return m ? m.row : 0; }
+function webMemberBlocked(email) { var m = findMemberBy('email', email); return !!(m && m.blocked); }
+
+// email/WA sudah dipakai member lain? -> 'blacklist' | 'email' | 'wa' | 'both' | null
+function findWebMemberDup(email, wa, excludeRow) {
+  var rows = memberRows(), e = false, w = false, bl = false;
+  for (var i = 0; i < rows.length; i++) {
+    if (excludeRow && i + 2 === excludeRow) continue;
+    var m = memberObj(rows[i], i + 2);
+    var me = m.email === email, mw = !!wa && m.wa === wa;
+    if (me) e = true; if (mw) w = true;
+    if ((me || mw) && m.blocked) bl = true;
+  }
+  if (bl) return 'blacklist';
+  return (e && w) ? 'both' : e ? 'email' : w ? 'wa' : null;
+}
+function nextMemberKode() {
+  var rows = memberRows(), mx = 0;
+  for (var i = 0; i < rows.length; i++) { var n = parseInt(String(rows[i][0]).replace(/\D/g, ''), 10); if (n > mx) mx = n; }
+  return 'APX-' + ('000' + (mx + 1)).slice(-Math.max(4, String(mx + 1).length));
+}
+// Gabung (setelah OTP benar): buat member baru (atau perbarui bila email sudah ada).
+function upsertWebMember(nama, email, wa, hal) {
   var lock = LockService.getScriptLock();
-  lock.tryLock(15000);
+  lock.tryLock(10000);
   try {
-    var sh = webMemberSheet();
-    var old = sh.getRange(me.row, 1, 1, 4).getDisplayValues()[0];
-    var oldEmail = String(old[2]).trim().toLowerCase(), oldWa = normPhone(String(old[3]));
-    sh.getRange(me.row, 2, 1, 3).setValues([[pr.nama, pr.email, "'" + pr.wa]]);
-    sh.getRange(me.row, 6).setValue(new Date());
-    if (pr.rek) sh.getRange(me.row, 8, 1, 4).setValues([[pr.bank, "'" + pr.rek, pr.an, new Date()]]);
-    var ms = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-    if (ms && ms.getLastRow() >= 2) {
-      var data = ms.getRange(2, 1, ms.getLastRow() - 1, 7).getValues();
-      for (var i = 0; i < data.length; i++) {
-        var rE = String(data[i][6] || '').trim().toLowerCase(), rW = normPhone(String(data[i][5] || ''));
-        if ((oldEmail && rE === oldEmail) || (oldWa && rW === oldWa)) {
-          ms.getRange(i + 2, 4).setValue(pr.nama);          // D Nama
-          ms.getRange(i + 2, 6).setValue("'" + pr.wa);      // F WA
-          ms.getRange(i + 2, 7).setValue(pr.email);         // G Email
-        }
-      }
-    }
+    var sh = memberSheet(), m = findMemberBy('email', email), now = new Date();
+    if (m) { sh.getRange(m.row, MB.NAMA, 1, 3).setValues([[nama, email, "'" + wa]]); sh.getRange(m.row, MB.LAST).setValue(now); return 'update'; }
+    var kode = nextMemberKode();
+    sh.appendRow([kode, now, nama, email, "'" + wa, '', '', '', '', false, now, '']);
+    sh.getRange(sh.getLastRow(), MB.BL).insertCheckboxes();
+    return 'new';
   } finally { lock.releaseLock(); }
 }
-
-// Admin centang/cabut Blacklist di "Registrasi Web" -> berlaku ke semua akun MT5 (tab Member) dgn email/WA sama.
-function handleWebBlacklistEdit(row, isBlocked) {
-  var sh = webMemberSheet();
-  var v = sh.getRange(row, 1, 1, 4).getDisplayValues()[0];
-  var email = String(v[2]).trim().toLowerCase(), wa = normPhone(String(v[3]));
-  if (isBlocked) sh.getRange(row, 12).setValue('');          // putus sesi login (token)
-  var ms = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  if (!ms || ms.getLastRow() < 2) return;
-  var data = ms.getRange(2, 1, ms.getLastRow() - 1, 14).getValues();
-  for (var i = 0; i < data.length; i++) {
-    var rE = String(data[i][6] || '').trim().toLowerCase(), rW = normPhone(String(data[i][5] || ''));
-    if ((email && rE === email) || (wa && rW === wa)) {
-      if (isBlacklisted(data[i][13]) !== isBlocked) {
-        ms.getRange(i + 2, 14).setValue(isBlocked);
-        handleBlacklistCascade(ms, i + 2, isBlocked);   // pakai alur lama: status Inactive/Active + email
-      }
-      return;   // cascade lama sudah menjalar ke semua baris dgn WA/email sama
+function sha256Hex(t) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(t)).map(function (b) {
+    return ('0' + ((b + 256) % 256).toString(16)).slice(-2);
+  }).join('');
+}
+function issueMemberToken(email) {
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  var m = findMemberBy('email', email);
+  if (m) { var sh = memberSheet(); sh.getRange(m.row, MB.TOKEN).setValue(sha256Hex(token)); sh.getRange(m.row, MB.LAST).setValue(new Date()); }
+  return token;
+}
+function authMember(p) {
+  var email = String((p && p.email) || '').trim().toLowerCase();
+  var token = String((p && p.token) || '');
+  if (!validEmailStr(email) || token.length < 32) return null;
+  var m = findMemberBy('email', email);
+  if (!m || !m.tokenHash || m.tokenHash !== sha256Hex(token) || m.blocked) return null;
+  return m;
+}
+function setMemberBank(row, bank, rek, an) {
+  memberSheet().getRange(row, MB.BANK, 1, 4).setValues([[bank, "'" + rek, an, new Date()]]);
+}
+function applyProfileChange(me, pr) {
+  var sh = memberSheet();
+  sh.getRange(me.row, MB.NAMA, 1, 3).setValues([[pr.nama, pr.email, "'" + pr.wa]]);
+  if (pr.rek) setMemberBank(me.row, pr.bank, pr.rek, pr.an);
+  // Akun EA cukup menyimpan Kode Member -> tidak ada yang perlu disalin.
+}
+// Admin centang/cabut Blacklist di tab Member -> semua akun EA milik member ikut.
+function handleMemberBlacklistEdit(row, isBlocked) {
+  var sh = memberSheet();
+  var m = memberObj(sh.getRange(row, 1, 1, MB_HEADERS.length).getDisplayValues()[0], row);
+  if (!m.kode) return;
+  if (isBlocked) sh.getRange(row, MB.TOKEN).setValue('');   // putus sesi login
+  var acc = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var logins = [];
+  if (acc && acc.getLastRow() >= 2) {
+    var data = acc.getRange(2, 1, acc.getLastRow() - 1, HEADERS.length).getValues();
+    for (var i = 0; i < data.length; i++) {
+      if (String(data[i][AC.KODE - 1]).trim() !== m.kode) continue;
+      var r = i + 2, st = String(data[i][AC.STATUS - 1]).toUpperCase().trim();
+      logins.push(String(data[i][AC.LOGIN - 1]));
+      if (isBlocked) { if (st !== 'INACTIVE' && st !== 'REJECTED') acc.getRange(r, AC.STATUS).setValue('Inactive'); }
+      else if (data[i][AC.EXP - 1] instanceof Date && st === 'INACTIVE') acc.getRange(r, AC.STATUS).setValue('Active');
     }
   }
+  try { if (isBlocked) sendBlacklistEmail(m, logins); else sendRehabEmail(m, logins); } catch (e) {}
 }
