@@ -2072,11 +2072,20 @@ function otpKey(email){ return 'otp_' + Utilities.base64EncodeWebSafe(Utilities.
 
 function handleOtpSend(p) {
   if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
+  var mode  = p.mode === 'login' ? 'login' : 'join';
   var nama  = String(p.nama || '').trim().slice(0, 40);
   var email = String(p.email || '').trim().toLowerCase().slice(0, 80);
   var wa    = normPhone(String(p.wa || ''));
   var hal   = String(p.halaman || '').trim().slice(0, 40);
-  if (!nama || !validEmailStr(email) || !isDigitsStr(wa) || wa.length < 8) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+  if (mode === 'login') {
+    // MASUK: member lama cukup email -> nama & WA diambil dari tab "Registrasi Web"
+    if (!validEmailStr(email)) return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+    var found = findWebMember(email);
+    if (!found) return otpOut({ result: 'not_found' });
+    nama = found.nama; wa = found.wa;
+  } else if (!nama || !validEmailStr(email) || !isDigitsStr(wa) || wa.length < 8) {
+    return otpOut({ result: 'error', error: 'INVALID_INPUT' });
+  }
 
   var cache = CacheService.getScriptCache();
   var k = otpKey(email);
@@ -2094,7 +2103,7 @@ function handleOtpSend(p) {
   cache.put(k + '_n', String(cnt + 1), 3600);
 
   try {
-    var intro = '<p style="margin:0 0 12px;">Berikut kode untuk bergabung di <b>apocalypto.id</b>. Kode berlaku <b>10 menit</b>.</p>' +
+    var intro = '<p style="margin:0 0 12px;">Berikut kode untuk ' + (mode === 'login' ? 'masuk ke' : 'bergabung di') + ' <b>apocalypto.id</b>. Kode berlaku <b>10 menit</b>.</p>' +
       '<div style="text-align:center;margin:18px 0;"><span style="display:inline-block;font-size:32px;font-weight:bold;letter-spacing:10px;color:#0E1A2B;background:#F5ECD5;border:1px solid #E6D7A8;border-radius:10px;padding:12px 18px 12px 28px;">' + code + '</span></div>';
     var note = infoBox('Jangan berikan kode ini kepada siapa pun, termasuk yang mengaku sebagai admin. Abaikan email ini bila Anda tidak merasa meminta kode.', 'warn');
     sendMailUser({
@@ -2110,6 +2119,19 @@ function handleOtpSend(p) {
     return otpOut({ result: 'error', error: 'MAIL_FAILED' });
   }
   return otpOut({ result: 'sent', wait: OTP_RESEND_SEC });
+}
+
+// Cari member di tab "Registrasi Web" berdasarkan email -> {nama, wa} atau null.
+function findWebMember(email) {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(WEB_MEMBER_SHEET);
+  if (!sh || sh.getLastRow() < 2) return null;
+  var rows = sh.getRange(2, 2, sh.getLastRow() - 1, 3).getDisplayValues();   // B nama, C email, D WA
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][1]).trim().toLowerCase() === email) {
+      return { nama: String(rows[i][0]).trim(), wa: normPhone(String(rows[i][2])) };
+    }
+  }
+  return null;
 }
 
 function handleOtpVerify(p) {
