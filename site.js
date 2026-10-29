@@ -19,8 +19,8 @@
   function readMember(){ try{ var m=JSON.parse(localStorage.getItem(MKEY)||"null"); return (m && m.verified && m.token) ? m : null; }catch(_){ return null; } }
   var loggedIn = !!readMember();
 
-  // Menu atas ringkas. Belum login: Beranda + Gabung. Sudah login: hanya tombol Log Out.
-  var NAV = loggedIn ? [] : [ { href:"index.html", label:"Beranda", key:"beranda" } ];
+  // Menu atas ringkas. Belum login: Masuk + Gabung. Sudah login: Profil + Log Out. (Logo = kembali ke beranda.)
+  var NAV = [];
   var navItems = NAV.map(function(m){
     return '<a href="'+m.href+'"'+(m.key===cur?' class="active"':'')+'>'+m.label+'</a>';
   }).join("");
