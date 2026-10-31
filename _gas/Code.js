@@ -2393,9 +2393,20 @@ function apoSetMainLogin() {
   if (r.getSelectedButton() !== ui.Button.OK) return;
   var v = String(r.getResponseText() || '').replace(/\D/g, '');
   if (!isDigitsStr(v)) { ui.alert('Nomor akun tidak valid.'); return; }
+  var ds = apoSheet(APO_DEAL_SHEET, APO_DEAL_HDR), bs = apoSheet(APO_BAL_SHEET, APO_BAL_HDR);
+  if (cur && v !== cur && (ds.getLastRow() > 1 || bs.getLastRow() > 1)) {
+    var q = ui.alert('Ganti akun ' + cur + ' -> ' + v,
+      'Hapus riwayat transaksi & saldo akun lama (' + cur + ') supaya situs hanya menampilkan akun baru?\n\nYES = hapus data lama   NO = biarkan (data lama & baru tercampur)',
+      ui.ButtonSet.YES_NO_CANCEL);
+    if (q === ui.Button.CANCEL || q === ui.Button.CLOSE) return;
+    if (q === ui.Button.YES) {
+      if (ds.getLastRow() > 1) ds.deleteRows(2, ds.getLastRow() - 1);
+      if (bs.getLastRow() > 1) bs.deleteRows(2, bs.getLastRow() - 1);
+    }
+  }
   PropertiesService.getScriptProperties().setProperty('APO_MAIN_LOGIN', v);
-  apoSheet(APO_DEAL_SHEET, APO_DEAL_HDR); apoSheet(APO_BAL_SHEET, APO_BAL_HDR);
-  ui.alert('Akun Apocalypto = ' + v + '.\nEA di akun ini akan mengirim riwayat transaksi setelah EA dipasang ulang / pergantian hari.');
+  CacheService.getScriptCache().remove('APO_HIST_V1');
+  ui.alert('Akun Apocalypto = ' + v + '.\nPasang ulang EA di akun ini supaya mulai mengirim riwayat transaksi. EA di akun lama otomatis berhenti mengirim.');
 }
 function apoSheet(name, hdr) {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName(name);
