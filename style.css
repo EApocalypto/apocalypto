@@ -239,3 +239,10 @@ html.mreg-lock,html.mreg-lock body{overflow:hidden}
 .apx-sec .soon-box p{margin:0;max-width:none}
 .apx-back{display:inline-flex;align-items:center;gap:7px;color:var(--ink-dim);text-decoration:none;font-size:14px;font-weight:700;padding:8px 12px 8px 8px;border-radius:10px;border:1px solid var(--line-soft);margin-top:22px}
 .apx-back:hover{color:var(--gold-soft);border-color:var(--line)}
+
+/* layar "Mohon tunggu..." */
+.apx-wait{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(3,8,20,.62);backdrop-filter:blur(3px)}
+.apx-wait.show{display:flex}
+.apx-wait-box{display:flex;align-items:center;gap:12px;padding:16px 22px;border-radius:14px;background:#0f2142;border:1px solid var(--line);box-shadow:0 20px 60px -20px rgba(0,0,0,.7);color:var(--ink);font-size:15px}
+.apx-spin{width:22px;height:22px;border-radius:50%;border:3px solid rgba(231,199,102,.25);border-top-color:var(--gold);animation:apxspin .8s linear infinite}
+@keyframes apxspin{to{transform:rotate(360deg)}}
