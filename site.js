@@ -124,7 +124,7 @@
         '<form id="mregOtp" novalidate style="display:none">'+
           '<p class="mreg-info" id="mregSentTo"></p>'+
           '<label for="m_otp">Kode OTP</label>'+
-          '<input id="m_otp" class="mreg-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">'+
+          '<input id="m_otp" class="mreg-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">'+
           '<div class="mreg-msg" id="mregMsg2"></div>'+
           '<button type="submit" class="btn-gold mreg-btn" id="mregVerify">Verifikasi &amp; Masuk</button>'+
           '<div class="mreg-links"><button type="button" class="mreg-link" id="mregResend" disabled>Kirim ulang kode</button>'+
@@ -286,6 +286,20 @@
     });
   }
   function updateMember(patch){ var m=getMember(); if(!m) return; for(var k in patch) m[k]=patch[k]; saveMember(m); }
+  // OTP: begitu 6 digit terisi (ketik/tempel/autofill), langsung diverifikasi tanpa klik tombol.
+  document.addEventListener("input", function(e){
+    var el=e.target;
+    if(!el || el.tagName!=="INPUT" || el.getAttribute("autocomplete")!=="one-time-code") return;
+    var v=el.value.replace(/\D/g,"").slice(0,6);
+    if(v!==el.value) el.value=v;
+    if(v.length!==6){ el.removeAttribute("data-sent"); return; }
+    if(el.getAttribute("data-sent")===v) return;
+    var f=el.form, b=f && f.querySelector('button[type="submit"]');
+    if(!f || (b && b.disabled)) return;
+    el.setAttribute("data-sent",v);
+    if(f.requestSubmit) f.requestSubmit(b||undefined); else if(b) b.click();
+  }, true);
+
   window.APX = { update:updateMember, WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember, url:SCRIPT_URL, key:REG_KEY, ready:backendReady, api:memberApi, esc:esc };
   document.dispatchEvent(new CustomEvent("apx:ready"));
 })();
