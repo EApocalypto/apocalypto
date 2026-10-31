@@ -76,10 +76,37 @@
   function getMember(){ return readMember(); }
   function saveMember(m){ try{ localStorage.setItem(MKEY, JSON.stringify(m)); }catch(_){} }
   function backendReady(){ return SCRIPT_URL.indexOf("http")===0; }
+  // Layar "Mohon tunggu..." saat sistem memproses aksi member (kirim/verifikasi OTP, daftar EA, ikut TANGKAS).
+  var WAIT_ACTIONS = { otp_send:1, otp_verify:1, ea_register:1, tangkas:1 };
+  var waitN = 0, waitEl = null, waitT = null;
+  function waitOn(){
+    waitN++;
+    if(waitN > 1) return;
+    clearTimeout(waitT);
+    waitT = setTimeout(function(){
+      if(!waitEl){
+        waitEl = document.createElement("div");
+        waitEl.className = "apx-wait";
+        waitEl.setAttribute("role","status");
+        waitEl.innerHTML = '<div class="apx-wait-box"><span class="apx-spin"></span><b>Mohon tunggu...</b></div>';
+        document.body.appendChild(waitEl);
+      }
+      waitEl.classList.add("show");
+    }, 150);
+  }
+  function waitOff(){
+    waitN = Math.max(0, waitN-1);
+    if(waitN) return;
+    clearTimeout(waitT);
+    if(waitEl) waitEl.classList.remove("show");
+  }
   function api(params){
     params.key = REG_KEY;
+    var w = !!WAIT_ACTIONS[params.action];
+    if(w) waitOn();
     return fetch(SCRIPT_URL, { method:"POST", body:new URLSearchParams(params) })
-      .then(function(r){ return r.json(); });
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if(w) waitOff(); return j; }, function(e){ if(w) waitOff(); throw e; });
   }
   function esc(t){ return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
 
