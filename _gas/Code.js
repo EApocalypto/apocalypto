@@ -131,6 +131,11 @@ function doGet(e) {
     if (!checkApiKey(p)) return ContentService.createTextOutput('ERR:BAD_KEY').setMimeType(ContentService.MimeType.TEXT);
     return handleProfit(e);
   }
+  // ---- Riwayat transaksi AKUN APOCALYPTO (hanya akun utama) dari EA ----
+  if (p.action === 'apo_deals') {
+    if (!checkApiKey(p)) return ContentService.createTextOutput('ERR:BAD_KEY').setMimeType(ContentService.MimeType.TEXT);
+    return ContentService.createTextOutput(handleApoDeals(p)).setMimeType(ContentService.MimeType.TEXT);
+  }
 
 
   // (Endpoint login/getbill/createinvoice halaman penagihan DIHAPUS — penagihan full-otomatis.)
@@ -230,7 +235,8 @@ function getLicenseText(e) {
       var exp = data[i][AC.EXP - 1];
       var actM = data[i][AC.AKTIVASI - 1] || data[i][AC.DAFTAR - 1];
       return "ACTIVE|" + (exp ? Utilities.formatDate(new Date(exp), tz, "yyyy.MM.dd") : "") + "|" +
-             (actM ? Utilities.formatDate(new Date(actM), tz, "yyyy.MM.dd") : "");
+             (actM ? Utilities.formatDate(new Date(actM), tz, "yyyy.MM.dd") : "") +
+             (acc === apoMainLogin() ? "|PUB" : "");   // akun utama Apocalypto -> EA kirim riwayat transaksi
     }
     if (status === "PENDING") return "PENDING|-";
     return "INACTIVE|-";
@@ -296,6 +302,7 @@ function doPost(e) {
     // Pastikan jadwal otomatis TANGKAS terpasang (sekali saja; aksi apa pun dari situs)
     if (p0.action) ensureTangkasTriggers();
     // ---- Gabung dgn OTP email (situs apocalypto.id) ----
+    if (p0.action === 'apo_history') return handleApoHistory(p0);
     if (p0.action === 'otp_send')   return handleOtpSend(p0);
     if (p0.action === 'otp_verify') return handleOtpVerify(p0);
     // ---- Entri harian TANGKAS dari situs ----
@@ -1569,6 +1576,7 @@ function onOpen(){
     SpreadsheetApp.getUi().createMenu('Apocalypto')
       .addItem('🔎 Build Profiling', 'buildProfiling')
       .addItem('🛠️ Pasang / Rapikan Struktur', 'setupSheet')
+      .addItem('📈 Atur Akun Apocalypto (riwayat transaksi)', 'apoSetMainLogin')
       .addSeparator()
       .addItem('♻️ Reset Database (hapus semua data)', 'resetDatabaseV2')
       .addToUi();
@@ -2363,4 +2371,110 @@ function handleMemberBlacklistEdit(row, isBlocked) {
     }
   }
   try { if (isBlocked) sendBlacklistEmail(m, logins); else sendRehabEmail(m, logins); } catch (e) {}
+}
+
+
+// =====================================================================
+//  AKUN APOCALYPTO — riwayat transaksi akun utama (dikirim otomatis oleh EA)
+//  Tab "Transaksi Apocalypto" (per deal) + "Saldo Apocalypto" (saldo/equity harian).
+//  Akun utama diatur admin lewat menu Apocalypto -> Atur Akun Apocalypto.
+// =====================================================================
+var APO_DEAL_SHEET = 'Transaksi Apocalypto';
+var APO_BAL_SHEET  = 'Saldo Apocalypto';
+var APO_DEAL_HDR = ['Deal', 'Posisi', 'Simbol', 'Tipe', 'Lot', 'Waktu Buka', 'Harga Buka', 'Waktu Tutup', 'Harga Tutup',
+                    'Profit', 'Swap', 'Komisi', 'Net', 'Diterima'];
+var APO_BAL_HDR  = ['Tanggal', 'Balance', 'Equity', 'Update'];
+
+function apoMainLogin() { return String(PropertiesService.getScriptProperties().getProperty('APO_MAIN_LOGIN') || '').trim(); }
+function apoSetMainLogin() {
+  var ui = SpreadsheetApp.getUi(), cur = apoMainLogin();
+  var r = ui.prompt('Akun Apocalypto', 'Nomor akun MT5 utama yang riwayat transaksinya ditampilkan di situs' +
+                    (cur ? ' (sekarang: ' + cur + ')' : '') + ':', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var v = String(r.getResponseText() || '').replace(/\D/g, '');
+  if (!isDigitsStr(v)) { ui.alert('Nomor akun tidak valid.'); return; }
+  PropertiesService.getScriptProperties().setProperty('APO_MAIN_LOGIN', v);
+  apoSheet(APO_DEAL_SHEET, APO_DEAL_HDR); apoSheet(APO_BAL_SHEET, APO_BAL_HDR);
+  ui.alert('Akun Apocalypto = ' + v + '.\nEA di akun ini akan mengirim riwayat transaksi setelah EA dipasang ulang / pergantian hari.');
+}
+function apoSheet(name, hdr) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.getRange(1, 1, 1, hdr.length).setValues([hdr]).setFontWeight('bold').setBackground('#0E1A2B').setFontColor('#E7C766');
+    sh.setFrozenRows(1);
+    if (name === APO_DEAL_SHEET) sh.getRange('A:B').setNumberFormat('@');
+    if (name === APO_BAL_SHEET) sh.getRange('A:A').setNumberFormat('@');
+  }
+  return sh;
+}
+function apoNum(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+function apoTime(t) {   // epoch detik (jam SERVER broker) -> "yyyy-MM-dd HH:mm:ss" apa adanya
+  var n = Number(t); if (!n) return '';
+  return Utilities.formatDate(new Date(n * 1000), 'UTC', 'yyyy-MM-dd HH:mm:ss');
+}
+
+// EA -> ?action=apo_deals&login=..&d=<deal;deal;...>&bal=..&eq=..&day=YYYY-MM-DD&key=..
+//   deal = deal,posisi,simbol,tipe(B/S/BAL),lot,tBuka,hBuka,tTutup,hTutup,profit,swap,komisi
+function handleApoDeals(p) {
+  var login = String(p.login || '').trim();
+  if (!login || login !== apoMainLogin()) return 'ERR:NOT_MAIN';
+  var lock = LockService.getScriptLock(); lock.tryLock(15000);
+  try {
+    var sh = apoSheet(APO_DEAL_SHEET, APO_DEAL_HDR), added = 0;
+    var raw = String(p.d || '').trim();
+    if (raw) {
+      var have = {}, last = sh.getLastRow();
+      if (last >= 2) sh.getRange(2, 1, last - 1, 1).getDisplayValues().forEach(function (r) { have[String(r[0]).trim()] = 1; });
+      var rows = [], now = new Date();
+      raw.split(';').forEach(function (s) {
+        var f = s.split(','); if (f.length < 12) return;
+        var id = String(f[0]).replace(/\D/g, ''); if (!id || have[id]) return;
+        have[id] = 1;
+        var tp = String(f[3]).toUpperCase(), typ = tp === 'B' ? 'BUY' : tp === 'S' ? 'SELL' : 'BALANCE';
+        var pr = apoNum(f[9]), sw = apoNum(f[10]), km = apoNum(f[11]);
+        rows.push([id, String(f[1]).replace(/\D/g, ''), String(f[2]).replace(/[^\w.#-]/g, '').slice(0, 20), typ, apoNum(f[4]),
+                   apoTime(f[5]), apoNum(f[6]), apoTime(f[7]), apoNum(f[8]), pr, sw, km, Math.round((pr + sw + km) * 100) / 100, now]);
+      });
+      if (rows.length) { sh.getRange(sh.getLastRow() + 1, 1, rows.length, APO_DEAL_HDR.length).setValues(rows); added = rows.length; }
+    }
+    var day = String(p.day || '');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(day) && p.bal !== undefined) {
+      var bs = apoSheet(APO_BAL_SHEET, APO_BAL_HDR), bl = bs.getLastRow(), row = 0;
+      if (bl >= 2) {
+        var dd = bs.getRange(2, 1, bl - 1, 1).getDisplayValues();
+        for (var i = dd.length - 1; i >= 0; i--) if (String(dd[i][0]) === day) { row = i + 2; break; }
+      }
+      var v = [[day, apoNum(p.bal), apoNum(p.eq), new Date()]];
+      if (row) bs.getRange(row, 1, 1, 4).setValues(v); else bs.getRange(bl + 1, 1, 1, 4).setValues(v);
+    }
+    CacheService.getScriptCache().remove('APO_HIST_V1');
+    return 'OK|' + added;
+  } catch (e) { console.error('handleApoDeals: ' + e); return 'ERR:' + e; }
+  finally { lock.releaseLock(); }
+}
+
+// Situs (member login) -> semua transaksi + saldo harian; filter periode dilakukan di halaman.
+function handleApoHistory(p) {
+  if (!checkFormKey(p)) return otpOut({ result: 'error', error: 'BAD_KEY' });
+  if (!authMember(p)) return otpOut({ result: 'auth' });
+  var cache = CacheService.getScriptCache(), hit = cache.get('APO_HIST_V1');
+  if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), out = { result: 'ok', login: apoMainLogin(), deals: [], saldo: [] };
+  var sh = ss.getSheetByName(APO_DEAL_SHEET);
+  if (sh && sh.getLastRow() >= 2) {
+    sh.getRange(2, 1, sh.getLastRow() - 1, 13).getValues().forEach(function (r) {
+      // [deal, posisi, simbol, tipe, lot, buka, hBuka, tutup, hTutup, profit, swap, komisi, net]
+      out.deals.push([String(r[0]), String(r[1]), String(r[2]), String(r[3]), Number(r[4]) || 0, String(r[5]), Number(r[6]) || 0,
+                      String(r[7]), Number(r[8]) || 0, Number(r[9]) || 0, Number(r[10]) || 0, Number(r[11]) || 0, Number(r[12]) || 0]);
+    });
+    out.deals.sort(function (a, b) { return a[7] < b[7] ? -1 : a[7] > b[7] ? 1 : 0; });
+  }
+  var bs = ss.getSheetByName(APO_BAL_SHEET);
+  if (bs && bs.getLastRow() >= 2)
+    out.saldo = bs.getRange(2, 1, bs.getLastRow() - 1, 3).getDisplayValues().map(function (r) { return [r[0], Number(String(r[1]).replace(/,/g, '')) || 0, Number(String(r[2]).replace(/,/g, '')) || 0]; })
+                  .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+  var txt = JSON.stringify(out);
+  if (txt.length < 95000) cache.put('APO_HIST_V1', txt, 300);
+  return ContentService.createTextOutput(txt).setMimeType(ContentService.MimeType.JSON);
 }

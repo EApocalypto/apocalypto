@@ -6,14 +6,46 @@
 <script src="gate.js?v=202610281227"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Akun Apocalypto — Apocalypto</title>
-<meta name="description" content="Transaksi harian dan link online akun trading Apocalypto di MQL5.">
+<meta name="description" content="Riwayat transaksi dan rekap akun trading Apocalypto.">
 <meta name="theme-color" content="#060d1f">
 <link rel="canonical" href="https://apocalypto.id/apocalypto.html">
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-<link rel="stylesheet" href="style.css?v=202610312144">
+<link rel="stylesheet" href="style.css?v=202610312158">
+<style>
+  .ah{max-width:1080px;margin:0 auto;padding-bottom:48px;display:grid;gap:14px}
+  .ah .card{padding:20px}
+  .ah h2{margin:0;font-size:16px;font-weight:900}
+  .ah-sub{font-size:12.5px;color:var(--ink-faint);margin-top:3px}
+  .pr{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .pr button{font:inherit;font-size:13px;font-weight:700;color:var(--ink-dim);background:var(--field);border:1px solid var(--field-line);border-radius:999px;padding:7px 13px;cursor:pointer}
+  .pr button.on{color:var(--navy-950,#060d1f);background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));border-color:transparent}
+  .rg{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--ink-dim)}
+  .rg input{font:inherit;font-size:14px;color:var(--ink);background:var(--field);border:1px solid var(--field-line);border-radius:10px;padding:8px 10px;color-scheme:dark}
+  .kp{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  .kp div{padding:14px;border-radius:12px;border:1px solid var(--line-soft);background:rgba(255,255,255,.03)}
+  .kp span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint)}
+  .kp b{display:block;margin-top:6px;font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}
+  .kp small{display:block;margin-top:2px;font-size:12px;color:var(--ink-dim)}
+  .pos{color:var(--ok)} .neg{color:var(--danger)}
+  .tw{margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tw table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tw th{text-align:left;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);padding:9px 10px;border-bottom:1px solid var(--line-soft)}
+  .tw td{padding:9px 10px;border-bottom:1px solid rgba(160,183,220,.08)}
+  .tw .r{text-align:right}
+  .tw tr:hover td{background:rgba(255,255,255,.025)}
+  .tg{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;border:1px solid var(--line-soft)}
+  .tg.b{color:#8fc3ff;border-color:rgba(143,195,255,.35)} .tg.s{color:#ffb38a;border-color:rgba(255,179,138,.35)} .tg.d{color:var(--gold);border-color:var(--line)}
+  .more{display:block;margin:12px auto 0;font:inherit;font-size:13px;font-weight:700;color:var(--gold-soft);background:transparent;border:1px solid var(--line);border-radius:10px;padding:8px 16px;cursor:pointer}
+  .ah-empty{padding:22px;text-align:center;color:var(--ink-dim);font-size:14px}
+  .ah>*,.ah-main>*,.two>*{min-width:0}
+  .tw.sc{max-height:560px;overflow-y:auto}
+  .ah-main{display:grid;gap:14px} .ah-main[hidden]{display:none}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:14px;align-items:start}
+  @media(max-width:900px){.kp{grid-template-columns:repeat(2,minmax(0,1fr))}.kp div:first-child{grid-column:1/-1}.two{grid-template-columns:1fr}}
+</style>
 </head>
 <body data-page="apocalypto">
   <div id="siteHeader"></div>
@@ -21,23 +53,119 @@
   <section class="page-hero container" style="padding-top:20px">
     <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-7"/></svg></div>
     <h1>Akun Apocalypto</h1>
-    <p>Perjalanan akun trading Apocalypto, dicatat setiap hari dan bisa dipantau secara online.</p>
+    <p>Perjalanan akun trading Apocalypto, dicatat otomatis oleh EA dan bisa dipantau di sini.</p>
   </section>
-  <section class="container apx-sec" style="margin-top:26px">
-    <div class="card soon-box">
-      <div class="bi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
-      <div><span class="tag"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Segera Hadir</span>
-      <h2>Transaksi Harian</h2>
-      <p>Rekap transaksi harian akun Apocalypto akan ditampilkan di sini.</p></div>
+
+  <section class="container ah" style="margin-top:22px">
+    <div class="card ah-empty" id="aLoad">Memuat&hellip;</div>
+
+    <div id="aMain" class="ah-main" hidden>
+      <div class="card">
+        <h2>Periode</h2>
+        <div class="ah-sub" id="aInfo"></div>
+        <div class="pr" id="aPre">
+          <button data-p="today">Hari Ini</button><button data-p="7">7 Hari</button><button data-p="month" class="on">Bulan Ini</button>
+          <button data-p="last">Bulan Lalu</button><button data-p="year">Tahun Ini</button><button data-p="all">Semua</button>
+        </div>
+        <div class="rg">Dari <input type="date" id="aFrom"> sampai <input type="date" id="aTo"></div>
+      </div>
+
+      <div class="kp" id="aKpi"></div>
+
+      <div class="two">
+        <div class="card">
+          <h2>Rekap Harian</h2>
+          <div class="tw sc"><table><thead><tr><th>Tanggal</th><th class="r">Trx</th><th class="r">Lot</th><th class="r">Net</th></tr></thead><tbody id="aDay"></tbody></table></div>
+        </div>
+        <div class="card">
+          <h2>Transaksi</h2>
+          <div class="ah-sub">Waktu sesuai jam server broker. Net = profit + swap + komisi.</div>
+          <div class="tw"><table><thead><tr><th>Waktu Tutup</th><th>Tipe</th><th class="r">Lot</th><th class="r">Buka</th><th class="r">Tutup</th><th class="r">Net</th></tr></thead><tbody id="aTrx"></tbody></table></div>
+          <button class="more" id="aMore" hidden>Tampilkan lebih banyak</button>
+        </div>
+      </div>
     </div>
-    <div class="card soon-box">
-      <div class="bi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></div>
-      <div><span class="tag"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Segera Hadir</span>
-      <h2>Akun Online di MQL5</h2>
-      <p>Link pemantauan akun Apocalypto secara online di MQL5 akan tersedia di sini.</p></div>
+
+    <div class="card" style="display:flex;gap:16px;align-items:flex-start">
+      <div style="flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:rgba(231,199,102,.1);border:1px solid var(--line);color:var(--gold)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></div>
+      <div><span class="tg d">Segera Hadir</span>
+        <h2 style="margin:8px 0 4px">Akun Online di MQL5</h2>
+        <div class="ah-sub" style="font-size:13.5px;color:var(--ink-dim)">Link pemantauan akun Apocalypto secara online di MQL5 akan tersedia di sini.</div></div>
     </div>
   </section>
+
   <div id="siteFooter"></div>
-  <script src="site.js?v=202610312144" defer></script>
+  <script src="site.js?v=202610312158" defer></script>
+  <script>
+  (function(){
+    var $=function(id){ return document.getElementById(id); };
+    var D=[], S=[], view=[], shown=0, PAGE=50;
+    var BL=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    function pad(n){ return (n<10?'0':'')+n; }
+    function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+    function tgl(s){ var p=s.split('-'); return Number(p[2])+' '+BL[Number(p[1])-1]+' '+p[0]; }
+    function money(v){ var s=(v<0?'-':'')+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return s; }
+    function cls(v){ return v>0?'pos':v<0?'neg':''; }
+    function px(v){ v=Number(v); if(!v) return '-'; return String(Math.round(v*100000)/100000); }
+    function lot(v){ return (Math.round(v*100)/100).toFixed(2); }
+
+    function preset(k){
+      var t=new Date(), f=new Date(t), to=new Date(t);
+      if(k==='7') f.setDate(t.getDate()-6);
+      else if(k==='month') f=new Date(t.getFullYear(),t.getMonth(),1);
+      else if(k==='last'){ f=new Date(t.getFullYear(),t.getMonth()-1,1); to=new Date(t.getFullYear(),t.getMonth(),0); }
+      else if(k==='year') f=new Date(t.getFullYear(),0,1);
+      else if(k==='all'){ var first=D.length?D[0][7].slice(0,10):ymd(t); $('aFrom').value=first; $('aTo').value=ymd(t); return; }
+      $('aFrom').value=ymd(f); $('aTo').value=ymd(to);
+    }
+    function apply(){
+      var a=$('aFrom').value, b=$('aTo').value; if(a&&b&&a>b){ var x=a; a=b; b=x; }
+      var tr=D.filter(function(d){ var k=d[7].slice(0,10); return d[3]!=='BALANCE' && (!a||k>=a) && (!b||k<=b); });
+      // KPI
+      var net=0, win=0, loss=0, lots=0, gp=0, gl=0;
+      tr.forEach(function(d){ net+=d[12]; lots+=d[4]; if(d[12]>0){win++;gp+=d[12];} else if(d[12]<0){loss++;gl-=d[12];} });
+      var n=tr.length, wr=n?Math.round(win/n*100):0, pf=gl>0?(gp/gl).toFixed(2):(gp>0?'∞':'-');
+      var bal=null; for(var i=S.length-1;i>=0;i--) if(!b||S[i][0]<=b){ bal=S[i]; break; }
+      $('aKpi').innerHTML=
+        '<div><span>Net Profit</span><b class="'+cls(net)+'">'+money(net)+'</b><small>'+(a?tgl(a):'')+' – '+(b?tgl(b):'')+'</small></div>'+
+        '<div><span>Transaksi</span><b>'+n+'</b><small>'+win+' profit · '+loss+' loss</small></div>'+
+        '<div><span>Win Rate</span><b>'+wr+'%</b><small>Profit factor '+pf+'</small></div>'+
+        '<div><span>Total Lot</span><b>'+lot(lots)+'</b><small>&nbsp;</small></div>'+
+        '<div><span>Balance</span><b>'+(bal?money(bal[1]):'-')+'</b><small>'+(bal?'Equity '+money(bal[2])+' · '+tgl(bal[0]):'&nbsp;')+'</small></div>';
+      // Rekap harian
+      var g={}, keys=[];
+      tr.forEach(function(d){ var k=d[7].slice(0,10); if(!g[k]){ g[k]={n:0,l:0,v:0}; keys.push(k); } g[k].n++; g[k].l+=d[4]; g[k].v+=d[12]; });
+      keys.sort().reverse();
+      $('aDay').innerHTML=keys.length?keys.map(function(k){ var x=g[k]; return '<tr><td>'+tgl(k)+'</td><td class="r">'+x.n+'</td><td class="r">'+lot(x.l)+'</td><td class="r '+cls(x.v)+'">'+money(x.v)+'</td></tr>'; }).join('')
+        :'<tr><td colspan="4" class="ah-empty">Tidak ada transaksi di periode ini.</td></tr>';
+      view=tr.slice().reverse(); shown=0; $('aTrx').innerHTML=''; more();
+      if(!view.length) $('aTrx').innerHTML='<tr><td colspan="6" class="ah-empty">Tidak ada transaksi di periode ini.</td></tr>';
+    }
+    function more(){
+      var h='', e=Math.min(view.length, shown+PAGE);
+      for(var i=shown;i<e;i++){ var d=view[i], b=d[3]==='BUY';
+        h+='<tr><td>'+d[7].slice(0,16)+'</td><td><span class="tg '+(b?'b':'s')+'">'+d[3]+'</span></td><td class="r">'+lot(d[4])+'</td><td class="r">'+px(d[6])+'</td><td class="r">'+px(d[8])+'</td><td class="r '+cls(d[12])+'">'+money(d[12])+'</td></tr>'; }
+      $('aTrx').insertAdjacentHTML('beforeend',h); shown=e; $('aMore').hidden=shown>=view.length;
+    }
+    [].forEach.call(document.querySelectorAll('#aPre button'),function(btn){ btn.addEventListener('click',function(){
+      [].forEach.call(document.querySelectorAll('#aPre button'),function(x){ x.classList.toggle('on',x===btn); });
+      preset(btn.getAttribute('data-p')); apply(); }); });
+    ['aFrom','aTo'].forEach(function(id){ $(id).addEventListener('change',function(){ [].forEach.call(document.querySelectorAll('#aPre button'),function(x){ x.classList.remove('on'); }); apply(); }); });
+    $('aMore').addEventListener('click',more);
+
+    function load(){
+      APX.api({action:'apo_history'}).then(function(r){
+        if(!r||r.result!=='ok'){ $('aLoad').textContent='Gagal memuat. Muat ulang halaman.'; return; }
+        D=r.deals||[]; S=r.saldo||[];
+        if(!D.length && !S.length){ $('aLoad').textContent='Belum ada data transaksi. Data akan tampil otomatis setelah EA akun Apocalypto mengirim riwayatnya.'; return; }
+        $('aLoad').hidden=true; $('aMain').hidden=false;
+        $('aInfo').textContent=(r.login?'Akun '+r.login+' · ':'')+(S.length?'Update terakhir '+tgl(S[S.length-1][0]):'');
+        preset('month'); apply();
+      }).catch(function(){ $('aLoad').textContent='Gagal terhubung. Muat ulang halaman.'; });
+    }
+    function start(){ if(window.APX&&APX.member&&APX.member()) load(); }
+    if(window.APX) start(); else document.addEventListener('apx:ready',start);
+  })();
+  </script>
 </body>
 </html>
