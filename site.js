@@ -327,6 +327,18 @@
     if(f.requestSubmit) f.requestSubmit(b||undefined); else if(b) b.click();
   }, true);
 
+  // Kunci ringan: klik kanan & pintasan lihat-sumber dinonaktifkan (kolom isian tetap bisa klik kanan utk tempel).
+  document.addEventListener("contextmenu", function(e){
+    var t=e.target; if(t && (t.tagName==="INPUT" || t.tagName==="TEXTAREA" || t.isContentEditable)) return;
+    e.preventDefault();
+  });
+  document.addEventListener("keydown", function(e){
+    var k=(e.key||"").toLowerCase(), c=e.ctrlKey||e.metaKey;
+    if(k==="f12" || (c && k==="u") || (c && e.shiftKey && (k==="i"||k==="j"||k==="c")) || (e.metaKey && e.altKey && (k==="i"||k==="j"||k==="u"))){
+      e.preventDefault(); e.stopPropagation();
+    }
+  }, true);
+
   window.APX = { update:updateMember, WA:WA, GRUP:GRUP, YT:YT, EMAIL:EMAIL, member:getMember, url:SCRIPT_URL, key:REG_KEY, ready:backendReady, api:memberApi, esc:esc };
   document.dispatchEvent(new CustomEvent("apx:ready"));
 })();
