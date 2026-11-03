@@ -90,8 +90,7 @@
         <div class="card">
           <h2>Transaksi</h2>
           <div class="ah-sub">Waktu sesuai jam server broker. Net = profit + swap + komisi.</div>
-          <div class="tw"><table><thead><tr><th>Waktu Tutup</th><th>Tipe</th><th class="r">Lot</th><th class="r">Buka</th><th class="r">Tutup</th><th class="r">Net</th></tr></thead><tbody id="aTrx"></tbody></table></div>
-          <button class="more" id="aMore" hidden>Tampilkan lebih banyak</button>
+          <div class="tw sc" id="aTrxW"><table><thead><tr><th>Waktu Tutup</th><th>Tipe</th><th class="r">Lot</th><th class="r">Buka</th><th class="r">Tutup</th><th class="r">Net</th></tr></thead><tbody id="aTrx"></tbody></table></div>
         </div>
       </div>
     </div>
@@ -105,7 +104,7 @@
   </section>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202611032027" defer></script>
+  <script src="site.js?v=202611032032" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
@@ -148,7 +147,7 @@
         '<div><span>Total Lot</span><b>'+lot(lots)+'</b><small>&nbsp;</small></div>'+
         '<div><span>Balance</span><b>'+(bal?money(bal[1]):'-')+'</b><small>'+(bal?'Equity '+money(bal[2])+' · '+tgl(bal[0]):'&nbsp;')+'</small></div>';
       TR=tr; rekap();
-      view=tr.slice().reverse(); shown=0; $('aTrx').innerHTML=''; more();
+      view=tr.slice().reverse(); shown=0; $('aTrx').innerHTML=''; $('aTrxW').scrollTop=0; more();
       if(!view.length) $('aTrx').innerHTML='<tr><td colspan="6" class="ah-empty">Tidak ada transaksi di periode ini.</td></tr>';
     }
     function rekap(){
@@ -167,13 +166,13 @@
       var h='', e=Math.min(view.length, shown+PAGE);
       for(var i=shown;i<e;i++){ var d=view[i], b=d[3]==='BUY';
         h+='<tr><td>'+d[7].slice(0,16)+'</td><td><span class="tg '+(b?'b':'s')+'">'+d[3]+'</span></td><td class="r">'+lot(d[4])+'</td><td class="r">'+px(d[6])+'</td><td class="r">'+px(d[8])+'</td><td class="r '+cls(d[12])+'">'+money(d[12])+'</td></tr>'; }
-      $('aTrx').insertAdjacentHTML('beforeend',h); shown=e; $('aMore').hidden=shown>=view.length;
+      $('aTrx').insertAdjacentHTML('beforeend',h); shown=e;
     }
     [].forEach.call(document.querySelectorAll('#aPre button'),function(btn){ btn.addEventListener('click',function(){
       [].forEach.call(document.querySelectorAll('#aPre button'),function(x){ x.classList.toggle('on',x===btn); });
       preset(btn.getAttribute('data-p')); apply(); }); });
     ['aFrom','aTo'].forEach(function(id){ $(id).addEventListener('change',function(){ [].forEach.call(document.querySelectorAll('#aPre button'),function(x){ x.classList.remove('on'); }); apply(); }); });
-    $('aMore').addEventListener('click',more);
+    $('aTrxW').addEventListener('scroll',function(){ var w=this; if(shown<view.length && w.scrollTop+w.clientHeight>=w.scrollHeight-200) more(); });
 
     function load(){
       APX.api({action:'apo_history'}).then(function(r){
