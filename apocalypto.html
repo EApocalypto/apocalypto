@@ -95,16 +95,16 @@
   </section>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202610312158" defer></script>
+  <script src="site.js?v=202611032017" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
-    var D=[], S=[], view=[], shown=0, PAGE=50;
+    var D=[], S=[], view=[], shown=0, PAGE=50, CENT=false;
     var BL=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     function pad(n){ return (n<10?'0':'')+n; }
     function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
     function tgl(s){ var p=s.split('-'); return Number(p[2])+' '+BL[Number(p[1])-1]+' '+p[0]; }
-    function money(v){ var s=(v<0?'-':'')+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return s; }
+    function money(v){ var n=Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return (v<0?'-':'')+(CENT?n+' ¢':'$'+n); }
     function cls(v){ return v>0?'pos':v<0?'neg':''; }
     function px(v){ v=Number(v); if(!v) return '-'; return String(Math.round(v*100000)/100000); }
     function lot(v){ return (Math.round(v*100)/100).toFixed(2); }
@@ -156,10 +156,10 @@
     function load(){
       APX.api({action:'apo_history'}).then(function(r){
         if(!r||r.result!=='ok'){ $('aLoad').textContent='Gagal memuat. Muat ulang halaman.'; return; }
-        D=r.deals||[]; S=r.saldo||[];
+        D=r.deals||[]; S=r.saldo||[]; CENT=!!r.cent;
         if(!D.length && !S.length){ $('aLoad').textContent='Belum ada data transaksi. Data akan tampil otomatis setelah EA akun Apocalypto mengirim riwayatnya.'; return; }
         $('aLoad').hidden=true; $('aMain').hidden=false;
-        $('aInfo').textContent=(r.login?'Akun '+r.login+' · ':'')+(S.length?'Update terakhir '+tgl(S[S.length-1][0]):'');
+        $('aInfo').textContent=(r.login?'Akun '+r.login+(r.jenis?' ('+r.jenis+')':'')+' · ':'')+(S.length?'Update terakhir '+tgl(S[S.length-1][0]):'');
         preset('month'); apply();
       }).catch(function(){ $('aLoad').textContent='Gagal terhubung. Muat ulang halaman.'; });
     }
