@@ -51,8 +51,13 @@
   .rk-tab button{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-dim);background:transparent;border:0;border-radius:999px;padding:6px 12px;cursor:pointer}
   .rk-tab button.on{color:#060d1f;background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep))}
   .ah-main{display:grid;gap:14px} .ah-main[hidden]{display:none}
-  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:14px;align-items:start}
-  @media(max-width:900px){.kp{grid-template-columns:repeat(2,minmax(0,1fr))}.kp div:first-child{grid-column:1/-1}.two{grid-template-columns:1fr}}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:14px;align-items:stretch}
+  .two>.card:first-child{min-height:340px}
+  /* tinggi kotak Transaksi = tinggi kotak Rekap; isi Transaksi digulir di dalam */
+  .trx-card{position:relative;padding:0!important}
+  .trx-in{position:absolute;inset:0;padding:20px;display:flex;flex-direction:column}
+  .trx-in .tw.sc{flex:1;min-height:0;max-height:none}
+  @media(max-width:900px){.kp{grid-template-columns:repeat(2,minmax(0,1fr))}.kp div:first-child{grid-column:1/-1}.two{grid-template-columns:1fr}.two>.card:first-child{min-height:0}.trx-card{padding:20px!important}.trx-in{position:static;padding:0}.trx-in .tw.sc{max-height:560px}}
 </style>
 </head>
 <body data-page="apocalypto">
@@ -87,11 +92,11 @@
           </div>
           <div class="tw sc"><table><thead><tr><th id="aRkH">Tanggal</th><th class="r">Trx</th><th class="r">Lot</th><th class="r">Net</th></tr></thead><tbody id="aDay"></tbody></table></div>
         </div>
-        <div class="card">
+        <div class="card trx-card"><div class="trx-in">
           <h2>Transaksi</h2>
           <div class="ah-sub">Waktu sesuai jam server broker. Net = profit + swap + komisi.</div>
           <div class="tw sc" id="aTrxW"><table><thead><tr><th>Waktu Tutup</th><th>Tipe</th><th class="r">Lot</th><th class="r">Buka</th><th class="r">Tutup</th><th class="r">Net</th></tr></thead><tbody id="aTrx"></tbody></table></div>
-        </div>
+        </div></div>
       </div>
     </div>
 
@@ -104,7 +109,7 @@
   </section>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202611032104" defer></script>
+  <script src="site.js?v=202611040643" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
