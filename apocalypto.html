@@ -46,7 +46,7 @@
   .ah>*,.ah-main>*,.two>*{min-width:0}
   .tw.sc{max-height:560px;overflow-y:auto}
   .tw.sc thead th{position:sticky;top:0;background:#0d1a33;z-index:1}
-  .rk-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .rk-hd{display:flex;align-items:center;justify-content:flex-start;gap:10px;flex-wrap:wrap}
   .rk-tab{display:inline-flex;padding:3px;border-radius:999px;background:var(--field);border:1px solid var(--field-line)}
   .rk-tab button{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-dim);background:transparent;border:0;border-radius:999px;padding:6px 12px;cursor:pointer}
   .rk-tab button.on{color:#060d1f;background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep))}
@@ -82,7 +82,7 @@
 
       <div class="two">
         <div class="card">
-          <div class="rk-hd"><h2>Rekap</h2>
+          <div class="rk-hd">
             <div class="rk-tab" id="aRk"><button data-g="d" class="on">Harian</button><button data-g="m">Bulanan</button><button data-g="y">Tahunan</button></div>
           </div>
           <div class="tw sc"><table><thead><tr><th id="aRkH">Tanggal</th><th class="r">Trx</th><th class="r">Lot</th><th class="r">Net</th></tr></thead><tbody id="aDay"></tbody></table></div>
@@ -105,7 +105,7 @@
   </section>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202611032025" defer></script>
+  <script src="site.js?v=202611032027" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
