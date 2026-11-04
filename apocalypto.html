@@ -111,7 +111,7 @@
   </section>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202611041206" defer></script>
+  <script src="site.js?v=202611041219" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
@@ -185,7 +185,7 @@
       APX.api({action:'apo_history'}).then(function(r){
         if(!r||r.result!=='ok'){ $('aLoad').textContent='Gagal memuat. Muat ulang halaman.'; return; }
         D=r.deals||[]; S=r.saldo||[]; CENT=!!r.cent;
-        if(r.mql5){ $('mqTag').textContent='Online'; $('mqTag').style.color='var(--ok)'; $('mqTag').style.borderColor='rgba(126,224,166,.4)';
+        if(r.mql5){ $('mqTag').textContent='Sinyal MQL5';
           $('mqTxt').textContent='Pantau akun Apocalypto secara terbuka & terverifikasi langsung oleh MQL5 (MetaQuotes): grafik, growth, drawdown, dan riwayat trade.';
           $('mqBtn').href=r.mql5; $('mqBtn').hidden=false; $('mqBtn').style.display='inline-flex'; }
         if(!D.length && !S.length){ $('aLoad').textContent='Belum ada data transaksi. Data akan tampil otomatis setelah EA akun Apocalypto mengirim riwayatnya.'; return; }
