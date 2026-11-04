@@ -109,7 +109,7 @@
   </section>
 
   <div id="siteFooter"></div>
-  <script src="site.js?v=202611040643" defer></script>
+  <script src="site.js?v=202611040800" defer></script>
   <script>
   (function(){
     var $=function(id){ return document.getElementById(id); };
@@ -120,7 +120,7 @@
     function tgl(s){ var p=s.split('-'); return Number(p[2])+' '+BL[Number(p[1])-1]+' '+p[0]; }
     function money(v){ var n=Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return (v<0?'-':'')+(CENT?n+' ¢':'$'+n); }
     function cls(v){ return v>0?'pos':v<0?'neg':''; }
-    function px(v){ v=Number(v); if(!v) return '-'; return String(Math.round(v*100000)/100000); }
+    function px(v){ v=Number(v); if(!v) return '-'; return v.toFixed(2); }
     function lot(v){ return (Math.round(v*100)/100).toFixed(2); }
 
     function preset(k){
