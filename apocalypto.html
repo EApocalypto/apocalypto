@@ -105,7 +105,13 @@
           <div>
             <h2 style="margin:0;font-size:16px;font-weight:900;line-height:1.3">Resume Siklus</h2>
           </div>
-          <span class="tg d" id="aCycTag">0 Siklus</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button id="aCycSync" hidden onclick="syncSiklus()" style="display:none;align-items:center;gap:6px;background:rgba(231,199,102,.12);border:1px solid rgba(231,199,102,.35);color:var(--gold);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .2s">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+              <span id="aCycSyncTxt">Sync ke Sheet</span>
+            </button>
+            <span class="tg d" id="aCycTag">0 Siklus</span>
+          </div>
         </div>
         <div class="tw sc" style="max-height:220px">
           <table>
@@ -758,10 +764,31 @@
         $('aLoad').textContent='Gagal terhubung. Muat ulang halaman.';
       });
     }
+    function showSyncBtn(){
+      var m=window.APX&&APX.member&&APX.member();
+      var isAdmin=m&&m.email==='admin@apocalypto.id';
+      var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:';
+      var btn=$('aCycSync');
+      if(btn&&(isAdmin||isLocal)){ btn.hidden=false; btn.style.display='inline-flex'; }
+    }
+    function syncSiklus(){
+      var btn=$('aCycSync'),txt=$('aCycSyncTxt');
+      if(!btn||btn.disabled) return;
+      btn.disabled=true; btn.style.opacity='0.6'; txt.textContent='Menyimpan...';
+      APX.api({action:'rebuild_siklus'}).then(function(r){
+        txt.textContent=r&&r.count!=null?'Tersimpan ('+r.count+' siklus)':'Tersimpan';
+        btn.style.opacity='1';
+        setTimeout(function(){ txt.textContent='Sync ke Sheet'; btn.disabled=false; },3000);
+      }).catch(function(){
+        txt.textContent='Gagal — coba lagi';
+        btn.style.opacity='1';
+        setTimeout(function(){ txt.textContent='Sync ke Sheet'; btn.disabled=false; },3000);
+      });
+    }
     function start(){
       var isLocal = location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:';
-      if(window.APX&&APX.member&&APX.member()) load();
-      else if(isLocal) initLocalDemoData();
+      if(window.APX&&APX.member&&APX.member()){ load(); showSyncBtn(); }
+      else if(isLocal){ initLocalDemoData(); showSyncBtn(); }
     }
     if(window.APX) start(); else document.addEventListener('apx:ready',start);
   })();
