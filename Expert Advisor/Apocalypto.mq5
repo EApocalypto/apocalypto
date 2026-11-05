@@ -490,7 +490,7 @@ void ApoSendHistory()
         }
       // arah posisi = kebalikan deal penutup; harga & waktu buka dari deal IN posisi tsb
       string   side = (typ == DEAL_TYPE_SELL) ? "B" : "S";
-      datetime tOpen = 0; double pOpen = 0;
+      datetime tOpen = 0; double pOpen = 0; string cmt = "";
       if(pos[i] > 0 && HistorySelectByPosition(pos[i]))
         {
          int m = HistoryDealsTotal();
@@ -501,15 +501,20 @@ void ApoSendHistory()
             tOpen = (datetime)HistoryDealGetInteger(q, DEAL_TIME);
             pOpen = HistoryDealGetDouble(q, DEAL_PRICE);
             side  = (HistoryDealGetInteger(q, DEAL_TYPE) == DEAL_TYPE_BUY) ? "B" : "S";
+            cmt   = HistoryDealGetString(q, DEAL_COMMENT);   // komentar posisi (layer info)
             double vIn = HistoryDealGetDouble(q, DEAL_VOLUME);
             if(vIn > 0) cm += HistoryDealGetDouble(q, DEAL_COMMISSION) * MathMin(1.0, vol / vIn);
             break;
            }
         }
+      // Max floating siklus disimpan di Global Variable saat siklus selesai (ResetTogglesOnNewL1)
+      double mf = 0.0;
+      string mfKey = "ApoMF_" + IntegerToString(pos[i]);
+      if(GlobalVariableCheck(mfKey)) mf = GlobalVariableGet(mfKey);
       int dg = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS); if(dg <= 0) dg = _Digits;
-      items[i] = StringFormat("%I64u,%I64d,%s,%s,%.2f,%I64d,%s,%I64d,%s,%.2f,%.2f,%.2f",
+      items[i] = StringFormat("%I64u,%I64d,%s,%s,%.2f,%I64d,%s,%I64d,%s,%.2f,%.2f,%.2f,%s,%.2f",
                               k, pos[i], sym, side, vol, (long)tOpen, DoubleToString(pOpen, dg),
-                              (long)tm[i], DoubleToString(pc, dg), pr, sw, cm);
+                              (long)tm[i], DoubleToString(pc, dg), pr, sw, cm, cmt, mf);
      }
 
    // 3) kirim per PER deal; tandai waktu deal terakhir yg sukses (server buang duplikat)
@@ -1483,6 +1488,9 @@ void ResetTogglesOnNewL1()
       if(gHoldMarti)  { gHoldMarti = false;  GlobalVariableSet(StateKey("holdMarti"), 0.0); Print("ℹ️ Hold Marti di-reset OFF (siklus baru)."); }
       if(gForceTier3) { gForceTier3 = false; GlobalVariableSet(StateKey("t3"), 0.0);        Print("ℹ️ Tier 3 di-reset OFF (siklus baru)."); }
       gRSIAnomaly = false;   // siklus baru / flat -> latch anomali RSI dibersihkan
+      // Simpan max floating siklus yg baru selesai → dipakai saat kirim riwayat ke backend
+      if(gCycleFounder != 0 && gCycleMinFloat < 0.0)
+         GlobalVariableSet("ApoMF_" + IntegerToString(gCycleFounder), gCycleMinFloat);
      }
 
    gCycleFounder = (nPos >= 1) ? founder : 0;

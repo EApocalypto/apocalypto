@@ -608,25 +608,27 @@
       if(!tr||!tr.length) return [];
       var cycles=[],cur=null,dayCnt={};
       tr.forEach(function(d){
-        var lyr=layerFromComment(d[2]);
+        // d[13]=comment(layer), d[5]=open_time, d[14]=maxFloat (dari backend v2+)
+        var lyr=layerFromComment(d[13]);
         var cDate=(d[7]||'').slice(0,10);
         var isL1=(lyr===1)||(lyr===0&&!cur);
+        var mf14=(typeof d[14]==='number'&&d[14]<0)?d[14]:null;
         if(isL1){
           if(cur) cycles.push(cur);
           if(!dayCnt[cDate]) dayCnt[cDate]=0;
           dayCnt[cDate]++;
-          cur={no:dayCnt[cDate],date:cDate,buka:d[1]||'',tutup:(d[7]||'').slice(0,16),layers:0,maxFloat:(typeof d[13]==='number'?d[13]:null),net:0};
+          cur={no:dayCnt[cDate],date:cDate,buka:d[5]||'',tutup:(d[7]||'').slice(0,16),layers:0,maxFloat:mf14,net:0};
         } else if(!cur){
           if(!dayCnt[cDate]) dayCnt[cDate]=0;
           dayCnt[cDate]++;
-          cur={no:dayCnt[cDate],date:cDate,buka:d[1]||'',tutup:(d[7]||'').slice(0,16),layers:0,maxFloat:(typeof d[13]==='number'?d[13]:null),net:0};
+          cur={no:dayCnt[cDate],date:cDate,buka:d[5]||'',tutup:(d[7]||'').slice(0,16),layers:0,maxFloat:mf14,net:0};
         }
         if(cur){
           cur.layers++;
           cur.net+=d[12];
           var t=(d[7]||'').slice(0,16);
           if(t>cur.tutup) cur.tutup=t;
-          if(typeof d[13]==='number'&&(cur.maxFloat===null||d[13]<cur.maxFloat)) cur.maxFloat=d[13];
+          if(mf14!==null&&(cur.maxFloat===null||mf14<cur.maxFloat)) cur.maxFloat=mf14;
         }
       });
       if(cur) cycles.push(cur);
@@ -691,20 +693,28 @@
       var dummyDeals = [], dealId = 90000;
       demoCycles.forEach(function(cyc, ci){
         var closeTime = cyc.date+' '+cyc.ch+':00';
+        var openTime  = cyc.date+' '+cyc.oh+':00';
         var openP = 2735.00 + ci * 1.5;
         cyc.layers.forEach(function(lyr, li){
           var layerNum = li+1;
+          var cmt = 'Apo '+layerNum+' '+(65+ci%10)+'.0';
+          // Format sesuai backend: d[0]=ticket, d[1]=posID, d[2]=sym, d[3]=side,
+          // d[4]=lot, d[5]=openTime, d[6]=openPrice, d[7]=closeTime, d[8]=closePrice,
+          // d[9]=profit, d[10]=swap, d[11]=commission, d[12]=net, d[13]=comment, d[14]=maxFloat
           var deal = [
-            dealId++,
-            cyc.date+' '+cyc.oh+':00',          // d[1] = open time
-            'Apo '+layerNum+' '+(65+ci%10)+'.0', // d[2] = comment layer
-            cyc.dir, lyr.lot, 0,
-            openP + li*0.5,                      // d[6] = open price
-            closeTime,                           // d[7] = close time (basket = sama)
-            openP + li*0.5 + (lyr.net>0?1.2:-0.8),
-            0, 0, 0, lyr.net
+            dealId++,                                    // d[0] ticket
+            90000 + ci*10,                               // d[1] positionID
+            'XAUUSD',                                    // d[2] symbol
+            cyc.dir,                                     // d[3] side
+            lyr.lot,                                     // d[4] lot
+            openTime,                                    // d[5] open time ← KUNCI
+            openP + li*0.5,                              // d[6] open price
+            closeTime,                                   // d[7] close time
+            openP + li*0.5 + (lyr.net>0?1.2:-0.8),      // d[8] close price
+            lyr.net, 0, 0, lyr.net,                      // d[9] profit, d[10] swap, d[11] cm, d[12] net
+            cmt,                                         // d[13] comment layer ← KUNCI
+            layerNum===1 ? cyc.mf : 0                   // d[14] max float (hanya L1) ← KUNCI
           ];
-          if(layerNum===1) deal.push(cyc.mf);   // d[13] = max floating siklus (di L1)
           dummyDeals.push(deal);
         });
       });
