@@ -99,6 +99,26 @@
         </div></div>
       </div>
 
+      <!-- RESUME SIKLUS PER HARI -->
+      <div class="card" id="aCycleCard" style="margin-top:14px;padding:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+          <div>
+            <h2 style="margin:0;font-size:16px;font-weight:900;line-height:1.3">Resume Siklus</h2>
+            <div style="font-size:12.5px;color:var(--ink-dim);margin-top:3px">Ringkasan per siklus transaksi. Nomor siklus reset setiap hari.</div>
+          </div>
+          <span class="tg d" id="aCycTag">0 Siklus</span>
+        </div>
+        <div class="tw sc" style="max-height:220px">
+          <table>
+            <thead><tr>
+              <th>Tanggal / Siklus</th><th>Jam Buka</th><th>Jam Tutup</th>
+              <th class="r">Layer</th><th class="r">Max Float</th><th class="r">Net Profit</th>
+            </tr></thead>
+            <tbody id="aCycTb"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- GRAFIK DINAMIS TRANSAKSI AKUN APOCALYPTO -->
       <div class="card" id="aChartCard" style="margin-top:14px;padding:22px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
@@ -200,7 +220,7 @@
         '<div><span>Win Rate</span><b>'+wr+'%</b><small>Profit factor '+pf+'</small></div>'+
         '<div><span>Total Lot</span><b>'+lot(lots)+'</b><small>&nbsp;</small></div>'+
         '<div><span>Balance</span><b>'+(bal?money(bal[1]):'-')+'</b><small>'+(bal?'Equity '+money(bal[2])+' · '+tgl(bal[0]):'&nbsp;')+'</small></div>';
-      TR=tr; rekap(); drawChart();
+      TR=tr; rekap(); drawChart(); renderCycles(TR);
       view=tr.slice().reverse(); shown=0; $('aTrx').innerHTML=''; $('aTrxW').scrollTop=0; more();
       if(!view.length) $('aTrx').innerHTML='<tr><td colspan="6" class="ah-empty">Tidak ada transaksi di periode ini.</td></tr>';
     }
@@ -578,41 +598,120 @@
       window.addEventListener('resize', drawChart);
     }
 
+    // ===== RESUME SIKLUS =====
+    function layerFromComment(c){
+      if(!c) return 0;
+      var m=String(c).match(/^Apo\s+(\d+)/i);
+      return m?parseInt(m[1]):0;
+    }
+    function buildCycles(tr){
+      if(!tr||!tr.length) return [];
+      var cycles=[],cur=null,dayCnt={};
+      tr.forEach(function(d){
+        var lyr=layerFromComment(d[2]);
+        var cDate=(d[7]||'').slice(0,10);
+        var isL1=(lyr===1)||(lyr===0&&!cur);
+        if(isL1){
+          if(cur) cycles.push(cur);
+          if(!dayCnt[cDate]) dayCnt[cDate]=0;
+          dayCnt[cDate]++;
+          cur={no:dayCnt[cDate],date:cDate,buka:d[1]||'',tutup:(d[7]||'').slice(0,16),layers:0,maxFloat:(typeof d[13]==='number'?d[13]:null),net:0};
+        } else if(!cur){
+          if(!dayCnt[cDate]) dayCnt[cDate]=0;
+          dayCnt[cDate]++;
+          cur={no:dayCnt[cDate],date:cDate,buka:d[1]||'',tutup:(d[7]||'').slice(0,16),layers:0,maxFloat:(typeof d[13]==='number'?d[13]:null),net:0};
+        }
+        if(cur){
+          cur.layers++;
+          cur.net+=d[12];
+          var t=(d[7]||'').slice(0,16);
+          if(t>cur.tutup) cur.tutup=t;
+          if(typeof d[13]==='number'&&(cur.maxFloat===null||d[13]<cur.maxFloat)) cur.maxFloat=d[13];
+        }
+      });
+      if(cur) cycles.push(cur);
+      return cycles.sort(function(a,b){
+        if(b.date!==a.date) return b.date>a.date?1:-1;
+        return b.tutup>a.tutup?1:-1;
+      });
+    }
+    function renderCycles(tr){
+      var tb=$('aCycTb'),tag=$('aCycTag');
+      if(!tb) return;
+      var cycles=buildCycles(tr);
+      if(tag) tag.textContent=cycles.length+' Siklus';
+      if(!cycles.length){
+        tb.innerHTML='<tr><td colspan="6" class="ah-empty">Tidak ada siklus di periode ini.</td></tr>';
+        return;
+      }
+      tb.innerHTML=cycles.map(function(c){
+        var bukaStr=c.buka?c.buka.slice(11,16)+'<small style="color:var(--ink-faint);margin-left:4px">'+c.buka.slice(5,10)+'</small>':'-';
+        var tutupStr=c.tutup&&c.tutup.length>=16?c.tutup.slice(11,16)+'<small style="color:var(--ink-faint);margin-left:4px">'+c.tutup.slice(5,10)+'</small>':'-';
+        var floatStr=c.maxFloat!==null?'<span style="color:var(--danger)">'+money(c.maxFloat)+'</span>':'<span style="color:var(--ink-faint)">-</span>';
+        var nc=c.net>0?'pos':c.net<0?'neg':'';
+        return '<tr>'+
+          '<td><b style="font-size:11px;color:var(--gold)">'+c.date.slice(5)+'</b> <span class="tg d" style="font-size:10px">S'+c.no+'</span></td>'+
+          '<td>'+bukaStr+'</td>'+
+          '<td>'+tutupStr+'</td>'+
+          '<td class="r">'+c.layers+'</td>'+
+          '<td class="r">'+floatStr+'</td>'+
+          '<td class="r '+nc+'">'+money(c.net)+'</td>'+
+          '</tr>';
+      }).join('');
+    }
+
     function initLocalDemoData(){
       CENT = true;
       $('aLoad').hidden = true;
       $('aMain').hidden = false;
       $('aInfo').textContent = 'Akun 223132966 (Cent / Real) · Update terakhir 5 Nov 2026';
 
-      var dummyDeals = [];
-      var baseDate = new Date('2026-11-01T08:00:00');
-      var tradeLots = [0.10, 0.20, 0.15, 0.30, 0.25, 0.50, 0.10, 0.40, 0.20, 0.35];
-      var tradeResults = [
-        25.40, 38.20, -18.50, 42.10, 15.30, 68.00, -24.20, 31.50, 52.40, 19.80,
-        -15.00, 45.20, 88.50, 22.10, -32.00, 41.00, 60.50, -12.40, 35.80, 50.20,
-        28.40, 14.20, -22.00, 48.00, 62.50, 18.90, -45.00, 36.20, 75.10, 29.40,
-        -19.50, 55.00, 40.20, -14.00, 33.50, 82.00, 24.10, -28.00, 44.50, 58.20,
-        16.80, 39.00, -11.50, 47.20, 65.00, -35.00, 21.40, 70.20, 33.00, -18.20,
-        49.50, 27.10, 64.00, -21.00, 38.50, 52.00, 17.50, -15.80, 43.20, 61.00,
-        -25.00, 34.00, 77.50, 20.20, -38.00, 46.00, 59.40, 15.00, 37.80, 68.50,
-        -16.20, 42.00, 54.50, -29.00, 31.20, 63.80, 26.50, 48.10, 51.61
+      // Demo cycles: each entry = satu siklus lengkap
+      // d[1]=open_time, d[2]=comment(layer), d[7]=close_time (basket=sama), d[12]=net
+      var demoCycles = [
+        {date:'2026-11-01',oh:'08:15',ch:'09:40',dir:'BUY', layers:[{lot:0.10,net:38.20}]},
+        {date:'2026-11-01',oh:'10:05',ch:'12:30',dir:'SELL',layers:[{lot:0.10,net:25.40},{lot:0.20,net:18.60}]},
+        {date:'2026-11-01',oh:'13:20',ch:'15:10',dir:'BUY', layers:[{lot:0.10,net:42.10}]},
+        {date:'2026-11-01',oh:'16:00',ch:'18:45',dir:'SELL',layers:[{lot:0.10,net:-18.50},{lot:0.20,net:52.30},{lot:0.30,net:68.00}]},
+        {date:'2026-11-02',oh:'08:30',ch:'09:55',dir:'BUY', layers:[{lot:0.10,net:31.50}]},
+        {date:'2026-11-02',oh:'10:20',ch:'13:15',dir:'SELL',layers:[{lot:0.10,net:-24.20},{lot:0.20,net:62.50}]},
+        {date:'2026-11-02',oh:'14:00',ch:'16:30',dir:'BUY', layers:[{lot:0.10,net:52.40}]},
+        {date:'2026-11-02',oh:'17:10',ch:'19:40',dir:'SELL',layers:[{lot:0.10,net:19.80}]},
+        {date:'2026-11-03',oh:'08:10',ch:'10:25',dir:'BUY', layers:[{lot:0.10,net:45.20},{lot:0.20,net:28.40}]},
+        {date:'2026-11-03',oh:'11:00',ch:'14:30',dir:'SELL',layers:[{lot:0.10,net:88.50}]},
+        {date:'2026-11-03',oh:'15:05',ch:'17:20',dir:'BUY', layers:[{lot:0.10,net:22.10},{lot:0.20,net:-32.00},{lot:0.30,net:68.50},{lot:0.40,net:41.00}]},
+        {date:'2026-11-04',oh:'08:45',ch:'10:10',dir:'SELL',layers:[{lot:0.10,net:60.50}]},
+        {date:'2026-11-04',oh:'10:50',ch:'12:40',dir:'BUY', layers:[{lot:0.10,net:-12.40},{lot:0.20,net:50.20}]},
+        {date:'2026-11-04',oh:'13:30',ch:'15:55',dir:'SELL',layers:[{lot:0.10,net:35.80}]},
+        {date:'2026-11-04',oh:'16:20',ch:'19:00',dir:'BUY', layers:[{lot:0.10,net:29.40},{lot:0.20,net:48.10},{lot:0.30,net:51.61}]},
+        {date:'2026-11-05',oh:'08:20',ch:'09:50',dir:'SELL',layers:[{lot:0.10,net:49.50}]},
+        {date:'2026-11-05',oh:'10:30',ch:'12:15',dir:'BUY', layers:[{lot:0.10,net:27.10},{lot:0.20,net:64.00}]}
       ];
-      var runningDate = new Date(baseDate);
-      tradeResults.forEach(function(res, i){
-        runningDate.setMinutes(runningDate.getMinutes() + 50 + (i % 7) * 20);
-        var lotV = tradeLots[i % tradeLots.length];
-        var openP = 2735.00 + (i % 10) * 1.5;
-        var closeP = openP + (res > 0 ? 1.2 : -0.8);
-        var closeTime = ymd(runningDate) + ' ' + pad(runningDate.getHours()) + ':' + pad(runningDate.getMinutes()) + ':00';
-        dummyDeals.push([100000 + i, '', '', (i % 2 === 0 ? 'BUY' : 'SELL'), lotV, 0, openP, closeTime, closeP, 0, 0, 0, res]);
+      var dummyDeals = [], dealId = 90000;
+      demoCycles.forEach(function(cyc, ci){
+        var closeTime = cyc.date+' '+cyc.ch+':00';
+        var openP = 2735.00 + ci * 1.5;
+        cyc.layers.forEach(function(lyr, li){
+          var layerNum = li+1;
+          dummyDeals.push([
+            dealId++,
+            cyc.date+' '+cyc.oh+':00',          // d[1] = open time
+            'Apo '+layerNum+' '+(65+ci%10)+'.0', // d[2] = comment layer
+            cyc.dir, lyr.lot, 0,
+            openP + li*0.5,                      // d[6] = open price
+            closeTime,                           // d[7] = close time (basket = sama)
+            openP + li*0.5 + (lyr.net>0?1.2:-0.8),
+            0, 0, 0, lyr.net
+          ]);
+        });
       });
       D = dummyDeals;
       S = [
         ['2026-11-01', 10000.00, 10000.00],
-        ['2026-11-02', 10350.20, 10350.20],
-        ['2026-11-03', 10820.50, 10820.50],
-        ['2026-11-04', 11290.10, 11290.10],
-        ['2026-11-05', 11814.71, 11814.71]
+        ['2026-11-02', 10226.10, 10226.10],
+        ['2026-11-03', 10368.10, 10368.10],
+        ['2026-11-04', 10629.80, 10629.80],
+        ['2026-11-05', 10893.01, 10893.01]
       ];
       preset('month');
       apply();
