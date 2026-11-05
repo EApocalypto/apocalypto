@@ -37,6 +37,7 @@ C:\Masmoel\Apocalypto\
 ├── CNAME               # apocalypto.id
 ├── server.py           # Server lokal Python port 8080
 ├── Buka_Website_Apocalypto.bat
+├── Backend/            # Repo backend privat (di-ignore repo website)
 ├── Expert Advisor/
 │   ├── Apocalypto.mq5  # Source code EA (bisa diedit)
 │   └── Apocalypto.ex5  # Compiled (perlu MetaEditor untuk recompile)
@@ -58,7 +59,7 @@ C:\Masmoel\Apocalypto\
 
 ### Relay Mailer
 - Deploy di `masmoel.trading@gmail.com` (Gmail biasa, sementara Workspace masih restriksi)
-- Kunci relay (`RELAY_KEY`) hanya ada di script deploy-nya; harus sama dengan `GMAIL_RELAY_KEY` di `Code.js`. Jangan simpan rahasia di repo ini: repo publik dan semua file di-track ikut tayang di GitHub Pages
+- Rahasia backend ditulis sebagai placeholder `__GAS_*__` di `Code.js` dan diisi dari GitHub Secret `GAS_SECRETS` saat deploy. Jangan simpan rahasia di repo website: repo publik dan semua file di-track ikut tayang di GitHub Pages
 
 ---
 
