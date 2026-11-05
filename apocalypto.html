@@ -225,7 +225,7 @@
         '<div><span>Win Rate</span><b>'+wr+'%</b><small>Profit factor '+pf+'</small></div>'+
         '<div><span>Total Lot</span><b>'+lot(lots)+'</b><small>&nbsp;</small></div>'+
         '<div><span>Balance</span><b>'+(bal?money(bal[1]):'-')+'</b><small>'+(bal?'Equity '+money(bal[2])+' · '+tgl(bal[0]):'&nbsp;')+'</small></div>';
-      TR=tr; rekap(); drawChart(); renderCycles(TR);
+      TR=tr; rekap(); drawChart(); renderCycles(a,b);
       view=tr.slice().reverse(); shown=0; $('aTrx').innerHTML=''; $('aTrxW').scrollTop=0; more();
       if(!view.length) $('aTrx').innerHTML='<tr><td colspan="6" class="ah-empty">Tidak ada transaksi di periode ini.</td></tr>';
     }
@@ -609,47 +609,42 @@
       var m=String(c).match(/^Apo\s+(\d+)/i);
       return m?parseInt(m[1]):0;
     }
-    function buildCycles(tr){
-      if(!tr||!tr.length) return [];
-      var rows=tr.slice().sort(function(a,b){
+    // Satu siklus = L1 sampai layer terakhir ditutup.
+    // Deal lama tak punya komentar layer, jadi siklus baru dikenali dari posisi yang dibuka
+    // setelah semua posisi siklus berjalan sudah tutup. Logika ini sama dgn buildSiklus() di backend.
+    function buildCycles(deals){
+      var rows=(deals||[]).filter(function(d){ return d[3]!=='BALANCE'; }).sort(function(a,b){
         var ta=a[5]||'',tb=b[5]||'';
-        return ta<tb?-1:ta>tb?1:0;
+        if(ta!==tb) return ta<tb?-1:1;
+        var la=layerFromComment(a[13]),lb=layerFromComment(b[13]);
+        return la!==lb?la-lb:a[4]-b[4];
       });
       var cycles=[],cur=null,dayCnt={};
       rows.forEach(function(d){
-        // d[13]=comment(layer), d[5]=open_time, d[14]=maxFloat (dari backend v2+)
-        var lyr=layerFromComment(d[13]);
-        var cDate=(d[5]||'').slice(0,10);
-        var isL1=(lyr===1)||(lyr===0&&!cur);
-        var mf14=(typeof d[14]==='number'&&d[14]<0)?d[14]:null;
-        if(isL1){
+        var lyr=layerFromComment(d[13]),open=d[5]||'',close=d[7]||'';
+        var mf=(typeof d[14]==='number'&&d[14]<0)?d[14]:null;
+        if(!cur||lyr===1||(lyr===0&&open>=cur.tutup)){
           if(cur) cycles.push(cur);
-          if(!dayCnt[cDate]) dayCnt[cDate]=0;
-          dayCnt[cDate]++;
-          cur={no:dayCnt[cDate],date:cDate,buka:d[5]||'',tutup:(d[7]||'').slice(0,16),layers:0,maxFloat:mf14,net:0};
-        } else if(!cur){
-          if(!dayCnt[cDate]) dayCnt[cDate]=0;
-          dayCnt[cDate]++;
-          cur={no:dayCnt[cDate],date:cDate,buka:d[5]||'',tutup:(d[7]||'').slice(0,16),layers:0,maxFloat:mf14,net:0};
+          var day=open.slice(0,10);
+          dayCnt[day]=(dayCnt[day]||0)+1;
+          cur={no:dayCnt[day],date:day,buka:open,tutup:close,layers:0,maxFloat:null,net:0};
         }
-        if(cur){
-          cur.layers++;
-          cur.net+=d[12];
-          var t=(d[7]||'').slice(0,16);
-          if(t>cur.tutup) cur.tutup=t;
-          if(mf14!==null&&(cur.maxFloat===null||mf14<cur.maxFloat)) cur.maxFloat=mf14;
-        }
+        cur.layers++;
+        cur.net+=d[12];
+        if(close>cur.tutup) cur.tutup=close;
+        if(mf!==null&&(cur.maxFloat===null||mf<cur.maxFloat)) cur.maxFloat=mf;
       });
       if(cur) cycles.push(cur);
-      return cycles.sort(function(a,b){
-        if(b.date!==a.date) return b.date>a.date?1:-1;
-        return b.tutup>a.tutup?1:-1;
-      });
+      return cycles.sort(function(a,b){ return a.buka<b.buka?1:a.buka>b.buka?-1:0; });
     }
-    function renderCycles(tr){
+    // Siklus dibangun dari seluruh deal lalu disaring per tanggal tutup, agar L1 tidak terpotong periode.
+    function renderCycles(from,to){
       var tb=$('aCycTb'),tag=$('aCycTag');
       if(!tb) return;
-      var cycles=buildCycles(tr);
+      var cycles=buildCycles(D).filter(function(c){
+        var k=c.tutup.slice(0,10);
+        return (!from||k>=from)&&(!to||k<=to);
+      });
       if(tag) tag.textContent=cycles.length+' Siklus';
       if(!cycles.length){
         tb.innerHTML='<tr><td colspan="6" class="ah-empty">Tidak ada siklus di periode ini.</td></tr>';
@@ -776,7 +771,8 @@
       if(!btn||btn.disabled) return;
       btn.disabled=true; btn.style.opacity='0.6'; txt.textContent='Menyimpan...';
       APX.api({action:'rebuild_siklus'}).then(function(r){
-        txt.textContent=r&&r.count!=null?'Tersimpan ('+r.count+' siklus)':'Tersimpan';
+        var ok=r&&r.result==='ok';
+        txt.textContent=ok?'Tersimpan ('+r.count+' siklus)':'Gagal — coba lagi';
         btn.style.opacity='1';
         setTimeout(function(){ txt.textContent='Sync ke Sheet'; btn.disabled=false; },3000);
       }).catch(function(){

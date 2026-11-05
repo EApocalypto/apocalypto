@@ -56,7 +56,8 @@ C:\Masmoel\Apocalypto\
 - Web App URL ada di `site.js` baris 70 (`SCRIPT_URL`)
 - Kunci registrasi publik ada di `site.js` baris 71 (`REG_KEY`)
 - Deploy di akun `admin@apocalypto.id` (Google Workspace)
-- Script utama ada di Google Drive — BUKAN di folder lokal ini
+- Script utama ada di `C:\Masmoel\Backend\_gas\Code.js` (repo backend) — push ke `main` = deploy otomatis lewat GitHub Actions
+- Resume Siklus tersimpan di tab `Resume Siklus` (1 siklus = 1 baris), logikanya `buildSiklus()` di `Code.js` dan `buildCycles()` di `apocalypto.html` harus sama
 
 ### Relay Mailer
 - Deploy di `masmoel.trading@gmail.com` (Gmail biasa, sementara Workspace masih restriksi)
