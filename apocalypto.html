@@ -609,7 +609,7 @@
       tr.forEach(function(d){
         // d[13]=comment(layer), d[5]=open_time, d[14]=maxFloat (dari backend v2+)
         var lyr=layerFromComment(d[13]);
-        var cDate=(d[7]||'').slice(0,10);
+        var cDate=(d[5]||'').slice(0,10);
         var isL1=(lyr===1)||(lyr===0&&!cur);
         var mf14=(typeof d[14]==='number'&&d[14]<0)?d[14]:null;
         if(isL1){
