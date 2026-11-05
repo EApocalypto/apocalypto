@@ -605,8 +605,12 @@
     }
     function buildCycles(tr){
       if(!tr||!tr.length) return [];
+      var rows=tr.slice().sort(function(a,b){
+        var ta=a[5]||'',tb=b[5]||'';
+        return ta<tb?-1:ta>tb?1:0;
+      });
       var cycles=[],cur=null,dayCnt={};
-      tr.forEach(function(d){
+      rows.forEach(function(d){
         // d[13]=comment(layer), d[5]=open_time, d[14]=maxFloat (dari backend v2+)
         var lyr=layerFromComment(d[13]);
         var cDate=(d[5]||'').slice(0,10);
