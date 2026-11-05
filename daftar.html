@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<script src="gate.js?v=202610281227"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expert Advisor — Apocalypto</title>
+<meta name="description" content="Lisensi EA Apocalypto (XAUUSD / MetaTrader 5).">
+<meta name="theme-color" content="#060d1f">
+<link rel="canonical" href="https://apocalypto.id/daftar.html">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="style.css?v=202610312144">
+<style>
+  .ea{max-width:1080px;margin:0 auto;padding-top:22px;padding-bottom:48px}
+  .ea-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+  .ea-grid .ea-card + .ea-card{margin-top:0}
+  #eList{position:sticky;top:20px}
+  #eAcc{max-height:calc(100vh - 170px);overflow-y:auto;padding-right:4px;margin-right:-4px}
+  .ea-empty{margin-top:10px;padding:22px 14px;border-radius:12px;border:1px dashed var(--line-soft);text-align:center;color:var(--ink-dim);font-size:13.5px}
+  .ea-count{font-weight:700;color:var(--ink-dim);font-size:13px;margin-left:6px}
+  @media(max-width:860px){.ea{max-width:600px}.ea-grid{grid-template-columns:1fr}#eList{position:static}#eAcc{max-height:none}}
+  .ea-back{display:inline-flex;align-items:center;gap:7px;color:var(--ink-dim);text-decoration:none;font-size:14px;font-weight:700;padding:8px 12px 8px 8px;border-radius:10px;border:1px solid var(--line-soft)}
+  .ea-back:hover{color:var(--gold-soft);border-color:var(--line)}
+  .ea h1{text-align:center;margin:22px 0 18px;font-size:clamp(28px,6vw,36px);font-weight:900}
+  .ea-card{padding:24px 22px}
+  .ea-card h2{margin:0 0 4px;font-size:16px;font-weight:900}
+  .ea-card .hint{margin:0;font-size:13px;color:var(--ink-dim);line-height:1.55}
+  .ea label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-dim);margin:16px 0 6px}
+  .ea input{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--field-line);border-radius:11px;padding:12px 13px;outline:none}
+  .ea input:focus{border-color:var(--gold)}
+  .ea input.err{border-color:var(--danger)}
+  .pk{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .pk label{margin:0;cursor:pointer;position:relative}
+  .pk input{position:absolute;inset:0;width:1px!important;height:1px;opacity:0;pointer-events:none}
+  .pk .box{display:block;padding:14px;border-radius:12px;border:1px solid var(--field-line);background:var(--field);text-align:center;transition:border-color .15s,background .15s}
+  .pk .box b{display:block;font-size:16px;color:var(--ink)}
+  .pk .box span{display:block;margin-top:3px;font-size:12.5px;color:var(--ink-dim);font-weight:600}
+  .pk input:checked + .box{border-color:var(--gold);background:rgba(231,199,102,.1)}
+  .pk input:checked + .box b{color:var(--gold-soft)}
+  .ea .emsg{display:none;color:var(--danger);font-size:12px;margin-top:6px}
+  .ea .emsg.show{display:block}
+  .ea .note{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(126,224,166,.07);border:1px solid rgba(126,224,166,.28);font-size:12.5px;color:var(--ink-dim);line-height:1.6}
+  .ea .btn-gold{width:100%;margin-top:18px}
+  .ea .btn-gold:disabled{opacity:.6;cursor:wait}
+  .ea .msg{display:none;margin-top:12px;font-size:13px;text-align:center;color:var(--danger)}
+  .ea .msg.show{display:block}
+  .ea .msg.ok{color:var(--ok)}
+  .acc{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--line-soft);background:rgba(255,255,255,.03);margin-top:8px}
+  .acc .l b{display:block;font-size:15px}
+  .acc .l span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-dim)}
+  .st{font-size:11.5px;font-weight:800;letter-spacing:.04em;padding:5px 10px;border-radius:999px;white-space:nowrap;border:1px solid var(--line-soft);color:var(--ink-dim)}
+  .st.active{color:var(--ok);border-color:rgba(126,224,166,.4);background:rgba(126,224,166,.08)}
+  .st.pending{color:var(--gold);border-color:var(--line);background:rgba(231,199,102,.08)}
+  .st.inactive,.st.rejected{color:var(--danger);border-color:rgba(255,157,138,.35);background:rgba(255,157,138,.06)}
+  .ea-load{text-align:center;color:var(--ink-dim);padding:30px 0}
+  .disc{max-height:220px;overflow-y:auto;padding:14px 16px;border-radius:12px;border:1px solid var(--field-line);background:var(--field);font-size:12.5px;color:var(--ink-dim);line-height:1.6}
+  .disc p{margin:0 0 10px}.disc p:last-child{margin:0}
+  .disc strong{color:var(--ink)}
+  .agree{display:flex!important;gap:10px;align-items:flex-start;margin:14px 0 0!important;font-size:13px!important;font-weight:600!important;color:var(--ink)!important;line-height:1.5;cursor:pointer}
+  .agree input{width:18px!important;height:18px;flex:none;margin:2px 0 0;padding:0;accent-color:var(--gold);cursor:pointer}
+</style>
+</head>
+<body data-page="daftar">
+  <div id="siteHeader"></div>
+  <main class="container ea">
+    <a class="ea-back" href="layanan.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Kembali</a>
+    <h1>Expert Advisor</h1>
+
+    <div class="card ea-card ea-load" id="eLoad">Memuat&hellip;</div>
+
+    <div class="ea-grid" id="eGrid" hidden>
+    <form class="card ea-card" id="eForm" novalidate>
+      <h2>Daftar Lisensi</h2>
+      <p class="hint">Saat ini kami hanya menyediakan platform MT5, untuk kebutuhan MT4 silakan hubungi <a href="https://wa.me/6281296855550" target="_blank" rel="noopener" style="color:var(--gold-soft);font-weight:700">Admin</a>.</p>
+      <label for="eLogin">Nomor Akun / ID Trading</label>
+      <input id="eLogin" type="text" inputmode="numeric" maxlength="15" placeholder="Contoh: 12345678" autocomplete="off">
+      <div class="emsg" data-for="eLogin">Masukkan nomor akun / ID trading (angka).</div>
+      <label>Paket lisensi</label>
+      <div class="pk" id="ePaket"></div>
+      <div class="emsg" data-for="ePaket">Pilih paket lisensi.</div>
+      <div class="note">Akun <b>Demo</b> otomatis <b>GRATIS</b> tanpa profit sharing. Untuk akun <b>Real</b>, profit sharing ditagih tiap akhir bulan hanya bila profit.</div>
+      <label>Disclaimer &amp; Persetujuan</label>
+      <div class="disc" tabindex="0">
+        <p><strong>Risiko Trading.</strong> Perdagangan Forex/emas (XAUUSD) dengan leverage mengandung risiko tinggi dan dapat menyebabkan kerugian sebagian atau seluruh modal. EA Apocalypto adalah alat bantu (automation tool), bukan jaminan keuntungan.</p>
+        <p><strong>Strategi.</strong> EA Apocalypto menggunakan metode averaging/martingale berlapis. Metode ini dapat menahan posisi floating dalam jumlah besar pada kondisi pasar tertentu. Pengguna wajib memahami cara kerja, pengaturan risiko, dan menyediakan modal yang sesuai.</p>
+        <p><strong>Tanpa Jaminan.</strong> Kinerja pada masa lalu maupun hasil backtest tidak menjamin hasil di masa depan. Penyedia tidak bertanggung jawab atas kerugian yang timbul dari penggunaan EA.</p>
+        <p><strong>Keputusan Mandiri.</strong> Segala keputusan penggunaan EA, besaran lot, dan pengaturan risiko sepenuhnya menjadi tanggung jawab pengguna. Gunakan hanya dana yang Anda siap tanggung risikonya.</p>
+        <p><strong>Lisensi.</strong> Lisensi terikat pada nomor akun yang didaftarkan dan tidak dapat dipindahtangankan tanpa persetujuan penyedia.</p>
+        <p><strong>Profit Sharing.</strong> User menyetujui membayar profit sharing setiap akhir bulan sesuai pilihan pada saat aktivasi, selambat-lambatnya 3 hari dari tanggal penagihan. Admin berhak memutus akses layanan secara sepihak apabila user tidak melakukan pembayaran.</p>
+        <p><strong>Dasar Perhitungan Profit Sharing.</strong> Profit sharing dihitung <strong>hanya dari transaksi yang dilakukan oleh EA Apocalypto</strong>. Apabila user bertransaksi sendiri (manual) atau menggunakan EA lain pada akun yang sama, profit maupun kerugian dari transaksi tersebut <strong>tidak diperhitungkan</strong> &mdash; perhitungan profit sharing tetap murni berdasarkan hasil transaksi EA Apocalypto.</p>
+      </div>
+      <label class="agree"><input type="checkbox" id="eSetuju"><span>Saya telah membaca, memahami, dan menyetujui seluruh disclaimer di atas serta bersedia menanggung risiko trading secara mandiri.</span></label>
+      <div class="emsg" data-for="eSetuju">Anda harus menyetujui disclaimer untuk melanjutkan.</div>
+      <div class="msg" id="eMsg"></div>
+      <button type="submit" class="btn-gold" id="eSend">Daftar Sekarang</button>
+    </form>
+
+    <div class="card ea-card" id="eList">
+      <h2>Akun EA Saya<span class="ea-count" id="eCnt"></span></h2>
+      <div id="eAcc"></div>
+    </div>
+    </div>
+  </main>
+
+  <div id="siteFooter"></div>
+  <script src="site.js?v=202611032104" defer></script>
+  <script>
+  (function(){
+    var $=function(id){ return document.getElementById(id); };
+    var PAKET={ '1 Bulan':'30%', '3 Bulan':'20%', '6 Bulan':'10%', '12 Bulan':'5%' };
+    var BULAN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    function esc(t){ return window.APX&&APX.esc?APX.esc(t):String(t); }
+    function tgl(s){ if(!s) return ''; var p=s.split('-'); return Number(p[2])+' '+BULAN[Number(p[1])-1]+' '+p[0]; }
+    function stLabel(s){ s=String(s||'').toLowerCase(); return s==='active'?'Aktif':s==='pending'?'Menunggu Sinkron':s==='rejected'?'Ditolak':'Nonaktif'; }
+    function fe(id,on){ var el=$(id); if(el&&el.tagName==='INPUT'&&el.type!=='checkbox') el.classList.toggle('err',on); var m=document.querySelector('.emsg[data-for="'+id+'"]'); if(m) m.classList.toggle('show',on); }
+    function msg(t,ok){ var el=$('eMsg'); el.textContent=t||''; el.className='msg'+(t?' show':'')+(ok?' ok':''); }
+
+    function paketUI(p){
+      PAKET=p||PAKET; var h='';
+      Object.keys(PAKET).forEach(function(k,i){ h+='<label><input type="radio" name="paket" value="'+esc(k)+'"'+(i===0?'':'')+'><span class="box"><b>'+esc(k)+'</b><span>Profit sharing '+esc(PAKET[k])+'</span></span></label>'; });
+      $('ePaket').innerHTML=h;
+      [].forEach.call(document.querySelectorAll('input[name=paket]'),function(r){ r.addEventListener('change',function(){ fe('ePaket',false); msg(''); }); });
+    }
+    function render(r){
+      $('eLoad').hidden=true; $('eGrid').hidden=false;
+      var ord={active:0,pending:1}, ak=(r.akun||[]).slice().sort(function(a,b){ var x=ord[String(a.status).toLowerCase()], y=ord[String(b.status).toLowerCase()]; return (x==null?2:x)-(y==null?2:y); });
+      $('eCnt').textContent=ak.length?'('+ak.length+')':'';
+      if(!ak.length){ $('eAcc').innerHTML='<div class="ea-empty">Belum ada akun terdaftar.<br>Daftarkan akun pertama Anda lewat form.</div>'; return; }
+      $('eAcc').innerHTML=ak.map(function(a){
+        var sub=[a.masa, a.jenis||'', a.exp?('s/d '+tgl(a.exp)):''].filter(Boolean).join(' · ');
+        return '<div class="acc"><div class="l"><b>'+esc(a.login)+'</b><span>'+esc(sub)+'</span></div><span class="st '+esc(String(a.status).toLowerCase())+'">'+stLabel(a.status)+'</span></div>';
+      }).join('');
+    }
+    function load(){ APX.api({action:'ea_list'}).then(function(r){ if(r&&r.result==='ok'){ paketUI(r.paket); render(r); } else $('eLoad').textContent='Gagal memuat. Muat ulang halaman.'; })
+      .catch(function(){ $('eLoad').textContent='Gagal terhubung. Muat ulang halaman.'; }); }
+
+    $('eLogin').addEventListener('input',function(){ var v=this.value.replace(/\D/g,''); if(v!==this.value) this.value=v; fe('eLogin',false); msg(''); });
+    $('eSetuju').addEventListener('change',function(){ if(this.checked) fe('eSetuju',false); });
+    $('eForm').addEventListener('submit',function(e){
+      e.preventDefault();
+      var login=$('eLogin').value.trim(), pk=document.querySelector('input[name=paket]:checked'), ok=true;
+      if(!/^\d{3,15}$/.test(login)){ fe('eLogin',true); ok=false; }
+      if(!pk){ fe('ePaket',true); ok=false; }
+      if(!$('eSetuju').checked){ fe('eSetuju',true); ok=false; }
+      if(!ok) return;
+      var b=$('eSend'); b.disabled=true; b.textContent='Mengirim...';
+      APX.api({action:'ea_register',login:login,paket:pk.value,setuju:'YA'}).then(function(r){
+        b.disabled=false; b.textContent='Daftar Sekarang';
+        if(r&&r.result==='ok'){ $('eLogin').value=''; pk.checked=false; $('eSetuju').checked=false; msg('Pendaftaran berhasil! File EA & panduan sudah dikirim ke email Anda.',true); load(); }
+        else if(r&&r.result==='duplicate'){ fe('eLogin',true); msg('Nomor akun ini sudah terdaftar.'); }
+        else msg('Pendaftaran belum berhasil. Periksa data lalu coba lagi.');
+      }).catch(function(){ b.disabled=false; b.textContent='Daftar Sekarang'; msg('Gagal terhubung. Periksa koneksi Anda.'); });
+    });
+    function start(){ if(window.APX&&APX.member&&APX.member()) load(); }
+    if(window.APX) start(); else document.addEventListener('apx:ready',start);
+  })();
+  </script>
+</body>
+</html>

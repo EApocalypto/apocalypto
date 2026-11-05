@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<script src="gate.js?v=202610281227"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>APOCALYPTO — Jurnal Trading Akun Apocalypto</title>
+<meta name="description" content="Riwayat transaksi dan rekap akun trading Apocalypto.">
+<meta name="theme-color" content="#060d1f">
+<link rel="canonical" href="https://apocalypto.id/apocalypto.html">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="style.css?v=202610312158">
+<style>
+  .ah{max-width:1080px;margin:0 auto;padding-bottom:48px;display:grid;gap:14px}
+  .ah .card{padding:20px}
+  .ah h2{margin:0;font-size:16px;font-weight:900}
+  .ah-sub{font-size:12.5px;color:var(--ink-faint);margin-top:3px}
+  .pr{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .pr button{font:inherit;font-size:13px;font-weight:700;color:var(--ink-dim);background:var(--field);border:1px solid var(--field-line);border-radius:999px;padding:7px 13px;cursor:pointer}
+  .pr button.on{color:var(--navy-950,#060d1f);background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));border-color:transparent}
+  .rg{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--ink-dim)}
+  .dp{position:relative;display:inline-flex;align-items:center;gap:10px;min-width:150px;justify-content:space-between;font-size:14px;color:var(--ink);background:var(--field);border:1px solid var(--field-line);border-radius:10px;padding:8px 12px;cursor:pointer}
+  .dp svg{color:var(--ink-dim)}
+  .dp input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+  .rg input.x{font:inherit;font-size:14px;color:var(--ink);background:var(--field);border:1px solid var(--field-line);border-radius:10px;padding:8px 10px;color-scheme:dark}
+  .kp{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  .kp div{padding:14px;border-radius:12px;border:1px solid var(--line-soft);background:rgba(255,255,255,.03)}
+  .kp span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint)}
+  .kp b{display:block;margin-top:6px;font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}
+  .kp small{display:block;margin-top:2px;font-size:12px;color:var(--ink-dim)}
+  .pos{color:var(--ok)} .neg{color:var(--danger)}
+  .tw{margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tw table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tw th{text-align:left;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);padding:9px 10px;border-bottom:1px solid var(--line-soft)}
+  .tw td{padding:9px 10px;border-bottom:1px solid rgba(160,183,220,.08)}
+  .tw .r{text-align:right}
+  .tw tr:hover td{background:rgba(255,255,255,.025)}
+  .tg{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;border:1px solid var(--line-soft)}
+  .tg.b{color:#8fc3ff;border-color:rgba(143,195,255,.35)} .tg.s{color:#ffb38a;border-color:rgba(255,179,138,.35)} .tg.d{color:var(--gold);border-color:var(--line)}
+  .more{display:block;margin:12px auto 0;font:inherit;font-size:13px;font-weight:700;color:var(--gold-soft);background:transparent;border:1px solid var(--line);border-radius:10px;padding:8px 16px;cursor:pointer}
+  .ah-empty{padding:22px;text-align:center;color:var(--ink-dim);font-size:14px}
+  .ah>*,.ah-main>*,.two>*{min-width:0}
+  .tw.sc{max-height:560px;overflow-y:auto}
+  .tw.sc thead th{position:sticky;top:0;background:#0d1a33;z-index:1}
+  .rk-hd{display:flex;align-items:center;justify-content:flex-start;gap:10px;flex-wrap:wrap}
+  .rk-tab{display:inline-flex;padding:3px;border-radius:999px;background:var(--field);border:1px solid var(--field-line)}
+  .rk-tab button{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-dim);background:transparent;border:0;border-radius:999px;padding:6px 12px;cursor:pointer}
+  .rk-tab button.on{color:#060d1f;background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep))}
+  .ah-main{display:grid;gap:14px} .ah-main[hidden]{display:none}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:14px;align-items:stretch}
+  .two>.card:first-child{min-height:340px}
+  /* tinggi kotak Transaksi = tinggi kotak Rekap; isi Transaksi digulir di dalam */
+  .trx-card{position:relative;padding:0!important}
+  .trx-in{position:absolute;inset:0;padding:20px;display:flex;flex-direction:column}
+  .trx-in .tw.sc{flex:1;min-height:0;max-height:none}
+  @media(max-width:900px){.kp{grid-template-columns:repeat(2,minmax(0,1fr))}.kp div:first-child{grid-column:1/-1}.two{grid-template-columns:1fr}.two>.card:first-child{min-height:0}.trx-card{padding:20px!important}.trx-in{position:static;padding:0}.trx-in .tw.sc{max-height:560px}}
+</style>
+</head>
+<body data-page="apocalypto">
+  <div id="siteHeader"></div>
+  <div class="container"><a class="apx-back" href="layanan.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Kembali</a></div>
+  <section class="page-hero container" style="padding-top:20px">
+    <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-7"/></svg></div>
+    <h1>APOCALYPTO</h1>
+    <p>Jurnal Trading Akun Apocalypto</p>
+  </section>
+
+  <section class="container ah" style="margin-top:22px">
+    <div class="card ah-empty" id="aLoad">Memuat&hellip;</div>
+
+    <div id="aMain" class="ah-main" hidden>
+      <div class="card">
+        <h2>Periode</h2>
+        <div class="ah-sub" id="aInfo"></div>
+        <div class="pr" id="aPre">
+          <button data-p="today">Hari Ini</button><button data-p="7">7 Hari</button><button data-p="month" class="on">Bulan Ini</button>
+          <button data-p="last">Bulan Lalu</button><button data-p="year">Tahun Ini</button><button data-p="all">Semua</button>
+        </div>
+        <div class="rg">Dari <label class="dp"><span id="aFromT">-</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><input type="date" id="aFrom"></label> sampai <label class="dp"><span id="aToT">-</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><input type="date" id="aTo"></label></div>
+      </div>
+
+      <div class="kp" id="aKpi"></div>
+
+      <div class="two">
+        <div class="card">
+          <div class="rk-hd">
+            <div class="rk-tab" id="aRk"><button data-g="d" class="on">Harian</button><button data-g="m">Bulanan</button><button data-g="y">Tahunan</button></div>
+          </div>
+          <div class="tw sc"><table><thead><tr><th id="aRkH">Tanggal</th><th class="r">Trx</th><th class="r">Lot</th><th class="r">Net</th></tr></thead><tbody id="aDay"></tbody></table></div>
+        </div>
+        <div class="card trx-card"><div class="trx-in">
+          <h2>Transaksi</h2>
+          <div class="ah-sub">Waktu sesuai jam server broker. Net = profit + swap + komisi.</div>
+          <div class="tw sc" id="aTrxW"><table><thead><tr><th>Waktu Tutup</th><th>Tipe</th><th class="r">Lot</th><th class="r">Buka</th><th class="r">Tutup</th><th class="r">Net</th></tr></thead><tbody id="aTrx"></tbody></table></div>
+        </div></div>
+      </div>
+
+      <!-- GRAFIK DINAMIS TRANSAKSI AKUN APOCALYPTO -->
+      <div class="card" id="aChartCard" style="margin-top:14px;padding:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <h2 style="margin:0;font-size:16px;font-weight:900">Grafik Transaksi Akun Apocalypto</h2>
+              <span class="tg d" style="font-size:10.5px">Dinamis</span>
+            </div>
+            <div class="ah-sub" style="font-size:12.5px;color:var(--ink-dim);margin-top:3px">
+              Kurva pertumbuhan profit &amp; performa transaksi akun Apocalypto.
+            </div>
+          </div>
+          <div class="rk-tab" id="chartTabs">
+            <button type="button" data-c="cum" class="on">Kumulatif Profit</button>
+            <button type="button" data-c="bar">Per Hari (P&amp;L)</button>
+            <button type="button" data-c="bal">Balance &amp; Equity</button>
+          </div>
+        </div>
+
+        <!-- Quick Summary Stats Row -->
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px" id="chartMetrics">
+          <div style="padding:10px 12px;border-radius:10px;border:1px solid var(--line-soft);background:rgba(255,255,255,.025)">
+            <span style="display:block;font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase">Net Growth</span>
+            <b id="cNet" style="display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums">-</b>
+          </div>
+          <div style="padding:10px 12px;border-radius:10px;border:1px solid var(--line-soft);background:rgba(255,255,255,.025)">
+            <span style="display:block;font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase">Trade Terbaik</span>
+            <b id="cBest" style="display:block;font-size:15px;margin-top:3px;color:var(--ok);font-variant-numeric:tabular-nums">-</b>
+          </div>
+          <div style="padding:10px 12px;border-radius:10px;border:1px solid var(--line-soft);background:rgba(255,255,255,.025)">
+            <span style="display:block;font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase">Trade Terendah</span>
+            <b id="cWorst" style="display:block;font-size:15px;margin-top:3px;color:var(--danger);font-variant-numeric:tabular-nums">-</b>
+          </div>
+          <div style="padding:10px 12px;border-radius:10px;border:1px solid var(--line-soft);background:rgba(255,255,255,.025)">
+            <span style="display:block;font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase">Total Titik Data</span>
+            <b id="cPoints" style="display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums">-</b>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div style="position:relative;width:100%;height:320px;border-radius:12px;background:rgba(255,255,255,.015);border:1px solid var(--line-soft);overflow:hidden" id="chartWrap">
+          <canvas id="aChartCanvas" style="width:100%;height:100%;display:block;cursor:crosshair"></canvas>
+          <div id="chartTip" style="position:absolute;display:none;pointer-events:none;background:rgba(6,13,31,.95);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.6);z-index:10;backdrop-filter:blur(8px);font-variant-numeric:tabular-nums;line-height:1.45"></div>
+          <div id="chartEmpty" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--ink-dim);font-size:13.5px">Belum ada transaksi di periode ini.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;gap:16px;align-items:flex-start">
+      <div style="flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:rgba(231,199,102,.1);border:1px solid var(--line);color:var(--gold)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></div>
+      <div style="flex:1;min-width:0"><span class="tg d" id="mqTag">Segera Hadir</span>
+        <h2 style="margin:8px 0 4px">Akun Online di MQL5</h2>
+        <div class="ah-sub" id="mqTxt" style="font-size:13.5px;color:var(--ink-dim)">Link pemantauan akun Apocalypto secara online di MQL5 akan tersedia di sini.</div>
+        <a class="btn-gold" id="mqBtn" href="#" target="_blank" rel="noopener" hidden style="margin-top:12px;align-items:center;gap:8px;padding:10px 16px;font-size:14px">Lihat di MQL5
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a></div>
+    </div>
+  </section>
+
+  <div id="siteFooter"></div>
+  <script src="site.js?v=202611041206" defer></script>
+  <script>
+  (function(){
+    var $=function(id){ return document.getElementById(id); };
+    var D=[], S=[], view=[], shown=0, PAGE=50, CENT=false, GRP='d', TR=[];
+    var BL=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    function pad(n){ return (n<10?'0':'')+n; }
+    function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+    function tgl(s){ var p=s.split('-'); return Number(p[2])+' '+BL[Number(p[1])-1]+' '+p[0]; }
+    function money(v){ var n=Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); return (v<0?'-':'')+(CENT?n+' ¢':'$'+n); }
+    function cls(v){ return v>0?'pos':v<0?'neg':''; }
+    function px(v){ v=Number(v); if(!v) return '-'; return v.toFixed(2); }
+    function lot(v){ return (Math.round(v*100)/100).toFixed(2); }
+
+    function preset(k){
+      var t=new Date(), f=new Date(t), to=new Date(t);
+      if(k==='7') f.setDate(t.getDate()-6);
+      else if(k==='month') f=new Date(t.getFullYear(),t.getMonth(),1);
+      else if(k==='last'){ f=new Date(t.getFullYear(),t.getMonth()-1,1); to=new Date(t.getFullYear(),t.getMonth(),0); }
+      else if(k==='year') f=new Date(t.getFullYear(),0,1);
+      else if(k==='all'){ var first=D.length?D[0][7].slice(0,10):ymd(t); $('aFrom').value=first; $('aTo').value=ymd(t); return; }
+      $('aFrom').value=ymd(f); $('aTo').value=ymd(to);
+    }
+    var BLF=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    function tglP(s){ if(!s) return '-'; var q=s.split('-'); return q[2]+' '+BLF[Number(q[1])-1]+' '+q[0]; }
+    function showDates(){ $('aFromT').textContent=tglP($('aFrom').value); $('aToT').textContent=tglP($('aTo').value); }
+    ['aFrom','aTo'].forEach(function(id){ $(id).addEventListener('click',function(){ try{ if(this.showPicker) this.showPicker(); }catch(_){} }); });
+    function apply(){
+      showDates();
+      var a=$('aFrom').value, b=$('aTo').value; if(a&&b&&a>b){ var x=a; a=b; b=x; }
+      var tr=D.filter(function(d){ var k=d[7].slice(0,10); return d[3]!=='BALANCE' && (!a||k>=a) && (!b||k<=b); });
+      // KPI
+      var net=0, win=0, loss=0, lots=0, gp=0, gl=0;
+      tr.forEach(function(d){ net+=d[12]; lots+=d[4]; if(d[12]>0){win++;gp+=d[12];} else if(d[12]<0){loss++;gl-=d[12];} });
+      var n=tr.length, wr=n?Math.round(win/n*100):0, pf=gl>0?(gp/gl).toFixed(2):(gp>0?'∞':'-');
+      var bal=null; for(var i=S.length-1;i>=0;i--) if(!b||S[i][0]<=b){ bal=S[i]; break; }
+      $('aKpi').innerHTML=
+        '<div><span>Net Profit</span><b class="'+cls(net)+'">'+money(net)+'</b><small>'+(a?tgl(a):'')+' – '+(b?tgl(b):'')+'</small></div>'+
+        '<div><span>Transaksi</span><b>'+n+'</b><small>'+win+' profit · '+loss+' loss</small></div>'+
+        '<div><span>Win Rate</span><b>'+wr+'%</b><small>Profit factor '+pf+'</small></div>'+
+        '<div><span>Total Lot</span><b>'+lot(lots)+'</b><small>&nbsp;</small></div>'+
+        '<div><span>Balance</span><b>'+(bal?money(bal[1]):'-')+'</b><small>'+(bal?'Equity '+money(bal[2])+' · '+tgl(bal[0]):'&nbsp;')+'</small></div>';
+      TR=tr; rekap(); drawChart();
+      view=tr.slice().reverse(); shown=0; $('aTrx').innerHTML=''; $('aTrxW').scrollTop=0; more();
+      if(!view.length) $('aTrx').innerHTML='<tr><td colspan="6" class="ah-empty">Tidak ada transaksi di periode ini.</td></tr>';
+    }
+    function rekap(){
+      var len=GRP==='y'?4:GRP==='m'?7:10, g={}, keys=[];
+      TR.forEach(function(d){ var k=d[7].slice(0,len); if(!g[k]){ g[k]={n:0,l:0,v:0}; keys.push(k); } g[k].n++; g[k].l+=d[4]; g[k].v+=d[12]; });
+      keys.sort().reverse();
+      $('aRkH').textContent=GRP==='y'?'Tahun':GRP==='m'?'Bulan':'Tanggal';
+      var lbl=function(k){ if(GRP==='y') return k; if(GRP==='m'){ var q=k.split('-'); return BL[Number(q[1])-1]+' '+q[0]; } return tgl(k); };
+      $('aDay').innerHTML=keys.length?keys.map(function(k){ var x=g[k]; return '<tr><td>'+lbl(k)+'</td><td class="r">'+x.n+'</td><td class="r">'+lot(x.l)+'</td><td class="r '+cls(x.v)+'">'+money(x.v)+'</td></tr>'; }).join('')
+        :'<tr><td colspan="4" class="ah-empty">Tidak ada transaksi di periode ini.</td></tr>';
+    }
+    [].forEach.call(document.querySelectorAll('#aRk button'),function(b){ b.addEventListener('click',function(){
+      [].forEach.call(document.querySelectorAll('#aRk button'),function(x){ x.classList.toggle('on',x===b); });
+      GRP=b.getAttribute('data-g'); rekap(); }); });
+    function more(){
+      var h='', e=Math.min(view.length, shown+PAGE);
+      for(var i=shown;i<e;i++){ var d=view[i], b=d[3]==='BUY';
+        h+='<tr><td>'+d[7].slice(0,16)+'</td><td><span class="tg '+(b?'b':'s')+'">'+d[3]+'</span></td><td class="r">'+lot(d[4])+'</td><td class="r">'+px(d[6])+'</td><td class="r">'+px(d[8])+'</td><td class="r '+cls(d[12])+'">'+money(d[12])+'</td></tr>'; }
+      $('aTrx').insertAdjacentHTML('beforeend',h); shown=e;
+    }
+    [].forEach.call(document.querySelectorAll('#aPre button'),function(btn){ btn.addEventListener('click',function(){
+      [].forEach.call(document.querySelectorAll('#aPre button'),function(x){ x.classList.toggle('on',x===btn); });
+      preset(btn.getAttribute('data-p')); apply(); }); });
+    ['aFrom','aTo'].forEach(function(id){ $(id).addEventListener('change',function(){ [].forEach.call(document.querySelectorAll('#aPre button'),function(x){ x.classList.remove('on'); }); apply(); }); });
+    $('aTrxW').addEventListener('scroll',function(){ var w=this; if(shown<view.length && w.scrollTop+w.clientHeight>=w.scrollHeight-200) more(); });
+
+    // ==========================================
+    // GRAFIK DINAMIS TRANSAKSI AKUN APOCALYPTO
+    // ==========================================
+    var CHART_MODE = 'cum';
+    var chartCanvas = $('aChartCanvas'), chartCtx = chartCanvas ? chartCanvas.getContext('2d') : null;
+    var chartWrap = $('chartWrap'), chartTip = $('chartTip'), chartEmpty = $('chartEmpty');
+    var chartHoverPt = null, chartDataPts = [];
+
+    [].forEach.call(document.querySelectorAll('#chartTabs button'), function(btn){
+      btn.addEventListener('click', function(){
+        [].forEach.call(document.querySelectorAll('#chartTabs button'), function(b){ b.classList.toggle('on', b === btn); });
+        CHART_MODE = btn.getAttribute('data-c');
+        drawChart();
+      });
+    });
+
+    function drawChart(){
+      if(!chartCtx || !chartWrap) return;
+      var dpr = window.devicePixelRatio || 1;
+      var rect = chartWrap.getBoundingClientRect();
+      var w = rect.width, h = rect.height;
+      if(w <= 0 || h <= 0) return;
+
+      chartCanvas.width = w * dpr;
+      chartCanvas.height = h * dpr;
+      chartCtx.save();
+      chartCtx.scale(dpr, dpr);
+      chartCtx.clearRect(0, 0, w, h);
+
+      chartDataPts = [];
+      var best = -Infinity, worst = Infinity, sumNet = 0;
+      var pL = 60, pR = 25, pT = 25, pB = 35;
+      var pw = w - pL - pR, ph = h - pT - pB;
+
+      if(CHART_MODE === 'bal'){
+        var a = $('aFrom').value, b = $('aTo').value;
+        var sFilt = S.filter(function(s){ return (!a || s[0] >= a) && (!b || s[0] <= b); });
+        if(!sFilt.length && S.length) sFilt = S.slice(-30);
+        if(!sFilt.length){
+          chartEmpty.style.display = 'flex';
+          $('cPoints').textContent = '0';
+          chartCtx.restore();
+          return;
+        }
+        chartEmpty.style.display = 'none';
+        sFilt.forEach(function(s){
+          chartDataPts.push({ xLabel: tgl(s[0]), date: s[0], val: s[1], eq: s[2], isBal: true });
+        });
+      } else if(CHART_MODE === 'bar'){
+        var len = GRP==='y'?4:GRP==='m'?7:10, g={}, keys=[];
+        TR.forEach(function(d){
+          var k = d[7].slice(0, len);
+          if(!g[k]){ g[k] = { net: 0, count: 0, lot: 0 }; keys.push(k); }
+          g[k].net += d[12];
+          g[k].count++;
+          g[k].lot += d[4];
+        });
+        keys.sort();
+        if(!keys.length){
+          chartEmpty.style.display = 'flex';
+          $('cPoints').textContent = '0';
+          chartCtx.restore();
+          return;
+        }
+        chartEmpty.style.display = 'none';
+        var lbl = function(k){ if(GRP==='y') return k; if(GRP==='m'){ var q=k.split('-'); return BL[Number(q[1])-1]+' '+q[0].slice(2); } return tgl(k); };
+        keys.forEach(function(k){
+          var item = g[k];
+          sumNet += item.net;
+          if(item.net > best) best = item.net;
+          if(item.net < worst) worst = item.net;
+          chartDataPts.push({ xLabel: lbl(k), date: k, net: item.net, count: item.count, lot: item.lot, isBar: true });
+        });
+      } else {
+        if(!TR.length){
+          chartEmpty.style.display = 'flex';
+          $('cPoints').textContent = '0';
+          chartCtx.restore();
+          return;
+        }
+        chartEmpty.style.display = 'none';
+        var cum = 0;
+        TR.forEach(function(d, idx){
+          cum += d[12];
+          sumNet += d[12];
+          if(d[12] > best) best = d[12];
+          if(d[12] < worst) worst = d[12];
+          chartDataPts.push({
+            xLabel: d[7].slice(5, 16),
+            date: d[7],
+            type: d[3],
+            lot: d[4],
+            openP: d[6],
+            closeP: d[8],
+            net: d[12],
+            cum: cum,
+            idx: idx + 1
+          });
+        });
+      }
+
+      // Update Summary Cards
+      if(CHART_MODE === 'bal'){
+        var lastS = chartDataPts[chartDataPts.length - 1];
+        var firstS = chartDataPts[0];
+        var diff = lastS ? (lastS.val - firstS.val) : 0;
+        $('cNet').textContent = money(diff);
+        $('cNet').className = cls(diff);
+        $('cBest').textContent = lastS ? money(lastS.val) : '-';
+        $('cBest').previousElementSibling.textContent = 'Balance Terkini';
+        $('cWorst').textContent = lastS ? money(lastS.eq) : '-';
+        $('cWorst').previousElementSibling.textContent = 'Equity Terkini';
+        $('cPoints').textContent = chartDataPts.length + ' Data';
+      } else {
+        $('cNet').textContent = money(sumNet);
+        $('cNet').className = cls(sumNet);
+        $('cBest').textContent = best === -Infinity ? '-' : money(best);
+        $('cBest').previousElementSibling.textContent = 'Trade Terbaik';
+        $('cWorst').textContent = worst === Infinity ? '-' : money(worst);
+        $('cWorst').previousElementSibling.textContent = 'Trade Terendah';
+        $('cPoints').textContent = chartDataPts.length + (CHART_MODE === 'bar' ? ' Hari' : ' Trx');
+      }
+
+      var n = chartDataPts.length;
+      if(n === 0){ chartCtx.restore(); return; }
+
+      var minY = Infinity, maxY = -Infinity;
+      if(CHART_MODE === 'bal'){
+        chartDataPts.forEach(function(p){
+          if(p.val < minY) minY = p.val;
+          if(p.val > maxY) maxY = p.val;
+          if(p.eq < minY) minY = p.eq;
+          if(p.eq > maxY) maxY = p.eq;
+        });
+      } else if(CHART_MODE === 'bar'){
+        minY = 0; maxY = 0;
+        chartDataPts.forEach(function(p){
+          if(p.net < minY) minY = p.net;
+          if(p.net > maxY) maxY = p.net;
+        });
+      } else {
+        minY = 0; maxY = 0;
+        chartDataPts.forEach(function(p){
+          if(p.cum < minY) minY = p.cum;
+          if(p.cum > maxY) maxY = p.cum;
+        });
+      }
+
+      var span = (maxY - minY) || 10;
+      maxY += span * 0.12;
+      minY -= span * 0.08;
+      span = maxY - minY;
+
+      function getY(v){ return pT + ph - ((v - minY) / span) * ph; }
+      function getX(i){ return n === 1 ? pL + pw / 2 : pL + (i / (n - 1)) * pw; }
+
+      // Gridlines & Labels
+      var tickCount = 5;
+      chartCtx.lineWidth = 1;
+      chartCtx.font = '11px Inter, -apple-system, sans-serif';
+      chartCtx.fillStyle = 'rgba(160, 183, 220, 0.45)';
+      chartCtx.textAlign = 'right';
+      chartCtx.textBaseline = 'middle';
+
+      for(var ti = 0; ti <= tickCount; ti++){
+        var val = minY + (span * (ti / tickCount));
+        var yPos = getY(val);
+        chartCtx.strokeStyle = 'rgba(160, 183, 220, 0.07)';
+        chartCtx.beginPath();
+        chartCtx.moveTo(pL, yPos);
+        chartCtx.lineTo(pL + pw, yPos);
+        chartCtx.stroke();
+
+        var yFmt = Math.abs(val) >= 1000 ? (val >= 0 ? '' : '-') + (Math.abs(val)/1000).toFixed(1) + 'k' : val.toFixed(0);
+        chartCtx.fillText((CENT?yFmt+' ¢':'$'+yFmt), pL - 10, yPos);
+      }
+
+      // Zero baseline
+      if(minY <= 0 && maxY >= 0){
+        var zeroY = getY(0);
+        chartCtx.setLineDash([4, 4]);
+        chartCtx.strokeStyle = 'rgba(231, 199, 102, 0.35)';
+        chartCtx.beginPath();
+        chartCtx.moveTo(pL, zeroY);
+        chartCtx.lineTo(pL + pw, zeroY);
+        chartCtx.stroke();
+        chartCtx.setLineDash([]);
+      }
+
+      // X Axis Date labels
+      chartCtx.textAlign = 'center';
+      chartCtx.textBaseline = 'top';
+      var xStep = Math.max(1, Math.floor(n / 6));
+      for(var xi = 0; xi < n; xi += xStep){
+        var xp = getX(xi);
+        var lblT = chartDataPts[xi].xLabel || chartDataPts[xi].date;
+        chartCtx.fillText(lblT, xp, pT + ph + 8);
+      }
+      if(n > 1 && (n - 1) % xStep !== 0){
+        chartCtx.fillText(chartDataPts[n - 1].xLabel || chartDataPts[n - 1].date, getX(n - 1), pT + ph + 8);
+      }
+
+      // Render chart body
+      if(CHART_MODE === 'bar'){
+        var barW = Math.max(4, Math.min(28, (pw / n) * 0.7));
+        var zeroY = getY(0);
+        chartDataPts.forEach(function(p, i){
+          var bx = pL + (i + 0.5) * (pw / n) - barW / 2;
+          var by = getY(p.net);
+          var bH = Math.abs(by - zeroY);
+          chartCtx.fillStyle = p.net >= 0 ? 'rgba(126, 224, 166, 0.85)' : 'rgba(255, 157, 138, 0.85)';
+          var topY = p.net >= 0 ? by : zeroY;
+          chartCtx.beginPath();
+          chartCtx.roundRect ? chartCtx.roundRect(bx, topY, barW, Math.max(2, bH), 3) : chartCtx.rect(bx, topY, barW, Math.max(2, bH));
+          chartCtx.fill();
+          p._x = bx + barW / 2;
+          p._y = by;
+        });
+      } else if(CHART_MODE === 'bal'){
+        chartCtx.strokeStyle = 'rgba(243, 221, 147, 0.95)';
+        chartCtx.lineWidth = 2.2;
+        chartCtx.beginPath();
+        chartDataPts.forEach(function(p, i){
+          var px = getX(i), py = getY(p.eq);
+          p._x = px; p._y = py;
+          if(i === 0) chartCtx.moveTo(px, py); else chartCtx.lineTo(px, py);
+        });
+        chartCtx.stroke();
+
+        chartCtx.strokeStyle = 'rgba(143, 195, 255, 0.85)';
+        chartCtx.lineWidth = 1.8;
+        chartCtx.beginPath();
+        chartDataPts.forEach(function(p, i){
+          var px = getX(i), py = getY(p.val);
+          if(i === 0) chartCtx.moveTo(px, py); else chartCtx.lineTo(px, py);
+        });
+        chartCtx.stroke();
+      } else {
+        var zeroY = getY(0);
+        var grad = chartCtx.createLinearGradient(0, pT, 0, pT + ph);
+        grad.addColorStop(0, 'rgba(231, 199, 102, 0.28)');
+        grad.addColorStop(1, 'rgba(231, 199, 102, 0.01)');
+
+        chartCtx.beginPath();
+        chartDataPts.forEach(function(p, i){
+          p._x = getX(i);
+          p._y = getY(p.cum);
+          if(i === 0) chartCtx.moveTo(p._x, p._y); else chartCtx.lineTo(p._x, p._y);
+        });
+        chartCtx.lineTo(getX(n - 1), pT + ph);
+        chartCtx.lineTo(getX(0), pT + ph);
+        chartCtx.closePath();
+        chartCtx.fillStyle = grad;
+        chartCtx.fill();
+
+        chartCtx.shadowColor = 'rgba(231, 199, 102, 0.45)';
+        chartCtx.shadowBlur = 10;
+        chartCtx.strokeStyle = 'rgba(243, 221, 147, 1)';
+        chartCtx.lineWidth = 2.5;
+        chartCtx.beginPath();
+        chartDataPts.forEach(function(p, i){
+          if(i === 0) chartCtx.moveTo(p._x, p._y); else chartCtx.lineTo(p._x, p._y);
+        });
+        chartCtx.stroke();
+        chartCtx.shadowBlur = 0;
+
+        var lastPt = chartDataPts[n - 1];
+        if(lastPt){
+          chartCtx.fillStyle = '#fff';
+          chartCtx.beginPath();
+          chartCtx.arc(lastPt._x, lastPt._y, 4, 0, Math.PI * 2);
+          chartCtx.fill();
+        }
+      }
+
+      // Hover Crosshair
+      if(chartHoverPt){
+        chartCtx.setLineDash([3, 3]);
+        chartCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        chartCtx.lineWidth = 1;
+        chartCtx.beginPath();
+        chartCtx.moveTo(chartHoverPt._x, pT);
+        chartCtx.lineTo(chartHoverPt._x, pT + ph);
+        chartCtx.stroke();
+        chartCtx.setLineDash([]);
+
+        chartCtx.fillStyle = '#f3dd93';
+        chartCtx.beginPath();
+        chartCtx.arc(chartHoverPt._x, chartHoverPt._y, 5, 0, Math.PI * 2);
+        chartCtx.fill();
+        chartCtx.strokeStyle = '#060d1f';
+        chartCtx.lineWidth = 2;
+        chartCtx.stroke();
+      }
+
+      chartCtx.restore();
+    }
+
+    if(chartWrap){
+      chartWrap.addEventListener('mousemove', function(e){
+        if(!chartDataPts.length) return;
+        var rect = chartWrap.getBoundingClientRect();
+        var mx = e.clientX - rect.left;
+
+        var closest = null, minDist = Infinity;
+        chartDataPts.forEach(function(p){
+          var dist = Math.abs(p._x - mx);
+          if(dist < minDist){ minDist = dist; closest = p; }
+        });
+
+        if(closest && minDist < 50){
+          chartHoverPt = closest;
+          drawChart();
+
+          var html = '<div style="font-weight:800;color:var(--gold-soft);margin-bottom:3px">' + (closest.date || closest.xLabel) + '</div>';
+          if(closest.isBal){
+            html += '<div>Balance: <b>' + money(closest.val) + '</b></div>';
+            html += '<div>Equity: <b>' + money(closest.eq) + '</b></div>';
+          } else if(closest.isBar){
+            html += '<div>Net Hari Ini: <b class="' + cls(closest.net) + '">' + money(closest.net) + '</b></div>';
+            html += '<div style="color:var(--ink-dim);font-size:11px">' + closest.count + ' Transaksi · ' + lot(closest.lot) + ' Lot</div>';
+          } else {
+            html += '<div>Kumulatif: <b class="' + cls(closest.cum) + '">' + money(closest.cum) + '</b></div>';
+            html += '<div>Trade #' + closest.idx + ' (' + closest.type + ' ' + lot(closest.lot) + ' Lot): <b class="' + cls(closest.net) + '">' + money(closest.net) + '</b></div>';
+          }
+
+          chartTip.innerHTML = html;
+          chartTip.style.display = 'block';
+
+          var tipW = chartTip.offsetWidth || 160;
+          var leftPos = closest._x + 14;
+          if(leftPos + tipW > rect.width - 10) leftPos = closest._x - tipW - 14;
+          chartTip.style.left = Math.max(10, leftPos) + 'px';
+          chartTip.style.top = Math.max(10, Math.min(rect.height - 70, closest._y - 20)) + 'px';
+        } else {
+          chartHoverPt = null;
+          chartTip.style.display = 'none';
+          drawChart();
+        }
+      });
+
+      chartWrap.addEventListener('mouseleave', function(){
+        chartHoverPt = null;
+        if(chartTip) chartTip.style.display = 'none';
+        drawChart();
+      });
+
+      window.addEventListener('resize', drawChart);
+    }
+
+    function initLocalDemoData(){
+      CENT = true;
+      $('aLoad').hidden = true;
+      $('aMain').hidden = false;
+      $('aInfo').textContent = 'Akun 223132966 (Cent / Real) · Update terakhir 5 Nov 2026';
+
+      var dummyDeals = [];
+      var baseDate = new Date('2026-11-01T08:00:00');
+      var tradeLots = [0.10, 0.20, 0.15, 0.30, 0.25, 0.50, 0.10, 0.40, 0.20, 0.35];
+      var tradeResults = [
+        25.40, 38.20, -18.50, 42.10, 15.30, 68.00, -24.20, 31.50, 52.40, 19.80,
+        -15.00, 45.20, 88.50, 22.10, -32.00, 41.00, 60.50, -12.40, 35.80, 50.20,
+        28.40, 14.20, -22.00, 48.00, 62.50, 18.90, -45.00, 36.20, 75.10, 29.40,
+        -19.50, 55.00, 40.20, -14.00, 33.50, 82.00, 24.10, -28.00, 44.50, 58.20,
+        16.80, 39.00, -11.50, 47.20, 65.00, -35.00, 21.40, 70.20, 33.00, -18.20,
+        49.50, 27.10, 64.00, -21.00, 38.50, 52.00, 17.50, -15.80, 43.20, 61.00,
+        -25.00, 34.00, 77.50, 20.20, -38.00, 46.00, 59.40, 15.00, 37.80, 68.50,
+        -16.20, 42.00, 54.50, -29.00, 31.20, 63.80, 26.50, 48.10, 51.61
+      ];
+      var runningDate = new Date(baseDate);
+      tradeResults.forEach(function(res, i){
+        runningDate.setMinutes(runningDate.getMinutes() + 50 + (i % 7) * 20);
+        var lotV = tradeLots[i % tradeLots.length];
+        var openP = 2735.00 + (i % 10) * 1.5;
+        var closeP = openP + (res > 0 ? 1.2 : -0.8);
+        var closeTime = ymd(runningDate) + ' ' + pad(runningDate.getHours()) + ':' + pad(runningDate.getMinutes()) + ':00';
+        dummyDeals.push([100000 + i, '', '', (i % 2 === 0 ? 'BUY' : 'SELL'), lotV, 0, openP, closeTime, closeP, 0, 0, 0, res]);
+      });
+      D = dummyDeals;
+      S = [
+        ['2026-11-01', 10000.00, 10000.00],
+        ['2026-11-02', 10350.20, 10350.20],
+        ['2026-11-03', 10820.50, 10820.50],
+        ['2026-11-04', 11290.10, 11290.10],
+        ['2026-11-05', 11814.71, 11814.71]
+      ];
+      preset('month');
+      apply();
+    }
+
+    function load(){
+      APX.api({action:'apo_history'}).then(function(r){
+        if(!r||r.result!=='ok'){
+          var isLocal = location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:';
+          if(isLocal){ initLocalDemoData(); return; }
+          $('aLoad').textContent='Gagal memuat. Muat ulang halaman.'; return;
+        }
+        D=r.deals||[]; S=r.saldo||[]; CENT=!!r.cent;
+        if(r.mql5){ $('mqTag').textContent='Online'; $('mqTag').style.color='var(--ok)'; $('mqTag').style.borderColor='rgba(126,224,166,.4)';
+          $('mqTxt').textContent='Pantau akun Apocalypto secara terbuka & terverifikasi langsung oleh MQL5 (MetaQuotes): grafik, growth, drawdown, dan riwayat trade.';
+          $('mqBtn').href=r.mql5; $('mqBtn').hidden=false; $('mqBtn').style.display='inline-flex'; }
+        if(!D.length && !S.length){
+          var isLocal = location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:';
+          if(isLocal){ initLocalDemoData(); return; }
+          $('aLoad').textContent='Belum ada data transaksi. Data akan tampil otomatis setelah EA akun Apocalypto mengirim riwayatnya.'; return;
+        }
+        $('aLoad').hidden=true; $('aMain').hidden=false;
+        $('aInfo').textContent=(r.login?'Akun '+r.login+(r.jenis?' ('+r.jenis+')':'')+' · ':'')+(S.length?'Update terakhir '+tgl(S[S.length-1][0]):'');
+        preset('month'); apply();
+      }).catch(function(){
+        var isLocal = location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:';
+        if(isLocal){ initLocalDemoData(); return; }
+        $('aLoad').textContent='Gagal terhubung. Muat ulang halaman.';
+      });
+    }
+    function start(){
+      var isLocal = location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.protocol==='file:';
+      if(window.APX&&APX.member&&APX.member()) load();
+      else if(isLocal) initLocalDemoData();
+    }
+    if(window.APX) start(); else document.addEventListener('apx:ready',start);
+  })();
+  </script>
+</body>
+</html>
