@@ -668,24 +668,25 @@
 
       // Demo cycles: each entry = satu siklus lengkap
       // d[1]=open_time, d[2]=comment(layer), d[7]=close_time (basket=sama), d[12]=net
+      // mf = max floating (negatif) selama siklus berjalan → dikirim backend via d[13] pada deal L1
       var demoCycles = [
-        {date:'2026-11-01',oh:'08:15',ch:'09:40',dir:'BUY', layers:[{lot:0.10,net:38.20}]},
-        {date:'2026-11-01',oh:'10:05',ch:'12:30',dir:'SELL',layers:[{lot:0.10,net:25.40},{lot:0.20,net:18.60}]},
-        {date:'2026-11-01',oh:'13:20',ch:'15:10',dir:'BUY', layers:[{lot:0.10,net:42.10}]},
-        {date:'2026-11-01',oh:'16:00',ch:'18:45',dir:'SELL',layers:[{lot:0.10,net:-18.50},{lot:0.20,net:52.30},{lot:0.30,net:68.00}]},
-        {date:'2026-11-02',oh:'08:30',ch:'09:55',dir:'BUY', layers:[{lot:0.10,net:31.50}]},
-        {date:'2026-11-02',oh:'10:20',ch:'13:15',dir:'SELL',layers:[{lot:0.10,net:-24.20},{lot:0.20,net:62.50}]},
-        {date:'2026-11-02',oh:'14:00',ch:'16:30',dir:'BUY', layers:[{lot:0.10,net:52.40}]},
-        {date:'2026-11-02',oh:'17:10',ch:'19:40',dir:'SELL',layers:[{lot:0.10,net:19.80}]},
-        {date:'2026-11-03',oh:'08:10',ch:'10:25',dir:'BUY', layers:[{lot:0.10,net:45.20},{lot:0.20,net:28.40}]},
-        {date:'2026-11-03',oh:'11:00',ch:'14:30',dir:'SELL',layers:[{lot:0.10,net:88.50}]},
-        {date:'2026-11-03',oh:'15:05',ch:'17:20',dir:'BUY', layers:[{lot:0.10,net:22.10},{lot:0.20,net:-32.00},{lot:0.30,net:68.50},{lot:0.40,net:41.00}]},
-        {date:'2026-11-04',oh:'08:45',ch:'10:10',dir:'SELL',layers:[{lot:0.10,net:60.50}]},
-        {date:'2026-11-04',oh:'10:50',ch:'12:40',dir:'BUY', layers:[{lot:0.10,net:-12.40},{lot:0.20,net:50.20}]},
-        {date:'2026-11-04',oh:'13:30',ch:'15:55',dir:'SELL',layers:[{lot:0.10,net:35.80}]},
-        {date:'2026-11-04',oh:'16:20',ch:'19:00',dir:'BUY', layers:[{lot:0.10,net:29.40},{lot:0.20,net:48.10},{lot:0.30,net:51.61}]},
-        {date:'2026-11-05',oh:'08:20',ch:'09:50',dir:'SELL',layers:[{lot:0.10,net:49.50}]},
-        {date:'2026-11-05',oh:'10:30',ch:'12:15',dir:'BUY', layers:[{lot:0.10,net:27.10},{lot:0.20,net:64.00}]}
+        {date:'2026-11-01',oh:'08:15',ch:'09:40',dir:'BUY', mf:-12.50, layers:[{lot:0.10,net:38.20}]},
+        {date:'2026-11-01',oh:'10:05',ch:'12:30',dir:'SELL',mf:-32.40, layers:[{lot:0.10,net:25.40},{lot:0.20,net:18.60}]},
+        {date:'2026-11-01',oh:'13:20',ch:'15:10',dir:'BUY', mf:-8.20,  layers:[{lot:0.10,net:42.10}]},
+        {date:'2026-11-01',oh:'16:00',ch:'18:45',dir:'SELL',mf:-98.60, layers:[{lot:0.10,net:-18.50},{lot:0.20,net:52.30},{lot:0.30,net:68.00}]},
+        {date:'2026-11-02',oh:'08:30',ch:'09:55',dir:'BUY', mf:-15.30, layers:[{lot:0.10,net:31.50}]},
+        {date:'2026-11-02',oh:'10:20',ch:'13:15',dir:'SELL',mf:-58.40, layers:[{lot:0.10,net:-24.20},{lot:0.20,net:62.50}]},
+        {date:'2026-11-02',oh:'14:00',ch:'16:30',dir:'BUY', mf:-6.80,  layers:[{lot:0.10,net:52.40}]},
+        {date:'2026-11-02',oh:'17:10',ch:'19:40',dir:'SELL',mf:-18.20, layers:[{lot:0.10,net:19.80}]},
+        {date:'2026-11-03',oh:'08:10',ch:'10:25',dir:'BUY', mf:-44.60, layers:[{lot:0.10,net:45.20},{lot:0.20,net:28.40}]},
+        {date:'2026-11-03',oh:'11:00',ch:'14:30',dir:'SELL',mf:-22.40, layers:[{lot:0.10,net:88.50}]},
+        {date:'2026-11-03',oh:'15:05',ch:'17:20',dir:'BUY', mf:-185.40,layers:[{lot:0.10,net:22.10},{lot:0.20,net:-32.00},{lot:0.30,net:68.50},{lot:0.40,net:41.00}]},
+        {date:'2026-11-04',oh:'08:45',ch:'10:10',dir:'SELL',mf:-14.20, layers:[{lot:0.10,net:60.50}]},
+        {date:'2026-11-04',oh:'10:50',ch:'12:40',dir:'BUY', mf:-48.80, layers:[{lot:0.10,net:-12.40},{lot:0.20,net:50.20}]},
+        {date:'2026-11-04',oh:'13:30',ch:'15:55',dir:'SELL',mf:-9.60,  layers:[{lot:0.10,net:35.80}]},
+        {date:'2026-11-04',oh:'16:20',ch:'19:00',dir:'BUY', mf:-112.50,layers:[{lot:0.10,net:29.40},{lot:0.20,net:48.10},{lot:0.30,net:51.61}]},
+        {date:'2026-11-05',oh:'08:20',ch:'09:50',dir:'SELL',mf:-18.60, layers:[{lot:0.10,net:49.50}]},
+        {date:'2026-11-05',oh:'10:30',ch:'12:15',dir:'BUY', mf:-38.20, layers:[{lot:0.10,net:27.10},{lot:0.20,net:64.00}]}
       ];
       var dummyDeals = [], dealId = 90000;
       demoCycles.forEach(function(cyc, ci){
@@ -693,7 +694,7 @@
         var openP = 2735.00 + ci * 1.5;
         cyc.layers.forEach(function(lyr, li){
           var layerNum = li+1;
-          dummyDeals.push([
+          var deal = [
             dealId++,
             cyc.date+' '+cyc.oh+':00',          // d[1] = open time
             'Apo '+layerNum+' '+(65+ci%10)+'.0', // d[2] = comment layer
@@ -702,7 +703,9 @@
             closeTime,                           // d[7] = close time (basket = sama)
             openP + li*0.5 + (lyr.net>0?1.2:-0.8),
             0, 0, 0, lyr.net
-          ]);
+          ];
+          if(layerNum===1) deal.push(cyc.mf);   // d[13] = max floating siklus (di L1)
+          dummyDeals.push(deal);
         });
       });
       D = dummyDeals;
