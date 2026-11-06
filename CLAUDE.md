@@ -57,8 +57,8 @@ C:\Masmoel\Apocalypto\
 - Script utama ada di `C:\Masmoel\Backend\_gas\Code.js` (repo backend) — push ke `main` = deploy otomatis lewat GitHub Actions
 - Resume Siklus tersimpan di tab `Resume Siklus` (1 siklus = 1 baris), logikanya `buildSiklus()` di `Code.js` dan `buildCycles()` di `apocalypto.html` harus sama
 
-### Relay Mailer
-- Deploy di `masmoel.trading@gmail.com` (Gmail biasa, sementara Workspace masih restriksi)
+### Email
+- Email pelanggan lewat Resend, diatur satu baris `EMAIL_PROVIDER` di `Code.js` (`resend` atau `workspace`), kunci di Script Properties `RESEND_API_KEY`. Kembali ke `workspace` setelah batasan Google lepas
 - Rahasia backend ditulis sebagai placeholder `__GAS_*__` di `Code.js` dan diisi dari GitHub Secret `GAS_SECRETS` saat deploy. Jangan simpan rahasia di repo website: repo publik dan semua file di-track ikut tayang di GitHub Pages
 
 ---
@@ -111,7 +111,7 @@ Push ke GitHub → GitHub Pages deploy otomatis dalam 1–2 menit.
 | DEV_LOCK | `true` — publik lihat "Segera Hadir" |
 | YouTube URL | Belum diisi (site.js baris 5) |
 | MQL5 link | Belum ada (menunggu akun MQL5) |
-| Relay Mailer | Aktif via masmoel.trading@gmail.com |
+| Email pelanggan | Resend, sementara sampai batasan Workspace lepas |
 | EA Apocalypto | Versi terbaru di `Expert Advisor/Apocalypto.mq5` |
 
 ---
