@@ -433,6 +433,26 @@ bool ApoSendBatch(string d)
   }
 
 // Dipanggil dari OnTick & OnTimer. Pakai jam lokal (TimeLocal) supaya tetap jalan saat tidak ada tick.
+// Catat floating minus terdalam ke Global Variable, kunci = position id L1 (posisi tertua).
+// Jalan di semua peran akun dan tersimpan langsung, jadi tahan restart EA dan siklus cepat.
+void ApoTrackMaxFloat()
+  {
+   long founderId = 0, oldestT = 0;
+   for(int i = PositionsTotal()-1; i >= 0; i--)
+     {
+      ulong t = PositionGetTicket(i);
+      if(t == 0 || PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+      long tm = (long)PositionGetInteger(POSITION_TIME_MSC);
+      if(founderId == 0 || tm < oldestT)
+        { oldestT = tm; founderId = PositionGetInteger(POSITION_IDENTIFIER); }
+     }
+   if(founderId == 0) return;
+   double fl = MyFloatingPnL();
+   if(fl >= 0.0) return;
+   string key = "ApoMF_" + IntegerToString(founderId);
+   if(!GlobalVariableCheck(key) || fl < GlobalVariableGet(key)) GlobalVariableSet(key, fl);
+  }
+
 void ApoTick()
   {
    if(!gApoPublish || gCopyRole == Monitor) return;
@@ -507,7 +527,7 @@ void ApoSendHistory()
             break;
            }
         }
-      // Max floating siklus disimpan di Global Variable saat siklus selesai (ResetTogglesOnNewL1)
+      // Max floating siklus dicatat terus-menerus di Global Variable (ApoTrackMaxFloat)
       double mf = 0.0;
       string mfKey = "ApoMF_" + IntegerToString(pos[i]);
       if(GlobalVariableCheck(mfKey)) mf = GlobalVariableGet(mfKey);
@@ -1488,9 +1508,6 @@ void ResetTogglesOnNewL1()
       if(gHoldMarti)  { gHoldMarti = false;  GlobalVariableSet(StateKey("holdMarti"), 0.0); Print("ℹ️ Hold Marti di-reset OFF (siklus baru)."); }
       if(gForceTier3) { gForceTier3 = false; GlobalVariableSet(StateKey("t3"), 0.0);        Print("ℹ️ Tier 3 di-reset OFF (siklus baru)."); }
       gRSIAnomaly = false;   // siklus baru / flat -> latch anomali RSI dibersihkan
-      // Simpan max floating siklus yg baru selesai → dipakai saat kirim riwayat ke backend
-      if(gCycleFounder != 0 && gCycleMinFloat < 0.0)
-         GlobalVariableSet("ApoMF_" + IntegerToString(gCycleFounder), gCycleMinFloat);
      }
 
    gCycleFounder = (nPos >= 1) ? founder : 0;
@@ -1645,6 +1662,7 @@ void OnTick()
 
    // Riwayat transaksi AKUN UTAMA Apocalypto -> situs (hanya bila server lisensi memberi flag PUB).
    // Normal tiap 5 menit; saat masih ada sisa (backfill riwayat lama) tiap 20 detik, maks 30 deal per kali.
+   ApoTrackMaxFloat();
    ApoTick();
 
    // === MODE MONITOR: refresh cukup lewat OnTimer (per 300ms) -> hindari kedip di chart tick cepat ===

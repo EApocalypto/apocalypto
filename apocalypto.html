@@ -116,8 +116,8 @@
         <div class="tw sc" style="max-height:220px">
           <table>
             <thead><tr>
-              <th>Tanggal / Siklus</th><th>Jam Buka</th><th>Jam Tutup</th>
-              <th class="r">Layer</th><th class="r">Max Float</th><th class="r">Net Profit</th>
+              <th>Tanggal</th><th>Siklus</th><th>Jam Buka</th><th>Jam Tutup</th><th class="r">Durasi</th>
+              <th class="r">Layer</th><th class="r">Max Floating</th><th class="r">Net Profit</th>
             </tr></thead>
             <tbody id="aCycTb"></tbody>
           </table>
@@ -637,6 +637,15 @@
       if(cur) cycles.push(cur);
       return cycles.sort(function(a,b){ return a.buka<b.buka?1:a.buka>b.buka?-1:0; });
     }
+    function tglPanjang(t){ return t.slice(8,10)+'-'+t.slice(5,7)+'-'+t.slice(0,4); }   // yyyy-mm-dd -> dd-mm-yyyy
+    // Selisih dua waktu "yyyy-MM-dd HH:mm:ss" -> "1j 05m 12d". Sama dgn siklusDurasi() di backend.
+    function durasiSiklus(a,b){
+      var p=function(t){ var m=String(t).match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/); return m?Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5],+m[6]):NaN; };
+      var s=Math.round((p(b)-p(a))/1000);
+      if(!(s>=0)) return '-';
+      var h=Math.floor(s/3600),m=Math.floor(s%3600/60),d=s%60,dua=function(n){ return (n<10?'0':'')+n; };
+      return h?h+'j '+dua(m)+'m '+dua(d)+'d':m?m+'m '+dua(d)+'d':d+'d';
+    }
     // Siklus dibangun dari seluruh deal lalu disaring per tanggal tutup, agar L1 tidak terpotong periode.
     function renderCycles(from,to){
       var tb=$('aCycTb'),tag=$('aCycTag');
@@ -647,18 +656,20 @@
       });
       if(tag) tag.textContent=cycles.length+' Siklus';
       if(!cycles.length){
-        tb.innerHTML='<tr><td colspan="6" class="ah-empty">Tidak ada siklus di periode ini.</td></tr>';
+        tb.innerHTML='<tr><td colspan="8" class="ah-empty">Tidak ada siklus di periode ini.</td></tr>';
         return;
       }
       tb.innerHTML=cycles.map(function(c){
-        var bukaStr=c.buka?c.buka.slice(11,16)+'<small style="color:var(--ink-faint);margin-left:4px">'+c.buka.slice(5,10)+'</small>':'-';
-        var tutupStr=c.tutup&&c.tutup.length>=16?c.tutup.slice(11,16)+'<small style="color:var(--ink-faint);margin-left:4px">'+c.tutup.slice(5,10)+'</small>':'-';
+        var bukaStr=c.buka?c.buka.slice(11,19):'-';
+        var tutupStr=c.tutup&&c.tutup.length>=19?c.tutup.slice(11,19)+(c.tutup.slice(0,10)!==c.date?'<small style="color:var(--ink-faint);margin-left:4px">'+tglPanjang(c.tutup)+'</small>':''):'-';
         var floatStr=c.maxFloat!==null?'<span style="color:var(--danger)">'+money(c.maxFloat)+'</span>':'<span style="color:var(--ink-faint)">-</span>';
         var nc=c.net>0?'pos':c.net<0?'neg':'';
         return '<tr>'+
-          '<td><b style="font-size:11px;color:var(--gold)">'+c.date.slice(8)+' - '+c.date.slice(5,7)+'</b><span class="tg d" style="font-size:10px;margin-left:7px">S'+c.no+'</span></td>'+
+          '<td><b style="font-size:12px;color:var(--gold)">'+tglPanjang(c.date)+'</b></td>'+
+          '<td><span class="tg d" style="font-size:10px">Ke-'+c.no+'</span></td>'+
           '<td>'+bukaStr+'</td>'+
           '<td>'+tutupStr+'</td>'+
+          '<td class="r">'+durasiSiklus(c.buka,c.tutup)+'</td>'+
           '<td class="r">'+c.layers+'</td>'+
           '<td class="r">'+floatStr+'</td>'+
           '<td class="r '+nc+'">'+money(c.net)+'</td>'+
